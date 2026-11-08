@@ -8,11 +8,15 @@ import dev.fyre.disguise.api.DisguiseService;
 import dev.fyre.disguise.api.SkinProperty;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.UUID;
 
-/** Pure profile conversion. Never modify the original packet entries. */
+/**
+ * Replaces only the selected visible identity, never mutating the original packet list,
+ * and retaining unrelated player profile properties.
+ */
 public final class PlayerInfoRewriter {
     private final DisguiseService disguises;
 
@@ -35,15 +39,16 @@ public final class PlayerInfoRewriter {
             if (result == null) result = new ArrayList<PlayerInfoData>(original);
             WrappedGameProfile profile = new WrappedGameProfile(subjectId, disguise.getName());
             Optional<SkinProperty> desiredSkin = disguise.getSkin();
-            if (desiredSkin.isPresent() && desiredSkin.get().isSigned()) {
+            boolean hasSignedSkin = desiredSkin.isPresent() && desiredSkin.get().isSigned();
+            for (Map.Entry<String, WrappedSignedProperty> entry : info.getProfile().getProperties().entries()) {
+                if (!hasSignedSkin || !"textures".equals(entry.getKey())) {
+                    profile.getProperties().put(entry.getKey(), entry.getValue());
+                }
+            }
+            if (hasSignedSkin) {
                 SkinProperty skin = desiredSkin.get();
                 profile.getProperties().put("textures",
                         new WrappedSignedProperty("textures", skin.getValue(), skin.getSignature()));
-            } else {
-                // Unsigned requests must never replace a valid original skin with blank textures.
-                for (WrappedSignedProperty texture : info.getProfile().getProperties().get("textures")) {
-                    profile.getProperties().put("textures", texture);
-                }
             }
             result.set(index, new PlayerInfoData(profile, info.getLatency(),
                     info.getGameMode(), info.getDisplayName()));
