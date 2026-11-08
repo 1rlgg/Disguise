@@ -30,6 +30,22 @@ public class DeferredRefreshBacklogTest {
         assertEquals(subject, primary.poll(1).get(0).getSubject());
     }
 
+    @Test public void evictedCosmeticSurvivesRestorationPriorityInDeferredBacklog() {
+        UUID viewer = UUID.randomUUID(), first = UUID.randomUUID(),
+                second = UUID.randomUUID(), restore = UUID.randomUUID();
+        RefreshQueue primary = new RefreshQueue(2);
+        DeferredRefreshBacklog backlog = new DeferredRefreshBacklog(2);
+        primary.offer(viewer, first);
+        primary.offer(viewer, second);
+        primary.offerRestoration(viewer, restore, pair ->
+                backlog.offer(pair.getViewer(), pair.getSubject()));
+        assertEquals(restore, primary.poll(1).get(0).getSubject());
+        assertEquals(second, primary.poll(1).get(0).getSubject());
+        assertEquals(1, backlog.drainTo(primary, 2));
+        assertEquals(first, primary.poll(1).get(0).getSubject());
+        assertEquals(0, backlog.size());
+    }
+
     @Test public void urgentRestorationCancelsStaleCosmeticWork() {
         UUID viewer = UUID.randomUUID(), subject = UUID.randomUUID();
         DeferredRefreshBacklog backlog = new DeferredRefreshBacklog(2);

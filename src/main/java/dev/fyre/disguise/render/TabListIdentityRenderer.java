@@ -76,6 +76,12 @@ public final class TabListIdentityRenderer implements IdentityRenderer {
         }
     }
 
+    private void enqueueRestoration(UUID viewer, UUID subject) {
+        deferred.cancel(viewer, subject);
+        pending.offerRestoration(viewer, subject, evicted ->
+                deferred.offer(evicted.getViewer(), evicted.getSubject()));
+    }
+
     @Override public void render(IdentityTransition transition) {
         assertPrimaryThread();
         // Explicit new identity transitions can retry a previously quarantined
@@ -83,8 +89,7 @@ public final class TabListIdentityRenderer implements IdentityRenderer {
         retries.newTransition(new RefreshQueue.Pair(transition.getViewerId(), transition.getSubjectId()));
         // On saturation, never prefer a cosmetic alias update to a removal.
         if (!transition.getAfter().isPresent()) {
-            deferred.cancel(transition.getViewerId(), transition.getSubjectId());
-            pending.offerRestoration(transition.getViewerId(), transition.getSubjectId());
+            enqueueRestoration(transition.getViewerId(), transition.getSubjectId());
         } else {
             enqueue(transition.getViewerId(), transition.getSubjectId());
         }
@@ -151,7 +156,7 @@ public final class TabListIdentityRenderer implements IdentityRenderer {
                     candidate -> !retries.suppressed(candidate)
                             && !state.getDisguiseFor(candidate.getViewer(), candidate.getSubject()).isPresent(),
                     128)) {
-                pending.offerRestoration(pair.getViewer(), pair.getSubject());
+                enqueueRestoration(pair.getViewer(), pair.getSubject());
             }
         }
         // Defer excess entity work instead of silently downgrading it to tab-only updates.
@@ -200,7 +205,7 @@ public final class TabListIdentityRenderer implements IdentityRenderer {
                     // Urgent undisguise restoration gets precedence over cosmetics.
                     boolean restore = state != null
                             && !state.getDisguiseFor(pair.getViewer(), pair.getSubject()).isPresent();
-                    if (restore) pending.offerRestoration(pair.getViewer(), pair.getSubject());
+                    if (restore) enqueueRestoration(pair.getViewer(), pair.getSubject());
                     else if (!pending.offer(pair.getViewer(), pair.getSubject())
                             && !deferred.offer(pair.getViewer(), pair.getSubject())) {
                         retries.succeeded(pair);
