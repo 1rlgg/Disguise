@@ -77,6 +77,42 @@ public class AsyncSkinServiceTest {
         } finally { release.countDown(); service.close(); }
     }
 
+    @Test public void failingSourceIsRateLimitedUntilCooldownExpires() throws Exception {
+        java.util.concurrent.atomic.AtomicLong clock = new java.util.concurrent.atomic.AtomicLong(0);
+        AtomicInteger calls = new AtomicInteger();
+        SkinSource source = uuid -> {
+            calls.incrementAndGet();
+            throw new IOException("Mojang unavailable");
+        };
+        SkinFailureBackoff cooldown = new SkinFailureBackoff(8, 100, clock::get);
+        try (AsyncSkinService service = new AsyncSkinService(source,
+                new SkinCache(10, TimeUnit.MINUTES.toNanos(1)), 1, 2, cooldown)) {
+            UUID id = UUID.randomUUID();
+            try {
+                service.lookup(id).get(3, TimeUnit.SECONDS);
+                fail("Expected failure");
+            } catch (ExecutionException expected) {
+                assertTrue(expected.getCause() instanceof IOException);
+            }
+            assertEquals(1, calls.get());
+            try {
+                service.lookup(id).get(3, TimeUnit.SECONDS);
+                fail("Expected short-term throttle");
+            } catch (ExecutionException expected) {
+                assertTrue(expected.getCause() instanceof IllegalStateException);
+            }
+            assertEquals(1, calls.get());
+            clock.set(100);
+            try {
+                service.lookup(id).get(3, TimeUnit.SECONDS);
+                fail("Expected retry to contact source and fail");
+            } catch (ExecutionException expected) {
+                assertTrue(expected.getCause() instanceof IOException);
+            }
+            assertEquals(2, calls.get());
+        }
+    }
+
     @Test public void surfacesNetworkFailures() throws Exception {
         SkinSource source = uuid -> { throw new IOException("offline"); };
         try (AsyncSkinService service = new AsyncSkinService(source,

@@ -20,14 +20,21 @@ import java.util.concurrent.RejectedExecutionException;
 public final class AsyncSkinService implements AutoCloseable {
     private final SkinSource source;
     private final SkinCache cache;
+    private final SkinFailureBackoff failures;
     private final ThreadPoolExecutor executor;
     private final Map<UUID, CompletableFuture<SkinProperty>> inFlight =
             new HashMap<UUID, CompletableFuture<SkinProperty>>();
     private boolean closed;
 
     public AsyncSkinService(SkinSource source, SkinCache cache, int workers, int queueCapacity) {
+        this(source, cache, workers, queueCapacity, SkinFailureBackoff.defaults());
+    }
+
+    AsyncSkinService(SkinSource source, SkinCache cache, int workers, int queueCapacity,
+                     SkinFailureBackoff failures) {
         this.source = Objects.requireNonNull(source, "source");
         this.cache = Objects.requireNonNull(cache, "cache");
+        this.failures = Objects.requireNonNull(failures, "failures");
         if (workers < 1 || workers > 8 || queueCapacity < 1 || queueCapacity > 10000) {
             throw new IllegalArgumentException("Invalid worker or queue limits");
         }
@@ -49,6 +56,9 @@ public final class AsyncSkinService implements AutoCloseable {
             if (cached.isPresent()) return CompletableFuture.completedFuture(cached.get());
             shared = inFlight.get(id);
             if (shared == null) {
+                if (failures.blocked(id)) {
+                    return failed(new IllegalStateException("Skin lookup temporarily unavailable; retry shortly"));
+                }
                 shared = new CompletableFuture<SkinProperty>();
                 inFlight.put(id, shared);
                 submit = true;
@@ -85,7 +95,12 @@ public final class AsyncSkinService implements AutoCloseable {
         synchronized (this) {
             inFlight.remove(id, shared);
             stopped = closed;
-            if (!stopped && failure == null) cache.put(id, skin);
+            if (!stopped && failure == null) {
+                cache.put(id, skin);
+                failures.succeeded(id);
+            } else if (!stopped) {
+                failures.failed(id);
+            }
         }
         // Complete downstream stages after releasing the lock: user callbacks may be slow.
         if (stopped) shared.completeExceptionally(new IllegalStateException("Skin service closed"));
@@ -100,6 +115,7 @@ public final class AsyncSkinService implements AutoCloseable {
     }
 
     public synchronized int pendingLookups() { return inFlight.size(); }
+    public synchronized int coolingDownSources() { return failures.size(); }
 
     @Override public void close() {
         java.util.List<CompletableFuture<SkinProperty>> pending;
@@ -110,6 +126,7 @@ public final class AsyncSkinService implements AutoCloseable {
             pending = new ArrayList<CompletableFuture<SkinProperty>>(inFlight.values());
             inFlight.clear();
             cache.clear();
+            failures.clear();
         }
         for (CompletableFuture<SkinProperty> future : pending) {
             future.completeExceptionally(new IllegalStateException("Skin service closed"));
