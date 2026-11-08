@@ -187,3 +187,22 @@ to increase packet budgets without load testing.
 
 Both `experimental-tab-refresh` and `experimental-entity-refresh`
 remain **false** by default. Maven/JUnit success does not validate live PvP.
+
+
+## Skin upstream outage hardening (development cycle 25)
+
+Failed Mojang texture lookups now enter a short, bounded five-second
+per-UUID cooldown. The resolver keeps only UUID/timestamp entries (up to 512)
+and rejects repeated failed lookups immediately during that window instead
+of repeatedly consuming HTTP worker threads. A success clears its failure
+state. Normal successful skins retain their positive cache; this is not an
+invalid-texture cache. The admin `/fyredisguise stats` command now reports
+how many UUIDs are currently recorded in the failure cooldown table.
+
+The outgoing experimental entity renderer also avoids incorrectly clearing
+its circuit-breaker error streak after an ineligible/no-op world refresh.
+If entity-packet recovery is necessary after a player moved, recovery uses
+**current location and metadata**, not an old captured spawn coordinate.
+Superseded async skin callbacks are filtered before queuing a main-thread
+Bukkit task. These are software reliability improvements, not a substitute
+for live multi-client 1.8.9 PvP compatibility testing.

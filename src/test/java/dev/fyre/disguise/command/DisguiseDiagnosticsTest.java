@@ -30,6 +30,12 @@ public class DisguiseDiagnosticsTest {
         assertTrue(report.lines().get(8).contains("capacity: 3"));
     }
 
+    @Test public void showsMojangFailureCooldownWithoutMisrepresentingStatus() {
+        DisguiseDiagnostics report = new DisguiseDiagnostics(true, false,
+                1, 1, 0, 0, 0, 0, 0, false, 0, 0, 0, 9);
+        assertTrue(report.lines().get(9).contains("9"));
+    }
+
     @Test(expected = IllegalArgumentException.class)
     public void refusesEntityWithoutTab() {
         new DisguiseDiagnostics(false, true, 0, 0, 0, 0);

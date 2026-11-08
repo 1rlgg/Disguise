@@ -19,12 +19,13 @@ public final class DisguiseDiagnostics {
     private final int queuedRetries;
     private final long exhaustedRetries;
     private final long rejectedRetries;
+    private final int coolingDownSkins;
 
     public DisguiseDiagnostics(boolean tabEnabled, boolean entityEnabled,
                               int pendingRefreshes, int appliedEntries,
                               int trackedSpawns, int pendingSkins) {
         this(tabEnabled, entityEnabled, pendingRefreshes, appliedEntries, trackedSpawns, pendingSkins,
-                0, 0, 0, false, 0, 0, 0);
+                0, 0, 0, false, 0, 0, 0, 0);
     }
 
     public DisguiseDiagnostics(boolean tabEnabled, boolean entityEnabled,
@@ -33,7 +34,7 @@ public final class DisguiseDiagnostics {
                               int urgentRestorations, long lostCosmetic,
                               long lostRestorations, boolean entityCircuitOpen) {
         this(tabEnabled, entityEnabled, pendingRefreshes, appliedEntries, trackedSpawns, pendingSkins,
-                urgentRestorations, lostCosmetic, lostRestorations, entityCircuitOpen, 0, 0, 0);
+                urgentRestorations, lostCosmetic, lostRestorations, entityCircuitOpen, 0, 0, 0, 0);
     }
 
     public DisguiseDiagnostics(boolean tabEnabled, boolean entityEnabled,
@@ -42,6 +43,19 @@ public final class DisguiseDiagnostics {
                               int urgentRestorations, long lostCosmetic,
                               long lostRestorations, boolean entityCircuitOpen,
                               int queuedRetries, long exhaustedRetries, long rejectedRetries) {
+        this(tabEnabled, entityEnabled, pendingRefreshes, appliedEntries, trackedSpawns, pendingSkins,
+                urgentRestorations, lostCosmetic, lostRestorations, entityCircuitOpen,
+                queuedRetries, exhaustedRetries, rejectedRetries, 0);
+    }
+
+    public DisguiseDiagnostics(boolean tabEnabled, boolean entityEnabled,
+                              int pendingRefreshes, int appliedEntries,
+                              int trackedSpawns, int pendingSkins,
+                              int urgentRestorations, long lostCosmetic,
+                              long lostRestorations, boolean entityCircuitOpen,
+                              int queuedRetries, long exhaustedRetries, long rejectedRetries,
+                              int coolingDownSkins) {
+        if (coolingDownSkins < 0) throw new IllegalArgumentException("Cooldown count cannot be negative");
         if (queuedRetries < 0 || exhaustedRetries < 0 || rejectedRetries < 0) {
             throw new IllegalArgumentException("Retry counters cannot be negative");
         }
@@ -65,6 +79,7 @@ public final class DisguiseDiagnostics {
         this.queuedRetries = queuedRetries;
         this.exhaustedRetries = exhaustedRetries;
         this.rejectedRetries = rejectedRetries;
+        this.coolingDownSkins = coolingDownSkins;
     }
 
     public List<String> lines() {
@@ -79,7 +94,8 @@ public final class DisguiseDiagnostics {
                         + "; displaced restorations: " + lostRestorations,
                 "Entity refresh circuit: " + (entityEnabled && entityCircuitOpen ? "OPEN (tab only)" : "not tripped"),
                 "Pending refresh retries: " + queuedRetries + "; exhausted: " + exhaustedRetries
-                        + "; denied by capacity: " + rejectedRetries
+                        + "; denied by capacity: " + rejectedRetries,
+                "Skin sources in short failure cooldown: " + coolingDownSkins
         ));
     }
 }
