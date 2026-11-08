@@ -24,12 +24,13 @@ public final class PlayerInfoPacketListener extends PacketAdapter {
     }
 
     @Override public void onPacketSending(PacketEvent event) {
-        if (breaker.isOpen()) return;
+        if (breaker.isOpen() || event.isCancelled()) return;
         try {
             PacketContainer packet = event.getPacket();
             if (packet.getPlayerInfoAction().read(0) != EnumWrappers.PlayerInfoAction.ADD_PLAYER) return;
             List<PlayerInfoData> existing = packet.getPlayerInfoDataLists().read(0);
-            if (existing == null || existing.isEmpty()) return;
+            if (!PlayerInfoPacketPolicy.mayRewrite(event.isCancelled(), true,
+                    existing != null && !existing.isEmpty())) return;
             List<PlayerInfoData> updated = rewriter.rewrite(event.getPlayer().getUniqueId(), existing);
             if (updated != existing) packet.getPlayerInfoDataLists().write(0, updated);
             breaker.recordSuccess();
