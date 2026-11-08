@@ -39,3 +39,29 @@ experimental-entity-refresh: false
 - Select an open-source license before public release.
 
 **Not production ready.** CI cannot prove client correctness or validate combat interactions.
+
+
+## Identity-clear restoration behavior
+
+When a running plugin consumer calls `DisguiseService.clearPlayer(id)` or `clear()`,
+the observable registry now publishes per-viewer identity transitions for
+still-active disguises. Both global aliases and viewer-specific-only aliases
+are included, so the experimental tab/entity renderers may attempt to restore
+the original identity. A normal disconnect intentionally performs quiet
+registry cleanup: Bukkit is already removing that player's entity.
+
+This remains **best-effort restoration**, not a guarantee that clients have
+reloaded their original skins or overhead nametags. A custom
+`DisguiseService` implementation must support subject enumeration to publish
+whole-registry clear transitions. The built-in in-memory implementation does.
+Queued updates can still be dropped at capacity, and real-client validation
+is necessary before deploying experimental rendering.
+
+### Still blocking a production release
+
+- Live Spigot 1.8.8 and Minecraft 1.8.9 multi-client testing of full disguise
+  and undisguise sequences, including respawn, teleport, death and server shutdown.
+- Scoreboard/team nameplate coordination and compatibility with vanish,
+  spectator, NPC and combat plugins.
+- Measured combat hit registration, visibility stability and packet/tick costs.
+- Owner-approved open-source license and supported release policy.
