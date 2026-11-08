@@ -28,6 +28,8 @@ import java.util.concurrent.TimeUnit;
 import org.bukkit.Bukkit;
 import org.bukkit.entity.Player;
 import org.bukkit.event.EventHandler;
+import org.bukkit.event.EventPriority;
+import dev.fyre.disguise.protocol.TeleportSnapshotPolicy;
 import org.bukkit.event.Listener;
 import org.bukkit.event.player.PlayerChangedWorldEvent;
 import org.bukkit.event.player.PlayerJoinEvent;
@@ -118,8 +120,12 @@ public final class FyreDisguisePlugin extends JavaPlugin implements Listener {
         invalidateSpawns(event.getPlayer().getUniqueId());
         scheduleResync(event.getPlayer().getUniqueId());
     }
-    @EventHandler public void onTeleport(PlayerTeleportEvent event) {
-        if (event.getTo() != null && !event.getFrom().equals(event.getTo())) {
+    @EventHandler(priority = EventPriority.MONITOR, ignoreCancelled = true)
+    public void onTeleport(PlayerTeleportEvent event) {
+        if (event.getTo() != null && TeleportSnapshotPolicy.invalidates(
+                !event.getFrom().getWorld().equals(event.getTo().getWorld()),
+                event.getFrom().getX(), event.getFrom().getY(), event.getFrom().getZ(),
+                event.getTo().getX(), event.getTo().getY(), event.getTo().getZ())) {
             invalidateSpawns(event.getPlayer().getUniqueId());
         }
     }
