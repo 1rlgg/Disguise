@@ -16,6 +16,7 @@ import dev.fyre.disguise.protocol.TrackedSpawnPackets;
 import dev.fyre.disguise.render.IdentityRenderer;
 import dev.fyre.disguise.render.LoggedIdentityRenderer;
 import dev.fyre.disguise.render.RefreshQueue;
+import dev.fyre.disguise.render.ResyncTicketLedger;
 import dev.fyre.disguise.render.RefreshTargetPlanner;
 import dev.fyre.disguise.render.TabListIdentityRenderer;
 import dev.fyre.disguise.skin.AsyncSkinService;
@@ -48,6 +49,7 @@ public final class FyreDisguisePlugin extends JavaPlugin implements Listener {
     private TabListIdentityRenderer tabRenderer;
     private RefreshTargetPlanner refreshPlanner;
     private TrackedSpawnPackets spawnPackets;
+    private final ResyncTicketLedger resyncTickets = new ResyncTicketLedger();
 
     @Override public void onEnable() {
         saveDefaultConfig();
@@ -117,8 +119,12 @@ public final class FyreDisguisePlugin extends JavaPlugin implements Listener {
 
     private void scheduleResync(UUID playerId) {
         if (tabRenderer == null) return;
+        final long ticket = resyncTickets.schedule(playerId);
         Bukkit.getScheduler().runTaskLater(this, () -> {
-            if (tabRenderer == null || refreshPlanner == null) return;
+            // Consume first: an older task must never revive a cancelled or
+            // superseded join/respawn/world resync after disconnect/reconnect.
+            if (!resyncTickets.consume(playerId, ticket)) return;
+            if (tabRenderer == null || refreshPlanner == null || !isEnabled()) return;
             Player player = Bukkit.getPlayer(playerId);
             if (player == null || !player.isOnline()) return;
             for (RefreshQueue.Pair pair : refreshPlanner.around(playerId, onlineViewerIds())) {
@@ -151,6 +157,7 @@ public final class FyreDisguisePlugin extends JavaPlugin implements Listener {
 
     @EventHandler public void onQuit(PlayerQuitEvent event) {
         UUID id = event.getPlayer().getUniqueId();
+        resyncTickets.forget(id);
         if (skinCommands != null) skinCommands.forgetPlayer(id);
         if (tabRenderer != null) tabRenderer.forget(id);
         if (spawnPackets != null) spawnPackets.forget(id);
@@ -160,6 +167,7 @@ public final class FyreDisguisePlugin extends JavaPlugin implements Listener {
     }
 
     @Override public void onDisable() {
+        resyncTickets.clear();
         if (registry != null) registry.clear();
         if (tabRenderer != null) {
             tabRenderer.restoreApplied();
