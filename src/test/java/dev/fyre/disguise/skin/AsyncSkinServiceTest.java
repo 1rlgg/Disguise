@@ -113,6 +113,29 @@ public class AsyncSkinServiceTest {
         }
     }
 
+    @Test public void unexpectedSourceErrorsStillSettleAndReleaseInFlightSlot() throws Exception {
+        AtomicInteger calls = new AtomicInteger();
+        SkinSource source = uuid -> {
+            if (calls.incrementAndGet() == 1) throw new AssertionError("bad provider");
+            return new SkinProperty("dGVzdA==", "c2ln");
+        };
+        try (AsyncSkinService service = new AsyncSkinService(source,
+                new SkinCache(10, TimeUnit.MINUTES.toNanos(1)), 1, 2,
+                new SkinFailureBackoff(10, 1, () -> 0L))) {
+            UUID id = UUID.randomUUID();
+            try {
+                service.lookup(id).get(2, TimeUnit.SECONDS);
+                fail("Unexpected provider failure must be forwarded");
+            } catch (ExecutionException expected) {
+                assertTrue(expected.getCause() instanceof AssertionError);
+            }
+            assertEquals(0, service.pendingLookups());
+            // Different target should still resolve using the same executor.
+            assertNotNull(service.lookup(UUID.randomUUID()).get(2, TimeUnit.SECONDS));
+            assertEquals(2, calls.get());
+        }
+    }
+
     @Test public void surfacesNetworkFailures() throws Exception {
         SkinSource source = uuid -> { throw new IOException("offline"); };
         try (AsyncSkinService service = new AsyncSkinService(source,
