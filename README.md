@@ -439,3 +439,31 @@ when cleanup removal itself throws. It is not a running Minecraft
 client or a substitute for real multiplayer acceptance.
 
 Both experimental renderer switches remain off by default.
+
+
+## 1.8 player-list name update and collision convergence (cycle 37)
+
+The player-info listener now rewrites **UPDATE_DISPLAY_NAME** as well as
+**ADD_PLAYER**, because otherwise a vanilla or third-party display-name
+update could reveal the real username in the tab list after an alias was
+already applied. Cancelled, empty, remove, latency and game-mode packets
+remain untouched by the alias-name rewrite admission check.
+
+The opt-in world entity refresh has a deliberately conservative **48-block
+maximum** distance, in addition to requiring a recent matching real server
+spawn snapshot. Chunk view distance alone does not prove the player is in
+the client's entity tracker. Servers configured with different entity
+tracking distances may skip some legitimate refreshes; this is an intentional
+fail-safe pending live client measurements.
+
+When two desired aliases conflict for one viewer, normal outgoing player-info
+rewrites leave the vanilla entries untouched rather than emitting duplicate
+profile usernames. Alias changes, removals, viewer overrides and clearPlayer
+now request refreshes for *other* affected names, so a collision appearing
+or clearing is not silently ignored simply because another subject's own
+disguise object has not changed. The bounded renderer still governs delivery,
+and a successful send is not a guarantee of what the Minecraft client rendered.
+
+No scoreboard teams are added, removed or modified by these changes.
+Overhead nametag aliasing is **not yet implemented**. Both optional
+experimental refresh flags remain disabled by default.

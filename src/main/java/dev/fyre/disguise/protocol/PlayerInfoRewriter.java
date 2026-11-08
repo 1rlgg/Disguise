@@ -13,6 +13,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
+import java.util.Set;
 import java.util.UUID;
 
 /**
@@ -35,6 +36,10 @@ public final class PlayerInfoRewriter {
         if (disguises instanceof DisguiseSubjectCatalog
                 && !((DisguiseSubjectCatalog) disguises).hasAnySubjects()) return original;
         List<PlayerInfoData> result = null;
+        // Freeze the subject catalog once per outgoing packet. Without this,
+        // each entry in a batch could allocate a new subject set and observe
+        // a different collision set during concurrent disguise updates.
+        Set<UUID> knownSubjects = null;
         for (int index = 0; index < original.size(); index++) {
             PlayerInfoData info = original.get(index);
             if (info == null || info.getProfile() == null) continue;
@@ -47,9 +52,12 @@ public final class PlayerInfoRewriter {
             // synchronized disguise catalog, never Bukkit online-player
             // lookups, to reject conflicting desired names for this viewer.
             // On conflict leave the vanilla entry unchanged.
-            if (disguises instanceof DisguiseSubjectCatalog
-                    && ViewerAliasCollisionPolicy.conflicts(disguises, viewerId, subjectId,
-                            disguise.getName(), ((DisguiseSubjectCatalog) disguises).subjectIds())) continue;
+            if (disguises instanceof DisguiseSubjectCatalog) {
+                if (knownSubjects == null)
+                    knownSubjects = ((DisguiseSubjectCatalog) disguises).subjectIds();
+                if (ViewerAliasCollisionPolicy.conflicts(disguises, viewerId, subjectId,
+                        disguise.getName(), knownSubjects)) continue;
+            }
             if (result == null) result = new ArrayList<PlayerInfoData>(original);
             WrappedGameProfile profile = new WrappedGameProfile(subjectId, disguise.getName());
             Optional<SkinProperty> requestedSkin = disguise.getSkin();

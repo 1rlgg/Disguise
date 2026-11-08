@@ -147,3 +147,22 @@ and two vanilla Minecraft 1.8.9 clients (A and B):
       recovery logging, then re-test nameplates and hit registration
 - [ ] Do not mark "complete" without actual client evidence and a
       scoreboard/vanish compatibility test on a disposable server
+
+
+## Display-name packet and collision acceptance (cycle 37)
+
+- [ ] With player A disguised to an alias, send real 1.8
+      UPDATE_DISPLAY_NAME for A; viewer B must not see A's real username
+      return in the tab list
+- [ ] Confirm UPDATE_LATENCY, UPDATE_GAME_MODE and REMOVE_PLAYER retain
+      normal vanilla/third-party behavior and cancelled packets stay untouched
+- [ ] Assign the same alias to A and C for B; verify safe vanilla fallback
+      rather than conflicting profile usernames; remove one alias and verify
+      the other's appearance can refresh without an extra command
+- [ ] Repeat collision introduction/removal with a viewer-specific override
+      and with clearPlayer, ensuring unrelated viewers are unaffected
+- [ ] Test synthetic in-world entity refresh at 16, 40, 48 and 49 blocks,
+      with player tracker range configured, and record any ghost entities
+- [ ] Verify third-party scoreboard teams and vanish visibility are untouched
+- [ ] Do not enable experimental world refresh for competitive use until
+      multiplayer appearance, equipment, hit registration and TPS are evidenced
