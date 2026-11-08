@@ -1,48 +1,45 @@
 # FyreDisguise
 
-Open-source disguise framework **under development** for Spigot 1.8.8 servers and Minecraft 1.8.9 clients.
+An open-source **work-in-progress** disguise framework for Spigot 1.8.8 with Minecraft 1.8.9 clients.
 
-## What works today
+## Implemented foundation
 
-- Java 8 Spigot plugin entry point and public `DisguiseService`.
-- Validated player-name disguise state.
-- Global disguise state and per-viewer overrides with global fallback.
-- Quit and disable cleanup to avoid stale player state.
-- Validated Base64 skin property value object (data model only).
-- Unit tests for registry semantics and cleanup.
+- Java 8 Maven plugin and a main-thread disguise-state API.
+- Global and per-viewer identity selection, efficient change planning, and no-op deduplication.
+- Rendering interface for a future protocol-specific backend (current default is **diagnostic only**).
+- Quit/shutdown state cleanup.
+- Mojang signed texture-property lookup with connection/read timeouts and response size limits.
+- Bounded asynchronous texture lookups with expiring, bounded LRU cache.
+- JUnit tests and GitHub Actions Maven verification.
 
-**Important:** These are desired-identity data structures. **Players do not visibly disguise in-game yet.** No packet engine, skin download service, or visual refresh logic has been implemented. Do not deploy as a working disguise solution.
+**Important:** Visible disguises are **not implemented**. The diagnostic renderer does not send packets or alter skins, tab lists, or entity names. No claim of production readiness is made.
 
-## Build and test
-
-Use JDK 8 and Maven:
+## Build
 
 ```bash
 mvn clean verify
 ```
 
-The Spigot API is provided by the server at runtime. The JAR, once built, is placed under `target/`.
+Use a Java 8 JDK; Spigot 1.8.8 API is a provided dependency.
 
-## Example (state only)
+## API example (requests only)
 
 ```java
 FyreDisguisePlugin plugin = JavaPlugin.getPlugin(FyreDisguisePlugin.class);
 DisguiseService service = plugin.getDisguiseService();
-service.setDisguise(new Disguise(player.getUniqueId(), "ExampleName"));
-service.setDisguiseFor(viewer.getUniqueId(), new Disguise(player.getUniqueId(), "ViewerOnly"));
-service.removeDisguiseFor(viewer.getUniqueId(), player.getUniqueId());
+service.setDisguise(new Disguise(subject.getUniqueId(), "NewAlias"));
+service.setDisguiseFor(viewer.getUniqueId(), new Disguise(subject.getUniqueId(), "ViewerAlias"));
+service.removeDisguiseFor(viewer.getUniqueId(), subject.getUniqueId());
 ```
 
-Call service methods from the primary server thread. Entries are not persisted between sessions and are removed when players disconnect.
+Disguise state calls must run on the primary Bukkit thread. Async skin lookup futures complete on background workers; schedule any Bukkit activity back to the main thread.
 
-## Remaining work before a production release
+## Remaining release-critical milestones
 
-1. Implement packet-level player-info and entity refresh operations for Spigot 1.8.8.
-2. Ensure safe restore, respawn, reconnect, tablist, vanish, and spectator interactions.
-3. Apply signed Mojang skin properties and add bounded async caching.
-4. Add visual per-viewer disguises and scoreboard/nametag compatibility.
-5. Run Maven CI, protocol integration tests, and real-server performance profiling.
+1. Implement and validate a Spigot 1.8.8 packet transport (player-info add/remove and entity refresh).
+2. Render global/per-viewer changes and restore the original identity safely.
+3. Add reconnect, teleport, respawn, scoreboard/nametag, vanish, tab-list and skin synchronization behavior.
+4. Add protocol integration tests, stress tests, and real-server compatibility checks.
+5. Evaluate skin retrieval backpressure and concurrency under load, document limits, choose an open-source license.
 
-## License
-
-No open-source license has yet been selected. Until one is added, ordinary copyright restrictions apply.
+This repository does not yet contain a production-ready disguise plugin.
