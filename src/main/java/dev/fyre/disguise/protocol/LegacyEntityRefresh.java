@@ -33,6 +33,11 @@ public final class LegacyEntityRefresh {
         Objects.requireNonNull(subject, "subject");
         if (viewer.equals(subject) || !viewer.isOnline() || !subject.isOnline()) return false;
         if (!viewer.getWorld().equals(subject.getWorld())) return false;
+        // 1.8 scoreboard teams may control nameplates, prefixes and invisibility.
+        // Never replace an entity client-side while its real-name entry is
+        // managed by another plugin; the caller can still refresh the tab list.
+        if (!ScoreboardNameplatePolicy.mayRefreshEntity(
+                viewer.getScoreboard().getEntryTeam(subject.getName()) != null)) return false;
 
         TrackedSpawnPackets.Snapshot tracked = snapshots.lookup(viewer.getUniqueId(), subject.getUniqueId());
         boolean matchingSpawn = tracked != null && tracked.getEntityId() == subject.getEntityId();
