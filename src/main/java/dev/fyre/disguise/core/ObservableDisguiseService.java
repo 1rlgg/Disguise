@@ -78,6 +78,10 @@ public final class ObservableDisguiseService implements DisguiseService {
         return delegate.getDisguiseFor(viewerId, subjectId);
     }
 
+    @Override public Optional<Disguise> getViewerOverride(UUID viewerId, UUID subjectId) {
+        return delegate.getViewerOverride(viewerId, subjectId);
+    }
+
     @Override public boolean removeDisguiseFor(UUID viewerId, UUID subjectId) {
         mutationGuard.run();
         Disguise before = delegate.getDisguiseFor(viewerId, subjectId).orElse(null);

@@ -50,8 +50,8 @@ public final class SkinCommandHandler {
         UUID subjectId = subject.getUniqueId();
         Disguise expected = viewerId == null
                 ? disguises.getDisguise(subjectId).orElse(null)
-                : disguises.getDisguiseFor(viewerId, subjectId).orElse(null);
-        if (expected == null || (viewerId != null && disguises.getDisguise(subjectId).orElse(null) == expected)) {
+                : disguises.getViewerOverride(viewerId, subjectId).orElse(null);
+        if (expected == null) {
             reply(sender, ChatColor.RED + "Set the corresponding alias before fetching a skin.");
             return;
         }

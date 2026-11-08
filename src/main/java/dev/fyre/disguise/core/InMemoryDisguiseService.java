@@ -70,6 +70,13 @@ public final class InMemoryDisguiseService implements DisguiseService, DisguiseS
         return getDisguise(playerId);
     }
 
+    @Override public synchronized Optional<Disguise> getViewerOverride(UUID viewerId, UUID playerId) {
+        Objects.requireNonNull(viewerId, "viewerId");
+        Objects.requireNonNull(playerId, "playerId");
+        Map<UUID, Disguise> overrides = perViewer.get(viewerId);
+        return Optional.ofNullable(overrides == null ? null : overrides.get(playerId));
+    }
+
     @Override public synchronized boolean removeDisguiseFor(UUID viewerId, UUID playerId) {
         Objects.requireNonNull(viewerId, "viewerId");
         Objects.requireNonNull(playerId, "playerId");

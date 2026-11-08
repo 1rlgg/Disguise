@@ -40,9 +40,9 @@ public final class SkinAssignment {
                                            Disguise expected, SkinProperty skin) {
         Objects.requireNonNull(viewerId, "viewerId");
         validate(playerId, expected, skin);
-        if (disguises.getDisguiseFor(viewerId, playerId).orElse(null) != expected) return false;
-        // A fallback to the global request must never become a new viewer override.
-        if (disguises.getDisguise(playerId).orElse(null) == expected) return false;
+        // Explicit scope lookup avoids confusing a shared immutable instance
+        // with a global fallback, and never creates a new override implicitly.
+        if (disguises.getViewerOverride(viewerId, playerId).orElse(null) != expected) return false;
         disguises.setDisguiseFor(viewerId, new Disguise(playerId, expected.getName(), skin));
         return true;
     }

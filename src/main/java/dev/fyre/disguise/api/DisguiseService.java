@@ -18,6 +18,17 @@ public interface DisguiseService {
     /** Returns viewer override if present, otherwise the global identity. */
     Optional<Disguise> getDisguiseFor(UUID viewerId, UUID playerId);
 
+    /**
+     * Returns an explicit per-viewer override, NEVER a global fallback.
+     * Custom implementations can opt in by overriding this method; the
+     * conservative default refuses per-viewer skin mutation.
+     */
+    default Optional<Disguise> getViewerOverride(UUID viewerId, UUID playerId) {
+        java.util.Objects.requireNonNull(viewerId, "viewerId");
+        java.util.Objects.requireNonNull(playerId, "playerId");
+        return Optional.empty();
+    }
+
     /** Removes only a viewer-specific override, revealing the global value if one exists. */
     boolean removeDisguiseFor(UUID viewerId, UUID playerId);
 
