@@ -1,55 +1,41 @@
 # FyreDisguise
 
-Experimental Minecraft 1.8.9 client player-disguise plugin for Java 8 and Spigot 1.8.8.
+Experimental Java 8 / Spigot 1.8.8 player-disguise framework for Minecraft 1.8.9 clients.
 
-## What currently works in code
+## Implemented
 
-- Global/per-viewer player aliases and Mojang texture-property state.
-- Outgoing ProtocolLib 4.8 `PLAYER_INFO ADD_PLAYER` rewrite with signed textures.
-- Async skin lookup, cache, permission-protected testing commands.
-- Experimental tab-list refresh and **new opt-in in-world entity refresh prototype**.
-- Entity prototype captures original server-produced `NAMED_ENTITY_SPAWN` snapshots per viewer, preserving entity ID and UUID; on a disguise transition it sends player-info refresh, entity destroy, cloned spawn with current location and metadata, head rotation and five equipment slots.
-- The experiment is bounded (4,096 tracked snapshots and 2,048 queued refreshes; 32 attempts per tick).
-- Java 8 CI and unit tests with downloadable development JAR.
+- Global and per-viewer aliases, skin properties, admin testing commands and bounded Mojang lookups.
+- ProtocolLib 4.8.0 player-info rewriting, including alias-aware tab-list display labels.
+- Experimental tab-list updating and best-effort restoration.
+- Experimental client-side in-world entity refresh using actual previously captured player spawn packets; original UUID and entity ID retained.
+- Conservative world refresh guards: skip vanished/invisible, dead, sleeping or mounted players, missing snapshots, cross-world pairs and out-of-range viewers.
+- Bounded queues (2,048 pairs; up to 32 tab updates and 8 entity refresh attempts per tick).
+- Java 8 Maven CI with downloadable development JAR.
 
-## Install and build
+## Build
 
-Requires Java 8, Spigot 1.8.8, ProtocolLib 4.8.0. Build using `mvn clean verify`.
+```sh
+mvn clean verify
+```
 
-## Experimental options
+Java 8, Spigot 1.8.8 and ProtocolLib 4.8.0 are required.
 
-In `plugins/FyreDisguise/config.yml`:
+## Config (both disabled by default)
 
 ```yaml
 experimental-tab-refresh: false
 experimental-entity-refresh: false
 ```
 
-**Both are disabled by default.** To evaluate in-world name and skin refresh *only on a disposable test server*, set both to `true` and restart. Entity refresh requires the tab refresh option. Normal PvP/production servers should leave both off.
+**Enable both only on a disposable test server with two Minecraft 1.8.9 clients.** The entity option requires the tab option. Client-side destroy/respawn may flicker or conflict with other plugins even though it never changes server hitboxes or Bukkit player visibility.
 
-The entity backend only attempts to refresh a subject if an original spawn packet was observed for that viewer and the viewer can currently see the subject in the same world. It deliberately does not modify Bukkit visibility or server hitboxes. Client-side flicker and incompatibilities may still occur. Client appearance, scoreboard nametags, mounted/sleeping status, and packet ordering require live verification.
+## Acceptance tests still required
 
-## Admin-only test commands
+- Verify profile alias and skin in tab and on in-world model; change and remove them while a player is standing, moving, and crossing view distance.
+- Verify original name/skin restoration, login/logout, respawn, teleport, world switches and plugin disable.
+- Confirm no disappearing entities, equipment mismatches, hit-registration changes, sudden loss of entity tracking or unintended visibility of vanished players.
+- Test player-list display formatting and scoreboard nametag behavior with existing PvP plugins.
+- Test near chunk boundaries and at scale; measure network packet rate and tick time.
+- Select an open-source license before public release.
 
-Permission `fyredisguise.admin` (default operator); named players must be online, but skin source can be an exact UUID:
-
-```text
-/fyredisguise set <player> <alias>
-/fyredisguise clear <player>
-/fyredisguise status <player>
-/fyredisguise view <viewer> <player> <alias>
-/fyredisguise unview <viewer> <player>
-/fyredisguise viewstatus <viewer> <player>
-/fyredisguise skin <target> <skin-source-or-uuid>
-/fyredisguise viewskin <viewer> <target> <skin-source-or-uuid>
-```
-
-## Release blockers
-
-1. **Real client verification:** two Minecraft 1.8.9 clients, Spigot 1.8.8, ProtocolLib 4.8.0; compare baseline and experiment with aliases, skins and undisguise.
-2. Confirm no disappearing entities, hit registration changes, exploit-prone tracking, gear loss, skin glitches, tab ordering or vanish bypass.
-3. Handle nonstandard states: sleeping, passengers, spectating, NPCs, scoreboard nametags and third-party plugins.
-4. Correctly restore world and tab identity on all disconnect/reconnect, respawn, world and shutdown paths.
-5. Add integration and performance tests, choose open-source license, and audit for release.
-
-**CI compilation/unit tests do not prove Minecraft client correctness. This is NOT production-ready.**
+**Not production ready.** CI cannot prove client correctness or validate combat interactions.
