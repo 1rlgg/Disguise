@@ -1,0 +1,5 @@
+name: FyreDisguise
+main: dev.fyre.disguise.FyreDisguisePlugin
+version: 0.1.0
+description: Developer-facing disguise framework foundation
+author: Fyre
