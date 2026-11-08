@@ -37,7 +37,7 @@ public final class LegacyEntityRefresh {
         TrackedSpawnPackets.Snapshot tracked = snapshots.lookup(viewer.getUniqueId(), subject.getUniqueId());
         boolean matchingSpawn = tracked != null && tracked.getEntityId() == subject.getEntityId();
         if (!EntityRefreshPolicy.permitted(true, viewer.canSee(subject), true,
-                subject.isDead(), subject.isSleeping(), subject.isInsideVehicle() || !subject.getPassengers().isEmpty(),
+                subject.isDead(), subject.isSleeping(), subject.isInsideVehicle() || subject.getPassenger() != null,
                 EntityRefreshPolicy.withinTrackingRange(viewer.getLocation().distanceSquared(subject.getLocation()),
                         Bukkit.getViewDistance()), matchingSpawn)) return false;
 
