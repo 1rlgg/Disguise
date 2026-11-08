@@ -46,7 +46,8 @@ public final class FyreDisguisePlugin extends JavaPlugin implements Listener {
         packets = ProtocolLibrary.getProtocolManager();
         boolean experimentalRefresh = getConfig().getBoolean("experimental-tab-refresh", false);
         if (experimentalRefresh) {
-            tabRenderer = new TabListIdentityRenderer(new PlayerInfoTabRefresh(packets, registry), getLogger());
+            tabRenderer = new TabListIdentityRenderer(new PlayerInfoTabRefresh(packets, registry),
+                    getLogger(), 2048, registry);
             refreshPlanner = new RefreshTargetPlanner(registry);
         }
         IdentityRenderer renderer = experimentalRefresh ? tabRenderer : new LoggedIdentityRenderer(getLogger());
@@ -94,14 +95,19 @@ public final class FyreDisguisePlugin extends JavaPlugin implements Listener {
     }
 
     @Override public void onDisable() {
-        if (tabRenderer != null) tabRenderer.clear();
+        // Remove desired disguise state before sending the original tab profile.
+        // This is best effort: it does not guarantee that all clients updated successfully.
+        if (registry != null) registry.clear();
+        if (tabRenderer != null) {
+            tabRenderer.restoreApplied();
+            tabRenderer.clear();
+        }
         tabRenderer = null;
         refreshPlanner = null;
         if (packets != null) packets.removePacketListeners(this);
         packets = null;
         if (skins != null) skins.close();
         skins = null;
-        if (disguises != null) disguises.clear();
         disguises = null;
         registry = null;
     }
