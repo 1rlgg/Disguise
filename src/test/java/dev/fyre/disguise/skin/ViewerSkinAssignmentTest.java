@@ -32,6 +32,28 @@ public class ViewerSkinAssignmentTest {
         assertFalse(registry.getDisguiseFor(viewer, subject).isPresent());
     }
 
+    @Test public void allowsExplicitOverrideSharingSameImmutableGlobalDisguiseInstance() {
+        InMemoryDisguiseService registry = new InMemoryDisguiseService();
+        Disguise shared = new Disguise(subject, "SharedAlias");
+        registry.setDisguise(shared);
+        registry.setDisguiseFor(viewer, shared);
+        assertSame(shared, registry.getViewerOverride(viewer, subject).get());
+        assertTrue(new SkinAssignment(registry).applyForViewerIfCurrent(viewer, subject, shared, skin));
+        assertSame(shared, registry.getDisguise(subject).get());
+        assertFalse(registry.getDisguise(subject).get().getSkin().isPresent());
+        assertSame(skin, registry.getViewerOverride(viewer, subject).get().getSkin().get());
+        assertSame(shared, registry.getDisguiseFor(other, subject).get());
+    }
+
+    @Test public void missingOverrideNeverGetsSynthesizedFromGlobal() {
+        InMemoryDisguiseService registry = new InMemoryDisguiseService();
+        Disguise global = new Disguise(subject, "GlobalAlias");
+        registry.setDisguise(global);
+        assertFalse(registry.getViewerOverride(viewer, subject).isPresent());
+        assertTrue(registry.getDisguiseFor(viewer, subject).isPresent());
+        assertFalse(new SkinAssignment(registry).applyForViewerIfCurrent(viewer, subject, global, skin));
+    }
+
     @Test public void discardsStaleViewerAlias() {
         InMemoryDisguiseService registry = new InMemoryDisguiseService();
         Disguise old = new Disguise(subject, "OldAlias");
