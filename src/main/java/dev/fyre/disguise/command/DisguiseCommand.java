@@ -45,6 +45,19 @@ public final class DisguiseCommand implements CommandExecutor {
             if (target != null && source != null) skinHandler.apply(sender, target, source);
             return true;
         }
+        if (args.length == 4 && args[0].equalsIgnoreCase("viewskin")) {
+            if (skinHandler == null) {
+                sender.sendMessage(ChatColor.RED + "Skin lookup is unavailable.");
+                return true;
+            }
+            Player viewer = find(sender, args[1]);
+            Player target = find(sender, args[2]);
+            Player source = find(sender, args[3]);
+            if (viewer != null && target != null && source != null) {
+                skinHandler.applyForViewer(sender, viewer, target, source);
+            }
+            return true;
+        }
         if (args.length == 3 && args[0].equalsIgnoreCase("set")) {
             Player target = find(sender, args[1]);
             if (target != null) {
@@ -103,5 +116,6 @@ public final class DisguiseCommand implements CommandExecutor {
         sender.sendMessage(ChatColor.YELLOW + "/" + label + " view <viewer> <player> <alias>");
         sender.sendMessage(ChatColor.YELLOW + "/" + label + " unview|viewstatus <viewer> <player>");
         sender.sendMessage(ChatColor.YELLOW + "/" + label + " skin <online-target> <online-skin-source>");
+        sender.sendMessage(ChatColor.YELLOW + "/" + label + " viewskin <viewer> <target> <skin-source>");
     }
 }
