@@ -4,6 +4,7 @@ import dev.fyre.disguise.api.Disguise;
 import dev.fyre.disguise.api.DisguiseService;
 import dev.fyre.disguise.skin.SkinSourceId;
 import dev.fyre.disguise.protocol.NameplateCompatibility;
+import dev.fyre.disguise.protocol.ViewerAliasCollisionPolicy;
 import java.util.Objects;
 import java.util.UUID;
 import java.util.List;
@@ -110,6 +111,11 @@ public final class DisguiseCommand implements CommandExecutor {
             Player aliasPlayer = alias == null ? null : Bukkit.getPlayerExact(alias);
             boolean aliasCollision = aliasPlayer != null && aliasPlayer.isOnline()
                     && !aliasPlayer.getUniqueId().equals(subject.getUniqueId());
+            java.util.List<UUID> onlineSubjects = new java.util.ArrayList<UUID>();
+            for (Player online : Bukkit.getOnlinePlayers())
+                onlineSubjects.add(online.getUniqueId());
+            boolean duplicateAlias = alias != null && ViewerAliasCollisionPolicy.conflicts(
+                    disguises, viewer.getUniqueId(), subject.getUniqueId(), alias, onlineSubjects);
             boolean spectator = "SPECTATOR".equals(viewer.getGameMode().name())
                     || "SPECTATOR".equals(subject.getGameMode().name());
             sender.sendMessage(ChatColor.YELLOW + "Effective alias: "
@@ -117,7 +123,7 @@ public final class DisguiseCommand implements CommandExecutor {
                     .map(Disguise::getName).orElse("(none)"));
             sender.sendMessage(ChatColor.YELLOW + "Experimental world eligibility: "
                     + NameplateCompatibility.reason(sameWorld, visible, teamOwned, aliasTeamOwned,
-                            aliasCollision, spectator, viewer.equals(subject)));
+                            aliasCollision, duplicateAlias, spectator, viewer.equals(subject)));
             sender.sendMessage(ChatColor.GRAY + "Inspection only; no packets or scoreboard teams changed.");
             return true;
         }

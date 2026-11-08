@@ -27,6 +27,11 @@ public class NameplateCompatibilityTest {
                 .contains("online player"));
     }
 
+    @Test public void reportsDuplicateViewerAliasesWithoutChangingScoreboards() {
+        assertTrue(NameplateCompatibility.reason(true, true, false, false, false, true, false, false)
+                .contains("another disguised subject"));
+    }
+
     @Test public void greenLightIsOnlyPreliminary() {
         assertTrue(NameplateCompatibility.reason(true, true, false, false, false)
                 .contains("POTENTIALLY ELIGIBLE"));
