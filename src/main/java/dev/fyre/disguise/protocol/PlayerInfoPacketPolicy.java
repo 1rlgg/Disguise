@@ -8,6 +8,12 @@ public final class PlayerInfoPacketPolicy {
                                      boolean hasEntries) {
         // A higher-priority plugin can suppress its own tracking packets;
         // never mutate those cancelled payloads.
-        return !packetCancelled && addPlayerAction && hasEntries;
+        return mayRewrite(packetCancelled, addPlayerAction, false, hasEntries);
+    }
+
+    /** Player-list display updates must not undo a previously sent alias. */
+    public static boolean mayRewrite(boolean packetCancelled, boolean addPlayerAction,
+                                     boolean updateDisplayNameAction, boolean hasEntries) {
+        return !packetCancelled && (addPlayerAction || updateDisplayNameAction) && hasEntries;
     }
 }

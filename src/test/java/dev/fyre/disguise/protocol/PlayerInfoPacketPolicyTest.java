@@ -11,6 +11,12 @@ public class PlayerInfoPacketPolicyTest {
         assertFalse(PlayerInfoPacketPolicy.mayRewrite(false, false, true));
         assertFalse(PlayerInfoPacketPolicy.mayRewrite(false, true, false));
     }
+    @Test public void displayNameUpdatesCannotLeakRealPlayerName() {
+        assertTrue(PlayerInfoPacketPolicy.mayRewrite(false, false, true, true));
+        assertFalse(PlayerInfoPacketPolicy.mayRewrite(true, false, true, true));
+        assertFalse(PlayerInfoPacketPolicy.mayRewrite(false, false, true, false));
+        assertFalse(PlayerInfoPacketPolicy.mayRewrite(false, false, false, true));
+    }
     @Test public void activeNonEmptyAddsCanBeRewritten() {
         assertTrue(PlayerInfoPacketPolicy.mayRewrite(false, true, true));
     }

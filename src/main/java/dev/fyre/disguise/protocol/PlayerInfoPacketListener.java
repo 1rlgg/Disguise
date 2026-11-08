@@ -27,9 +27,12 @@ public final class PlayerInfoPacketListener extends PacketAdapter {
         if (breaker.isOpen() || event.isCancelled()) return;
         try {
             PacketContainer packet = event.getPacket();
-            if (packet.getPlayerInfoAction().read(0) != EnumWrappers.PlayerInfoAction.ADD_PLAYER) return;
+            EnumWrappers.PlayerInfoAction action = packet.getPlayerInfoAction().read(0);
+            boolean add = action == EnumWrappers.PlayerInfoAction.ADD_PLAYER;
+            boolean display = action == EnumWrappers.PlayerInfoAction.UPDATE_DISPLAY_NAME;
+            if (!add && !display) return;
             List<PlayerInfoData> existing = packet.getPlayerInfoDataLists().read(0);
-            if (!PlayerInfoPacketPolicy.mayRewrite(event.isCancelled(), true,
+            if (!PlayerInfoPacketPolicy.mayRewrite(event.isCancelled(), add, display,
                     existing != null && !existing.isEmpty())) return;
             List<PlayerInfoData> updated = rewriter.rewrite(event.getPlayer().getUniqueId(), existing);
             // An unchanged packet is not evidence that rewriting works.
