@@ -188,7 +188,7 @@ public final class TabListIdentityRenderer implements IdentityRenderer {
             // A stale deferred/resync queue entry is not a new identity
             // transition. Quarantine exhausted transports until an explicit
             // transition resets the retry gate.
-            if (retries.suppressed(pair)) continue;
+            if (!RefreshAdmissionPolicy.mayAttempt(retries.suppressed(pair))) continue;
             Player viewer = Bukkit.getPlayer(pair.getViewer());
             Player subject = Bukkit.getPlayer(pair.getSubject());
             if (viewer == null || subject == null || !viewer.isOnline() || !subject.isOnline()
