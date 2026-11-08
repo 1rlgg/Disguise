@@ -1,6 +1,15 @@
 name: FyreDisguise
 main: dev.fyre.disguise.FyreDisguisePlugin
 version: 0.1.0
-description: Developer-facing disguise framework (experimental)
+description: Experimental developer-facing disguise framework
 author: Fyre
 depend: [ProtocolLib]
+commands:
+  fyredisguise:
+    description: Administration and testing of global disguise state
+    usage: /fyredisguise <set|clear|status>
+    permission: fyredisguise.admin
+permissions:
+  fyredisguise.admin:
+    description: Allows editing and viewing test aliases
+    default: op
