@@ -79,7 +79,11 @@ public final class FyreDisguisePlugin extends JavaPlugin implements Listener {
                         tabRenderer == null ? 0 : tabRenderer.pendingCount(),
                         tabRenderer == null ? 0 : tabRenderer.appliedCount(),
                         spawnPackets == null ? 0 : spawnPackets.size(),
-                        skins == null ? 0 : skins.pendingLookups()).lines()));
+                        skins == null ? 0 : skins.pendingLookups(),
+                        tabRenderer == null ? 0 : tabRenderer.pendingRestorationCount(),
+                        tabRenderer == null ? 0 : tabRenderer.droppedCosmeticCount(),
+                        tabRenderer == null ? 0 : tabRenderer.displacedRestorationCount(),
+                        tabRenderer != null && tabRenderer.entityRefreshCircuitOpen()).lines()));
         packets.addPacketListener(new PlayerInfoPacketListener(this, new PlayerInfoRewriter(registry)));
         Bukkit.getPluginManager().registerEvents(this, this);
         if (tabRenderer != null) Bukkit.getScheduler().runTaskTimer(this, () -> tabRenderer.flush(32), 1L, 1L);
