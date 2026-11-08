@@ -303,3 +303,30 @@ These are safeguards for an experimental plugin, not production
 certification. Leave experimental refresh flags disabled on PvP
 production servers pending real Spigot 1.8.8 and Minecraft 1.8.9
 multiplayer tests.
+
+
+## Restoration ordering and burst reliability (development cycle 32)
+
+With many outstanding viewer pairs at shutdown, the 256-pair synchronous
+tab restoration cap now **prioritizes pending undisguise work** before
+older applied cosmetics. Entries not attempted are still reported, and
+clients may need to reconnect to clear stale identities. This does not
+make disable-time restoration comprehensive or client-verified.
+
+When an urgent undisguise evicts an ordinary cosmetic update from the
+bounded primary queue, the plugin attempts to place that cosmetic pair
+in the bounded deferred backlog. If both queues saturate it still
+records losses; it never permits cosmetic work to overtake urgent
+restoration. Regression tests cover eviction, replay and a combined
+saturation burst.
+
+After an experimental world-renderer failure opens its circuit breaker,
+tab-only updates regain the standard per-tick budget (32 in the plugin)
+instead of retaining the eight-pair world-respawn safety cap. Both
+experimental refresh flags remain off by default.
+
+The remaining production release blockers are unchanged: actual
+Minecraft 1.8.9 multi-client appearance and original-skin restoration,
+safe per-viewer overhead nametag integration with scoreboard plugins,
+vanish/spectator/NPC behavior, and measured PvP hit registration,
+packet load and server TPS.
