@@ -26,6 +26,23 @@ public class ResyncTicketLedgerTest {
         assertEquals(0, ledger.pendingCount());
     }
 
+    @Test public void rapidReconnectAndWorldChangesNeverAcceptSupersededTickets() {
+        ResyncTicketLedger ledger = new ResyncTicketLedger();
+        UUID player = UUID.randomUUID();
+        for (int cycle = 0; cycle < 1000; cycle++) {
+            long old = ledger.schedule(player);
+            long latest = ledger.schedule(player);
+            assertFalse(ledger.consume(player, old));
+            if ((cycle & 1) == 0) {
+                ledger.forget(player);
+                assertFalse(ledger.consume(player, latest));
+            } else {
+                assertTrue(ledger.consume(player, latest));
+            }
+        }
+        assertEquals(0, ledger.pendingCount());
+    }
+
     @Test public void playerCleanupDoesNotCancelOtherPlayersResync() {
         ResyncTicketLedger ledger = new ResyncTicketLedger();
         UUID one = UUID.randomUUID(), two = UUID.randomUUID();

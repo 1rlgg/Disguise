@@ -47,3 +47,18 @@ Do **not** declare production-ready until all blocking checks are evidenced,
 the owner approves gameplay-affecting behavior, and a release license is selected.
 Any client invisibility, combat regression, or stranded identity is a no-go:
 disable both experimental options immediately and revert the faulty commit normally.
+
+
+## New hard gates: async session validity and disable load
+
+- [ ] Rapid join/quit/rejoin during the 2-tick resync delay never applies an
+      old session's work to the new session
+- [ ] Multiple respawn/world-change events coalesce to the most recent
+      delayed resync ticket
+- [ ] A first failed experimental world refresh attempts tab fallback and
+      leaves the world failure breaker accounting accurate
+- [ ] On disable with over 256 applied pairs, packet restoration is bounded,
+      unattempted pairs are reported, and client reconnect clears any
+      stale identity state
+- [ ] Measure main-thread shutdown delay, packet rate and client appearance
+      before considering a larger shutdown packet budget

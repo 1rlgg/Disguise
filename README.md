@@ -276,3 +276,30 @@ visual correctness on an untested client. If **both** backlogs saturate, the
 new cosmetic update can still be dropped, and the counter records that loss.
 Real multiplayer PvP client testing and scoreboard-compatible nametags remain
 release blockers. The experimental renderer is still disabled by default.
+
+
+## Lifecycle resync tickets and bounded shutdown restoration
+
+Delayed join, respawn, and world-change resynchronizations now use a
+per-player generation ticket. A task queued before a disconnect/reconnect
+or a later resync is discarded; cleanup on quit and plugin disable
+invalidates outstanding tickets. Regression tests exercise rapid
+reconnects and overlapping world-change tasks.
+
+If experimental world refresh throws a transport error, the plugin now
+attempts a **tab-list fallback immediately on every failure**, not just
+when the entity breaker finally disables the world renderer. A failed
+tab fallback does not count as an entity failure and is kept as a
+suppressed error on the original failure.
+
+Plugin disable performs **at most 256 synchronous tab restoration attempts**
+rather than an unbounded packet burst. A warning reports packet failures,
+unavailable/hidden pairs, and entries **not attempted** because of this
+safety budget. The count is NOT proof of client-side success. Any remaining
+stale player identities require client reconnect/retest; shutting down a
+busy server is not a validated identity-restoration mechanism.
+
+These are safeguards for an experimental plugin, not production
+certification. Leave experimental refresh flags disabled on PvP
+production servers pending real Spigot 1.8.8 and Minecraft 1.8.9
+multiplayer tests.
