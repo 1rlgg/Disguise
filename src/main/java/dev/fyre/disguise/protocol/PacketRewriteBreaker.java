@@ -20,8 +20,8 @@ public final class PacketRewriteBreaker {
 
     /** Returns true only on the transition to disabled. */
     public boolean recordFailure() {
-        int next = failures.updateAndGet(old -> old >= threshold ? threshold : old + 1);
-        return next == threshold;
+        int previous = failures.getAndUpdate(old -> old >= threshold ? threshold : old + 1);
+        return previous == threshold - 1;
     }
 
     public void recordSuccess() {
