@@ -2,42 +2,42 @@
 
 Experimental Java 8 / Spigot 1.8.8 disguise framework for Minecraft 1.8.9 clients.
 
-## Currently implemented
+## Working components
 
-- Global and per-viewer disguise aliases, safe synchronous mutations and logout cleanup.
-- ProtocolLib 4.8.0 rewriting of outgoing `PLAYER_INFO ADD_PLAYER` packets.
-- Experimental tab-list-only refresh/restore, queued, bounded and disabled by default.
-- Asynchronous bounded Mojang texture lookups, LRU caching, deduplication and stale-result protection.
-- Global **and per-viewer** signed texture-property assignment for existing disguise state.
-- Admin-only test commands, Maven CI, JUnit tests, downloadable development JAR.
+- Global/per-viewer disguise identities and operator test commands.
+- ProtocolLib 4.8.0 outgoing `PLAYER_INFO ADD_PLAYER` aliases.
+- Experimental tab-list-only updates and best-effort restores (disabled by default).
+- Async Mojang skin lookup, bounded queue/cache, and single-flight network requests.
+- Signed texture lookup source by online username **or exact full Mojang UUID**, including offline sources.
+- Sessionserver profile UUID validation so an unexpected profile cannot substitute signed properties.
+- Safe per-viewer skin assignments that never synthesize a new viewer override from a global alias.
+- Java 8 Maven tests and an uploaded GitHub Actions development JAR.
 
-## Build
+## Usage
 
-Java 8 + Maven: `mvn clean verify`. Requires a Spigot 1.8.8 server and ProtocolLib 4.8.0, installed separately.
-
-## Operator-only test commands
+Java 8, Spigot 1.8.8, ProtocolLib 4.8.0 installed separately. Build with `mvn clean verify`. All commands require `fyredisguise.admin` (operators by default).
 
 ```text
-/fyredisguise set <target> <alias>
-/fyredisguise clear <target>
-/fyredisguise status <target>
-/fyredisguise view <viewer> <target> <alias>
-/fyredisguise unview <viewer> <target>
-/fyredisguise viewstatus <viewer> <target>
-/fyredisguise skin <target> <skin-source>
-/fyredisguise viewskin <viewer> <target> <skin-source>
+/fyredisguise set <online-player> <alias>
+/fyredisguise view <viewer> <online-player> <alias>
+/fyredisguise skin <online-target> <online-source|full-uuid>
+/fyredisguise viewskin <viewer> <online-target> <online-source|full-uuid>
+/fyredisguise clear <online-player>
+/fyredisguise unview <viewer> <online-player>
+/fyredisguise status <online-player>
+/fyredisguise viewstatus <viewer> <online-player>
 ```
 
-All named users must be online. Permission: `fyredisguise.admin` (defaults to ops). For `skin`, first set a global alias. For `viewskin`, first set a viewer-specific alias using `view`; it never silently creates an override from the global fallback. Mojang profile-property signatures must be present; cryptographic verification is not implemented. Texture lookups do not block the server thread and will not overwrite a newer alias.
+The target and optional viewer must be online; the source account can be offline when its UUID is known. The source UUID is *not* a username resolver. Mojang must return a signed textures property with matching profile UUID; cryptographic verification of the signature is not currently implemented.
 
-The option `experimental-tab-refresh: false` in `plugins/FyreDisguise/config.yml` remains disabled by default. Only enable on a disposable test server. Tab-list updates do not make existing world entities redraw their skins or nameplates.
+The `experimental-tab-refresh: false` config option stays off by default. Only experiment on a disposable server.
 
-## Remaining before a full production release
+## Outstanding release blockers
 
-1. Reliable world-entity name and skin rendering using tested 1.8 packet behavior.
-2. Safe entity refresh and identity restoration without harming PvP tracking, hit registration or visibility.
-3. Scoreboard nametag integration, vanish/NPC/spectator compatibility, reconnect/respawn validation.
-4. Live Spigot 1.8.8 and Minecraft 1.8.9 multi-client integration, soak and load tests.
-5. Owner-selected open-source license and final production packaging.
+1. **No full in-world name or skin disguise implementation.** Existing entities are not re-spawned.
+2. Identity restore is limited to best-effort tab entries, not full entity appearance.
+3. Nametag/team/vanish/NPC/spectator compatibility and PvP hit registration are untested.
+4. Real Spigot 1.8.8 + Minecraft 1.8.9 multi-client verification and load profiling are still missing.
+5. Open-source licensing and release criteria need owner approval.
 
-**Green CI proves only Maven compilation and tests, not working in-world disguises.**
+A successful Maven build does **not** establish production-ready Minecraft disguise functionality.
