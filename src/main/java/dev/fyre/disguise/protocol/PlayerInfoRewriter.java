@@ -12,7 +12,7 @@ import java.util.Objects;
 import java.util.Optional;
 import java.util.UUID;
 
-/** Pure profile conversion. Do not mutate original profile or incoming list. */
+/** Pure profile conversion. Never modify the original packet entries. */
 public final class PlayerInfoRewriter {
     private final DisguiseService disguises;
 
@@ -34,13 +34,13 @@ public final class PlayerInfoRewriter {
             Disguise disguise = wanted.get();
             if (result == null) result = new ArrayList<PlayerInfoData>(original);
             WrappedGameProfile profile = new WrappedGameProfile(subjectId, disguise.getName());
-            if (disguise.getSkin().isPresent()) {
-                SkinProperty skin = disguise.getSkin().get();
-                // A signed property is expected here; Base64 validation alone is not signature verification.
-                if (skin.isSigned()) profile.getProperties().put("textures",
+            Optional<SkinProperty> desiredSkin = disguise.getSkin();
+            if (desiredSkin.isPresent() && desiredSkin.get().isSigned()) {
+                SkinProperty skin = desiredSkin.get();
+                profile.getProperties().put("textures",
                         new WrappedSignedProperty("textures", skin.getValue(), skin.getSignature()));
             } else {
-                // Keep original textures when no custom skin was requested.
+                // Unsigned requests must never replace a valid original skin with blank textures.
                 for (WrappedSignedProperty texture : info.getProfile().getProperties().get("textures")) {
                     profile.getProperties().put("textures", texture);
                 }
