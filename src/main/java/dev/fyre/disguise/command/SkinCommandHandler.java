@@ -66,6 +66,10 @@ public final class SkinCommandHandler {
         }
         reply(sender, ChatColor.YELLOW + "Looking up signed Mojang textures asynchronously...");
         skins.lookup(sourceId).whenComplete((skin, error) -> {
+            // Mojang work can complete long after a replacement command.
+            // Skip queuing a Bukkit main-thread task for a superseded token.
+            // The tracker is synchronized, so this check is thread-safe.
+            if (!requests.isCurrent(viewerId, subjectId, token)) return;
             if (!plugin.isEnabled()) {
                 requests.finish(viewerId, subjectId, token);
                 return;

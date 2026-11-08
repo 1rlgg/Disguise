@@ -5,6 +5,19 @@ import org.junit.Test;
 import static org.junit.Assert.*;
 
 public class SkinRequestTrackerTest {
+    @Test public void supersededCallbackCannotConsumeNewerToken() {
+        SkinRequestTracker tracker = new SkinRequestTracker(1);
+        UUID viewer = UUID.randomUUID(), subject = UUID.randomUUID();
+        long first = tracker.begin(viewer, subject);
+        long second = tracker.begin(viewer, subject);
+        assertFalse(tracker.isCurrent(viewer, subject, first));
+        tracker.finish(viewer, subject, first);
+        assertTrue(tracker.isCurrent(viewer, subject, second));
+        assertEquals(1, tracker.size());
+        tracker.finish(viewer, subject, second);
+        assertEquals(0, tracker.size());
+    }
+
     @Test public void latestRequestWinsOutOfOrderCompletion() {
         SkinRequestTracker tracker = new SkinRequestTracker(2);
         UUID subject = UUID.randomUUID();
