@@ -15,9 +15,8 @@ import java.util.Objects;
 import org.bukkit.entity.Player;
 
 /**
- * Refreshes the tab-list player-info entry for one visible viewer.
- * Does NOT respawn entities or change nameplates in the world.
- * All invocations must be on the Bukkit primary thread.
+ * Experimental per-viewer tab-list synchronization. No world entity or
+ * nametag refresh is performed; caller must use Bukkit primary thread.
  */
 public final class PlayerInfoTabRefresh {
     private final ProtocolManager protocol;
@@ -41,17 +40,30 @@ public final class PlayerInfoTabRefresh {
         List<PlayerInfoData> input = Collections.singletonList(original);
         List<PlayerInfoData> output = rewriter.rewrite(viewer.getUniqueId(), input);
 
-        // Only a player-info list entry is affected. Do not use hidePlayer/showPlayer,
-        // since that could break combat tracking, vanish state or entity visibility.
-        PacketContainer remove = protocol.createPacket(PacketType.Play.Server.PLAYER_INFO);
-        remove.getPlayerInfoAction().write(0, EnumWrappers.PlayerInfoAction.REMOVE_PLAYER);
-        remove.getPlayerInfoDataLists().write(0, input);
-        PacketContainer add = protocol.createPacket(PacketType.Play.Server.PLAYER_INFO);
-        add.getPlayerInfoAction().write(0, EnumWrappers.PlayerInfoAction.ADD_PLAYER);
-        add.getPlayerInfoDataLists().write(0, output);
+        PacketContainer remove = makePacket(EnumWrappers.PlayerInfoAction.REMOVE_PLAYER, input);
+        PacketContainer add = makePacket(EnumWrappers.PlayerInfoAction.ADD_PLAYER, output);
 
-        // Skip our own packet listener: data has already been rewritten for this viewer.
+        // Never hide/show Bukkit players: doing so alters entity tracking and vanish state.
         protocol.sendServerPacket(viewer, remove, false);
-        protocol.sendServerPacket(viewer, add, false);
+        try {
+            protocol.sendServerPacket(viewer, add, false);
+        } catch (InvocationTargetException | RuntimeException failure) {
+            // Best-effort recovery: avoid leaving a viewer without a tab entry if
+            // the custom profile could not be serialized or delivered.
+            try {
+                protocol.sendServerPacket(viewer,
+                        makePacket(EnumWrappers.PlayerInfoAction.ADD_PLAYER, input), false);
+            } catch (InvocationTargetException | RuntimeException restoreFailure) {
+                failure.addSuppressed(restoreFailure);
+            }
+            throw failure;
+        }
+    }
+
+    private PacketContainer makePacket(EnumWrappers.PlayerInfoAction action, List<PlayerInfoData> data) {
+        PacketContainer packet = protocol.createPacket(PacketType.Play.Server.PLAYER_INFO);
+        packet.getPlayerInfoAction().write(0, action);
+        packet.getPlayerInfoDataLists().write(0, data);
+        return packet;
     }
 }
