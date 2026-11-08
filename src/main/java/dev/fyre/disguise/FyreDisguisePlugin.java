@@ -11,6 +11,8 @@ import dev.fyre.disguise.protocol.PlayerInfoRewriter;
 import dev.fyre.disguise.protocol.PlayerInfoTabRefresh;
 import dev.fyre.disguise.render.IdentityRenderer;
 import dev.fyre.disguise.render.LoggedIdentityRenderer;
+import dev.fyre.disguise.render.RefreshQueue;
+import dev.fyre.disguise.render.RefreshTargetPlanner;
 import dev.fyre.disguise.render.TabListIdentityRenderer;
 import dev.fyre.disguise.skin.AsyncSkinService;
 import dev.fyre.disguise.skin.MojangSkinSource;
@@ -29,20 +31,23 @@ import org.bukkit.event.player.PlayerQuitEvent;
 import org.bukkit.event.player.PlayerRespawnEvent;
 import org.bukkit.plugin.java.JavaPlugin;
 
-/** Experimental tab-list alias framework; world entity disguises not yet implemented. */
+/** Experimental tab-list alias framework; world entity disguises not implemented. */
 public final class FyreDisguisePlugin extends JavaPlugin implements Listener {
     private DisguiseService disguises;
+    private InMemoryDisguiseService registry;
     private AsyncSkinService skins;
     private ProtocolManager packets;
     private TabListIdentityRenderer tabRenderer;
+    private RefreshTargetPlanner refreshPlanner;
 
     @Override public void onEnable() {
         saveDefaultConfig();
-        InMemoryDisguiseService registry = new InMemoryDisguiseService();
+        registry = new InMemoryDisguiseService();
         packets = ProtocolLibrary.getProtocolManager();
         boolean experimentalRefresh = getConfig().getBoolean("experimental-tab-refresh", false);
         if (experimentalRefresh) {
             tabRenderer = new TabListIdentityRenderer(new PlayerInfoTabRefresh(packets, registry), getLogger());
+            refreshPlanner = new RefreshTargetPlanner(registry);
         }
         IdentityRenderer renderer = experimentalRefresh ? tabRenderer : new LoggedIdentityRenderer(getLogger());
         disguises = new ObservableDisguiseService(registry, renderer, this::onlineViewerIds, this::assertMainThread);
@@ -51,9 +56,7 @@ public final class FyreDisguisePlugin extends JavaPlugin implements Listener {
         getCommand("fyredisguise").setExecutor(new DisguiseCommand(disguises));
         packets.addPacketListener(new PlayerInfoPacketListener(this, new PlayerInfoRewriter(registry)));
         Bukkit.getPluginManager().registerEvents(this, this);
-        if (tabRenderer != null) {
-            Bukkit.getScheduler().runTaskTimer(this, () -> tabRenderer.flush(32), 1L, 1L);
-        }
+        if (tabRenderer != null) Bukkit.getScheduler().runTaskTimer(this, () -> tabRenderer.flush(32), 1L, 1L);
         getLogger().info("Player-info aliases enabled; experimental tab refresh: " + experimentalRefresh
                 + "; world entity refresh NOT implemented.");
     }
@@ -71,26 +74,18 @@ public final class FyreDisguisePlugin extends JavaPlugin implements Listener {
     private void scheduleResync(UUID playerId) {
         if (tabRenderer == null) return;
         Bukkit.getScheduler().runTaskLater(this, () -> {
-            if (tabRenderer == null) return;
+            if (tabRenderer == null || refreshPlanner == null) return;
             Player player = Bukkit.getPlayer(playerId);
             if (player == null || !player.isOnline()) return;
-            Collection<UUID> online = onlineViewerIds();
-            tabRenderer.refreshViewer(playerId, online);
-            tabRenderer.refreshSubject(playerId, online);
+            for (RefreshQueue.Pair pair : refreshPlanner.around(playerId, onlineViewerIds())) {
+                tabRenderer.enqueue(pair.getViewer(), pair.getSubject());
+            }
         }, 2L);
     }
 
-    @EventHandler public void onJoin(PlayerJoinEvent event) {
-        scheduleResync(event.getPlayer().getUniqueId());
-    }
-
-    @EventHandler public void onRespawn(PlayerRespawnEvent event) {
-        scheduleResync(event.getPlayer().getUniqueId());
-    }
-
-    @EventHandler public void onWorldChange(PlayerChangedWorldEvent event) {
-        scheduleResync(event.getPlayer().getUniqueId());
-    }
+    @EventHandler public void onJoin(PlayerJoinEvent event) { scheduleResync(event.getPlayer().getUniqueId()); }
+    @EventHandler public void onRespawn(PlayerRespawnEvent event) { scheduleResync(event.getPlayer().getUniqueId()); }
+    @EventHandler public void onWorldChange(PlayerChangedWorldEvent event) { scheduleResync(event.getPlayer().getUniqueId()); }
 
     @EventHandler public void onQuit(PlayerQuitEvent event) {
         UUID id = event.getPlayer().getUniqueId();
@@ -101,12 +96,14 @@ public final class FyreDisguisePlugin extends JavaPlugin implements Listener {
     @Override public void onDisable() {
         if (tabRenderer != null) tabRenderer.clear();
         tabRenderer = null;
+        refreshPlanner = null;
         if (packets != null) packets.removePacketListeners(this);
         packets = null;
         if (skins != null) skins.close();
         skins = null;
         if (disguises != null) disguises.clear();
         disguises = null;
+        registry = null;
     }
 
     public DisguiseService getDisguiseService() {
