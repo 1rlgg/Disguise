@@ -23,6 +23,8 @@ public final class TabListIdentityRenderer implements IdentityRenderer {
     private final RefreshQueue pending;
     private final AppliedTabEntries applied = new AppliedTabEntries();
     private final RefreshRetryLedger retries;
+    private final RestorationReconciler reconciler = new RestorationReconciler();
+    private int ticksSinceReconcile;
     private final DisguiseService state;
     private final LegacyEntityRefresh entityRefresh;
     private final EntityRefreshFailureGate entityGate = new EntityRefreshFailureGate(3);
@@ -65,6 +67,9 @@ public final class TabListIdentityRenderer implements IdentityRenderer {
 
     @Override public void render(IdentityTransition transition) {
         assertPrimaryThread();
+        // Explicit new identity transitions can retry a previously quarantined
+        // pair; periodic background reconciliation cannot.
+        retries.newTransition(new RefreshQueue.Pair(transition.getViewerId(), transition.getSubjectId()));
         // On saturation, never prefer a cosmetic alias update to a removal.
         if (!transition.getAfter().isPresent()) {
             pending.offerRestoration(transition.getViewerId(), transition.getSubjectId());
@@ -122,6 +127,15 @@ public final class TabListIdentityRenderer implements IdentityRenderer {
 
     public void flush(int maxPerTick) {
         assertPrimaryThread();
+        if (++ticksSinceReconcile >= 20 && state != null) {
+            ticksSinceReconcile = 0;
+            for (RefreshQueue.Pair pair : reconciler.scan(applied.snapshot(),
+                    candidate -> !retries.suppressed(candidate)
+                            && !state.getDisguiseFor(candidate.getViewer(), candidate.getSubject()).isPresent(),
+                    128)) {
+                pending.offerRestoration(pair.getViewer(), pair.getSubject());
+            }
+        }
         // Defer excess entity work instead of silently downgrading it to tab-only updates.
         int batchSize = entityRefresh == null ? maxPerTick : Math.min(maxPerTick, 8);
         for (RefreshQueue.Pair pair : pending.poll(batchSize)) {
@@ -193,6 +207,8 @@ public final class TabListIdentityRenderer implements IdentityRenderer {
         assertPrimaryThread();
         pending.clear();
         retries.clear();
+        reconciler.reset();
+        ticksSinceReconcile = 0;
         applied.clear();
         capacityWarning = false;
     }

@@ -17,6 +17,11 @@ public class RefreshRetryLedgerTest {
         assertFalse(ledger.shouldRetry(pair));
         assertEquals(0, ledger.size());
         assertEquals(1, ledger.exhaustedCount());
+        assertTrue(ledger.suppressed(pair));
+        assertFalse(ledger.shouldRetry(pair));
+        ledger.newTransition(pair);
+        assertFalse(ledger.suppressed(pair));
+        assertTrue(ledger.shouldRetry(pair));
     }
 
     @Test public void successResetsFailureAttempts() {
@@ -48,6 +53,16 @@ public class RefreshRetryLedgerTest {
         ledger.clear();
         assertEquals(0, ledger.overflowCount());
         assertEquals(0, ledger.exhaustedCount());
+    }
+
+    @Test public void forgettingPlayersReleasesTerminalQuarantine() {
+        RefreshRetryLedger ledger = new RefreshRetryLedger(1, 2);
+        RefreshQueue.Pair pair = pair();
+        assertTrue(ledger.shouldRetry(pair));
+        assertFalse(ledger.shouldRetry(pair));
+        assertTrue(ledger.suppressed(pair));
+        ledger.forget(pair.getSubject());
+        assertFalse(ledger.suppressed(pair));
     }
 
     @Test(expected = IllegalArgumentException.class)
