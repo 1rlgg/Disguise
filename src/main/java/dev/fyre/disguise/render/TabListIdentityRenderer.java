@@ -258,7 +258,7 @@ public final class TabListIdentityRenderer implements IdentityRenderer {
                 // entities. The server is about to tear down our listeners,
                 // and tab-only restoration avoids ghost entities and armor
                 // packet bursts in the final server tick.
-                deliver(viewer, subject, false);
+                transport.restoreOriginal(viewer, subject);
                 applied.restored(pair.getViewer(), pair.getSubject());
                 restored++;
             } catch (InvocationTargetException | RuntimeException ex) {

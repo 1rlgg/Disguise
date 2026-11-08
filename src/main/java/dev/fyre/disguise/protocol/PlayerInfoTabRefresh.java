@@ -28,6 +28,19 @@ public final class PlayerInfoTabRefresh {
     }
 
     public void refresh(Player viewer, Player subject) throws InvocationTargetException {
+        send(viewer, subject, false);
+    }
+
+    /**
+     * Force the ORIGINAL player profile for shutdown/restoration regardless of
+     * the current disguise registry. Never let a late alias reappear here.
+     */
+    public void restoreOriginal(Player viewer, Player subject) throws InvocationTargetException {
+        send(viewer, subject, true);
+    }
+
+    private void send(Player viewer, Player subject, boolean originalOnly)
+            throws InvocationTargetException {
         Objects.requireNonNull(viewer, "viewer");
         Objects.requireNonNull(subject, "subject");
         if (viewer.equals(subject) || !viewer.isOnline() || !subject.isOnline() || !viewer.canSee(subject)) return;
@@ -38,7 +51,8 @@ public final class PlayerInfoTabRefresh {
                 WrappedChatComponent.fromText(subject.getPlayerListName() == null
                         ? subject.getName() : subject.getPlayerListName()));
         List<PlayerInfoData> input = Collections.singletonList(original);
-        List<PlayerInfoData> output = rewriter.rewrite(viewer.getUniqueId(), input);
+        List<PlayerInfoData> output = originalOnly ? input
+                : rewriter.rewrite(viewer.getUniqueId(), input);
 
         PacketContainer remove = makePacket(EnumWrappers.PlayerInfoAction.REMOVE_PLAYER, input);
         PacketContainer add = makePacket(EnumWrappers.PlayerInfoAction.ADD_PLAYER, output);
