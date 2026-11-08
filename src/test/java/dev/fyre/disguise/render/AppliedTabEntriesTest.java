@@ -6,6 +6,16 @@ import org.junit.Test;
 import static org.junit.Assert.*;
 
 public class AppliedTabEntriesTest {
+    @Test public void containsReportsAppliedPairsAndRestorations() {
+        AppliedTabEntries entries = new AppliedTabEntries();
+        UUID viewer = UUID.randomUUID(), subject = UUID.randomUUID();
+        assertFalse(entries.contains(viewer, subject));
+        entries.applied(viewer, subject);
+        assertTrue(entries.contains(viewer, subject));
+        entries.restored(viewer, subject);
+        assertFalse(entries.contains(viewer, subject));
+    }
+
     @Test public void recordsOnlyDistinctPairsAndRemovesSpecificRestore() {
         AppliedTabEntries entries = new AppliedTabEntries();
         UUID viewer = UUID.randomUUID(), subject = UUID.randomUUID(), other = UUID.randomUUID();

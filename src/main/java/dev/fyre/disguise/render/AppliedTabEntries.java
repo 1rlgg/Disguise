@@ -15,6 +15,10 @@ public final class AppliedTabEntries {
         applied.add(new RefreshQueue.Pair(viewer, subject));
     }
 
+    public boolean contains(UUID viewer, UUID subject) {
+        return applied.contains(new RefreshQueue.Pair(viewer, subject));
+    }
+
     public void restored(UUID viewer, UUID subject) {
         applied.remove(new RefreshQueue.Pair(viewer, subject));
     }

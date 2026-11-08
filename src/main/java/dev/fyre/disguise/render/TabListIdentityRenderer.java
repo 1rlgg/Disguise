@@ -127,6 +127,16 @@ public final class TabListIdentityRenderer implements IdentityRenderer {
                 retries.succeeded(pair);
                 continue;
             }
+            // A set/clear burst may leave nothing to display. Never remove/add
+            // a normal player's tab entry unless this plugin actually applied
+            // an alias before or a disguise remains desired.
+            boolean currentDisguise = state != null
+                    && state.getDisguiseFor(pair.getViewer(), pair.getSubject()).isPresent();
+            if (state != null && !RefreshDeliveryPolicy.shouldSend(
+                    currentDisguise, applied.contains(pair.getViewer(), pair.getSubject()))) {
+                retries.succeeded(pair);
+                continue;
+            }
             try {
                 deliver(viewer, subject, true);
                 retries.succeeded(pair);
