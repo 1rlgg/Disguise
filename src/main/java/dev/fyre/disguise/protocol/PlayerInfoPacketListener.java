@@ -12,10 +12,11 @@ import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.logging.Level;
 import org.bukkit.plugin.Plugin;
 
-/** Fail-open PLAYER_INFO listener: a broken alias may never block a server packet. */
+/** Fail-open PLAYER_INFO listener: an invalid alias must never cancel an outgoing packet. */
 public final class PlayerInfoPacketListener extends PacketAdapter {
     private final PlayerInfoRewriter rewriter;
-    private final AtomicBoolean errorLogged = new AtomicBoolean();
+    private final PacketRewriteBreaker breaker = new PacketRewriteBreaker(5);
+    private final AtomicBoolean firstErrorLogged = new AtomicBoolean();
 
     public PlayerInfoPacketListener(Plugin plugin, PlayerInfoRewriter rewriter) {
         super(plugin, ListenerPriority.HIGH, PacketType.Play.Server.PLAYER_INFO);
@@ -23,6 +24,7 @@ public final class PlayerInfoPacketListener extends PacketAdapter {
     }
 
     @Override public void onPacketSending(PacketEvent event) {
+        if (breaker.isOpen()) return;
         try {
             PacketContainer packet = event.getPacket();
             if (packet.getPlayerInfoAction().read(0) != EnumWrappers.PlayerInfoAction.ADD_PLAYER) return;
@@ -30,10 +32,16 @@ public final class PlayerInfoPacketListener extends PacketAdapter {
             if (existing == null || existing.isEmpty()) return;
             List<PlayerInfoData> updated = rewriter.rewrite(event.getPlayer().getUniqueId(), existing);
             if (updated != existing) packet.getPlayerInfoDataLists().write(0, updated);
+            breaker.recordSuccess();
         } catch (RuntimeException ex) {
-            if (errorLogged.compareAndSet(false, true)) {
+            boolean nowDisabled = breaker.recordFailure();
+            if (firstErrorLogged.compareAndSet(false, true)) {
                 getPlugin().getLogger().log(Level.WARNING,
-                        "Player-info rewriting failed; leaving the original packet unchanged (first occurrence)", ex);
+                        "Player-info alias rewriting failed; leaving original packets unchanged", ex);
+            }
+            if (nowDisabled) {
+                getPlugin().getLogger().severe(
+                        "Disabling player-info rewriting after repeated failures; restart after fixing the issue");
             }
         }
     }
