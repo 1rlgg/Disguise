@@ -18,6 +18,18 @@ public class DeferredRefreshBacklogTest {
         assertEquals(0, deferred.size());
     }
 
+    @Test public void duplicatePrimaryWorkPrunesDeferredEntryEvenWhenPrimaryFull() {
+        UUID viewer = UUID.randomUUID(), subject = UUID.randomUUID();
+        RefreshQueue primary = new RefreshQueue(1);
+        DeferredRefreshBacklog deferred = new DeferredRefreshBacklog(2);
+        deferred.offer(viewer, subject);
+        primary.offerRestoration(viewer, subject);
+        assertEquals(0, deferred.drainTo(primary, 1));
+        assertEquals(0, deferred.size());
+        assertEquals(1, primary.size());
+        assertEquals(subject, primary.poll(1).get(0).getSubject());
+    }
+
     @Test public void urgentRestorationCancelsStaleCosmeticWork() {
         UUID viewer = UUID.randomUUID(), subject = UUID.randomUUID();
         DeferredRefreshBacklog backlog = new DeferredRefreshBacklog(2);

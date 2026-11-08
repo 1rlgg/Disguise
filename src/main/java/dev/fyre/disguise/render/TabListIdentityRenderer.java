@@ -64,7 +64,10 @@ public final class TabListIdentityRenderer implements IdentityRenderer {
 
     public void enqueue(UUID viewer, UUID subject) {
         assertPrimaryThread();
-        if (!pending.offer(viewer, subject)) {
+        if (pending.offer(viewer, subject)) {
+            // A newer primary update supersedes an older deferred copy.
+            deferred.cancel(viewer, subject);
+        } else {
             if (!deferred.offer(viewer, subject) && !capacityWarning) {
                 capacityWarning = true;
                 logger.warning("Tab refresh and deferred queues full; cosmetic updates may be dropped");

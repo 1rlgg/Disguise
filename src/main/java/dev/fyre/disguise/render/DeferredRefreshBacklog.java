@@ -34,9 +34,16 @@ public final class DeferredRefreshBacklog {
         if (maxPerTick < 1) throw new IllegalArgumentException("maxPerTick must be positive");
         int moved = 0;
         Iterator<RefreshQueue.Pair> iter = deferred.iterator();
-        while (iter.hasNext() && moved < maxPerTick && queue.hasFreeSlot()) {
+        while (iter.hasNext() && moved < maxPerTick) {
             RefreshQueue.Pair pair = iter.next();
-            if (!queue.offer(pair.getViewer(), pair.getSubject())) break;
+            if (queue.contains(pair.getViewer(), pair.getSubject())) {
+                // A newer queue event already represents this exact pair.
+                // Remove the stale deferred copy even if the primary is full.
+                iter.remove();
+                continue;
+            }
+            if (!queue.hasFreeSlot()
+                    || !queue.offer(pair.getViewer(), pair.getSubject())) break;
             iter.remove();
             moved++;
         }
