@@ -2,7 +2,9 @@ package dev.fyre.disguise.command;
 
 import dev.fyre.disguise.api.Disguise;
 import dev.fyre.disguise.api.DisguiseService;
+import dev.fyre.disguise.skin.SkinSourceId;
 import java.util.Objects;
+import java.util.UUID;
 import org.bukkit.Bukkit;
 import org.bukkit.ChatColor;
 import org.bukkit.command.Command;
@@ -10,18 +12,18 @@ import org.bukkit.command.CommandExecutor;
 import org.bukkit.command.CommandSender;
 import org.bukkit.entity.Player;
 
-/** Admin-only test commands. Do not change world entity appearance. */
+/** Operator-only test controls; world entity appearance is not changed. */
 public final class DisguiseCommand implements CommandExecutor {
     private final DisguiseService disguises;
-    private final SkinCommandHandler skinHandler;
+    private final SkinCommandHandler skins;
 
     public DisguiseCommand(DisguiseService disguises) {
         this(disguises, null);
     }
 
-    public DisguiseCommand(DisguiseService disguises, SkinCommandHandler skinHandler) {
+    public DisguiseCommand(DisguiseService disguises, SkinCommandHandler skins) {
         this.disguises = Objects.requireNonNull(disguises, "disguises");
-        this.skinHandler = skinHandler;
+        this.skins = skins;
     }
 
     private Player find(CommandSender sender, String name) {
@@ -30,32 +32,33 @@ public final class DisguiseCommand implements CommandExecutor {
         return player;
     }
 
+    private UUID skinSource(CommandSender sender, String input) {
+        Player online = Bukkit.getPlayerExact(input);
+        if (online != null && online.isOnline()) return online.getUniqueId();
+        java.util.Optional<UUID> uuid = SkinSourceId.parse(input);
+        if (uuid.isPresent()) return uuid.get();
+        sender.sendMessage(ChatColor.RED + "Source must be an online player name or complete UUID.");
+        return null;
+    }
+
     @Override public boolean onCommand(CommandSender sender, Command command, String label, String[] args) {
         if (!sender.hasPermission("fyredisguise.admin")) {
             sender.sendMessage(ChatColor.RED + "You do not have permission.");
             return true;
         }
         if (args.length == 3 && args[0].equalsIgnoreCase("skin")) {
-            if (skinHandler == null) {
-                sender.sendMessage(ChatColor.RED + "Skin lookup is unavailable.");
-                return true;
-            }
+            if (skins == null) { sender.sendMessage(ChatColor.RED + "Skin lookup unavailable."); return true; }
             Player target = find(sender, args[1]);
-            Player source = find(sender, args[2]);
-            if (target != null && source != null) skinHandler.apply(sender, target, source);
+            UUID source = skinSource(sender, args[2]);
+            if (target != null && source != null) skins.apply(sender, target, source);
             return true;
         }
         if (args.length == 4 && args[0].equalsIgnoreCase("viewskin")) {
-            if (skinHandler == null) {
-                sender.sendMessage(ChatColor.RED + "Skin lookup is unavailable.");
-                return true;
-            }
+            if (skins == null) { sender.sendMessage(ChatColor.RED + "Skin lookup unavailable."); return true; }
             Player viewer = find(sender, args[1]);
             Player target = find(sender, args[2]);
-            Player source = find(sender, args[3]);
-            if (viewer != null && target != null && source != null) {
-                skinHandler.applyForViewer(sender, viewer, target, source);
-            }
+            UUID source = skinSource(sender, args[3]);
+            if (viewer != null && target != null && source != null) skins.applyForViewer(sender, viewer, target, source);
             return true;
         }
         if (args.length == 3 && args[0].equalsIgnoreCase("set")) {
@@ -63,7 +66,7 @@ public final class DisguiseCommand implements CommandExecutor {
             if (target != null) {
                 try {
                     disguises.setDisguise(new Disguise(target.getUniqueId(), args[2]));
-                    sender.sendMessage(ChatColor.GREEN + "Global alias updated. World appearance is unchanged.");
+                    sender.sendMessage(ChatColor.GREEN + "Global alias updated. World appearance unchanged.");
                 } catch (IllegalArgumentException ex) { invalidAlias(sender); }
             }
             return true;
@@ -115,7 +118,7 @@ public final class DisguiseCommand implements CommandExecutor {
         sender.sendMessage(ChatColor.YELLOW + "/" + label + " set|clear|status <player> [alias]");
         sender.sendMessage(ChatColor.YELLOW + "/" + label + " view <viewer> <player> <alias>");
         sender.sendMessage(ChatColor.YELLOW + "/" + label + " unview|viewstatus <viewer> <player>");
-        sender.sendMessage(ChatColor.YELLOW + "/" + label + " skin <online-target> <online-skin-source>");
-        sender.sendMessage(ChatColor.YELLOW + "/" + label + " viewskin <viewer> <target> <skin-source>");
+        sender.sendMessage(ChatColor.YELLOW + "/" + label + " skin <online-target> <online-source|uuid>");
+        sender.sendMessage(ChatColor.YELLOW + "/" + label + " viewskin <viewer> <target> <online-source|uuid>");
     }
 }
