@@ -5,6 +5,8 @@ import dev.fyre.disguise.api.DisguiseService;
 import dev.fyre.disguise.skin.SkinSourceId;
 import java.util.Objects;
 import java.util.UUID;
+import java.util.List;
+import java.util.function.Supplier;
 import org.bukkit.Bukkit;
 import org.bukkit.ChatColor;
 import org.bukkit.command.Command;
@@ -16,14 +18,21 @@ import org.bukkit.entity.Player;
 public final class DisguiseCommand implements CommandExecutor {
     private final DisguiseService disguises;
     private final SkinCommandHandler skins;
+    private final Supplier<List<String>> diagnostics;
 
     public DisguiseCommand(DisguiseService disguises) {
-        this(disguises, null);
+        this(disguises, null, null);
     }
 
     public DisguiseCommand(DisguiseService disguises, SkinCommandHandler skins) {
+        this(disguises, skins, null);
+    }
+
+    public DisguiseCommand(DisguiseService disguises, SkinCommandHandler skins,
+                          Supplier<List<String>> diagnostics) {
         this.disguises = Objects.requireNonNull(disguises, "disguises");
         this.skins = skins;
+        this.diagnostics = diagnostics;
     }
 
     private Player find(CommandSender sender, String name) {
@@ -44,6 +53,14 @@ public final class DisguiseCommand implements CommandExecutor {
     @Override public boolean onCommand(CommandSender sender, Command command, String label, String[] args) {
         if (!sender.hasPermission("fyredisguise.admin")) {
             sender.sendMessage(ChatColor.RED + "You do not have permission.");
+            return true;
+        }
+        if (args.length == 1 && args[0].equalsIgnoreCase("stats")) {
+            if (diagnostics == null) {
+                sender.sendMessage(ChatColor.RED + "Diagnostics unavailable.");
+            } else {
+                for (String line : diagnostics.get()) sender.sendMessage(ChatColor.YELLOW + line);
+            }
             return true;
         }
         if (args.length == 3 && args[0].equalsIgnoreCase("skin")) {
@@ -115,6 +132,7 @@ public final class DisguiseCommand implements CommandExecutor {
     }
 
     private static void usage(CommandSender sender, String label) {
+        sender.sendMessage(ChatColor.YELLOW + "/" + label + " stats");
         sender.sendMessage(ChatColor.YELLOW + "/" + label + " set|clear|status <player> [alias]");
         sender.sendMessage(ChatColor.YELLOW + "/" + label + " view <viewer> <player> <alias>");
         sender.sendMessage(ChatColor.YELLOW + "/" + label + " unview|viewstatus <viewer> <player>");

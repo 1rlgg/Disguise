@@ -72,7 +72,12 @@ public final class FyreDisguisePlugin extends JavaPlugin implements Listener {
         skins = new AsyncSkinService(new MojangSkinSource(3000, 5000),
                 new SkinCache(512, TimeUnit.MINUTES.toNanos(30)), 2, 128);
         getCommand("fyredisguise").setExecutor(new DisguiseCommand(disguises,
-                new SkinCommandHandler(this, disguises, skins)));
+                new SkinCommandHandler(this, disguises, skins), () -> new dev.fyre.disguise.command.DisguiseDiagnostics(
+                        tabRenderer != null, spawnPackets != null,
+                        tabRenderer == null ? 0 : tabRenderer.pendingCount(),
+                        tabRenderer == null ? 0 : tabRenderer.appliedCount(),
+                        spawnPackets == null ? 0 : spawnPackets.size(),
+                        skins == null ? 0 : skins.pendingLookups()).lines()));
         packets.addPacketListener(new PlayerInfoPacketListener(this, new PlayerInfoRewriter(registry)));
         Bukkit.getPluginManager().registerEvents(this, this);
         if (tabRenderer != null) Bukkit.getScheduler().runTaskTimer(this, () -> tabRenderer.flush(32), 1L, 1L);
