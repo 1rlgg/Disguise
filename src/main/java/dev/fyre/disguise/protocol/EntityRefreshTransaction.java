@@ -36,15 +36,22 @@ public final class EntityRefreshTransaction {
         } catch (InvocationTargetException | RuntimeException failure) {
             // A send failure is ambiguous: the client may have received the
             // packet. Best effort, always restore a coherent original spawn.
-            try {
-                transport.send(destroy);
-                transport.send(originalSpawn);
-                transport.send(head);
-                for (T item : equipment) transport.send(item);
-            } catch (InvocationTargetException | RuntimeException restoreFailure) {
-                failure.addSuppressed(restoreFailure);
-            }
+            // A recovery step may also throw. Still attempt every subsequent
+            // step; preserving all failures on the original exception improves
+            // diagnosis and gives the client the best chance to regain state.
+            trySend(transport, destroy, failure);
+            trySend(transport, originalSpawn, failure);
+            trySend(transport, head, failure);
+            for (T item : equipment) trySend(transport, item, failure);
             throw failure;
+        }
+    }
+
+    private static <T> void trySend(Sender<T> transport, T packet, Throwable original) {
+        try {
+            transport.send(packet);
+        } catch (InvocationTargetException | RuntimeException error) {
+            if (error != original) original.addSuppressed(error);
         }
     }
 }

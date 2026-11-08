@@ -51,6 +51,26 @@ public class EntityRefreshTransactionTest {
         }
     }
 
+    @Test public void recoveryContinuesAfterOriginalSpawnFailure() {
+        List<String> sent = new ArrayList<String>();
+        try {
+            EntityRefreshTransaction.execute("destroy", "new-spawn", "original-spawn",
+                    "head", Arrays.asList("hand", "armor"), packet -> {
+                        sent.add(packet);
+                        if ("new-spawn".equals(packet) || "original-spawn".equals(packet)) {
+                            throw new IllegalStateException("cannot spawn");
+                        }
+                    });
+            fail("Expected failure");
+        } catch (IllegalStateException expected) {
+            assertEquals(1, expected.getSuppressed().length);
+            assertEquals(Arrays.asList("destroy", "new-spawn", "destroy", "original-spawn",
+                    "head", "hand", "armor"), sent);
+        } catch (InvocationTargetException unexpected) {
+            fail("Wrong exception");
+        }
+    }
+
     @Test public void recoveryFailuresAreSuppressedOnOriginalFailure() {
         try {
             EntityRefreshTransaction.execute("destroy", "new-spawn", "original-spawn",
