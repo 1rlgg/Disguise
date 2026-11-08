@@ -6,6 +6,8 @@ on:
 jobs:
   test:
     runs-on: ubuntu-latest
+    permissions:
+      contents: read
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-java@v4
@@ -13,5 +15,12 @@ jobs:
           distribution: temurin
           java-version: '8'
           cache: maven
-      - name: Verify
-        run: mvn --batch-mode --no-transfer-progress verify
+      - name: Verify Java 8 compatibility and unit tests
+        run: mvn --batch-mode --no-transfer-progress clean verify
+      - name: Upload verified development artifact
+        if: success()
+        uses: actions/upload-artifact@v4
+        with:
+          name: fyredisguise-development-jar
+          path: target/fyredisguise-*.jar
+          if-no-files-found: error
