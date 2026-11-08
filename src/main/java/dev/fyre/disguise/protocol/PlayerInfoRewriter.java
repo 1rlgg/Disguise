@@ -1,6 +1,7 @@
 package dev.fyre.disguise.protocol;
 
 import com.comphenix.protocol.wrappers.PlayerInfoData;
+import com.comphenix.protocol.wrappers.WrappedChatComponent;
 import com.comphenix.protocol.wrappers.WrappedGameProfile;
 import com.comphenix.protocol.wrappers.WrappedSignedProperty;
 import dev.fyre.disguise.api.Disguise;
@@ -14,8 +15,9 @@ import java.util.Optional;
 import java.util.UUID;
 
 /**
- * Replaces only the selected visible identity, never mutating the original packet list,
- * and retaining unrelated player profile properties.
+ * Applies per-viewer visible player-info profile and display name. A non-null
+ * old display name can expose the undisguised username, so the alias is used
+ * in both places. Original packets and unrelated profile properties remain intact.
  */
 public final class PlayerInfoRewriter {
     private final DisguiseService disguises;
@@ -38,20 +40,22 @@ public final class PlayerInfoRewriter {
             Disguise disguise = wanted.get();
             if (result == null) result = new ArrayList<PlayerInfoData>(original);
             WrappedGameProfile profile = new WrappedGameProfile(subjectId, disguise.getName());
-            Optional<SkinProperty> desiredSkin = disguise.getSkin();
-            boolean hasSignedSkin = desiredSkin.isPresent() && desiredSkin.get().isSigned();
+            Optional<SkinProperty> requestedSkin = disguise.getSkin();
+            boolean signedSkin = requestedSkin.isPresent() && requestedSkin.get().isSigned();
             for (Map.Entry<String, WrappedSignedProperty> entry : info.getProfile().getProperties().entries()) {
-                if (!hasSignedSkin || !"textures".equals(entry.getKey())) {
+                if (!signedSkin || !"textures".equals(entry.getKey())) {
                     profile.getProperties().put(entry.getKey(), entry.getValue());
                 }
             }
-            if (hasSignedSkin) {
-                SkinProperty skin = desiredSkin.get();
+            if (signedSkin) {
+                SkinProperty skin = requestedSkin.get();
                 profile.getProperties().put("textures",
                         new WrappedSignedProperty("textures", skin.getValue(), skin.getSignature()));
             }
-            result.set(index, new PlayerInfoData(profile, info.getLatency(),
-                    info.getGameMode(), info.getDisplayName()));
+            // The 1.8 player-info display-name field overrides the profile name.
+            // Explicitly use the alias to avoid retaining a real-name list label.
+            WrappedChatComponent label = WrappedChatComponent.fromText(disguise.getName());
+            result.set(index, new PlayerInfoData(profile, info.getLatency(), info.getGameMode(), label));
         }
         return result == null ? original : result;
     }
