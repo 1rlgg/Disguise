@@ -39,17 +39,17 @@ public final class EntityRefreshAttempt {
         } catch (InvocationTargetException | RuntimeException failure) {
             boolean disabled = gate.failure();
             if (disabled) {
-                // The caller needs to log the circuit transition; preserve the
-                // original failure to make retry and recovery behavior explicit.
+                // Only world errors trip the entity breaker, even if the
+                // fallback also fails. Mark the transition for one log entry.
                 failure.addSuppressed(new EntityCircuitOpenedException());
-                // Recover this same viewer's tab profile immediately; waiting
-                // for a later retry can leave it stale after the breaker opens.
-                // Preserve the original world failure for accurate diagnosis.
-                try {
-                    tab.refresh();
-                } catch (InvocationTargetException | RuntimeException fallbackFailure) {
-                    if (fallbackFailure != failure) failure.addSuppressed(fallbackFailure);
-                }
+            }
+            // Best-effort tab delivery on EVERY world failure. Waiting for
+            // the third failure can leave the viewer's tab entry stale.
+            // Keep the original world exception to drive bounded retries.
+            try {
+                tab.refresh();
+            } catch (InvocationTargetException | RuntimeException fallbackFailure) {
+                if (fallbackFailure != failure) failure.addSuppressed(fallbackFailure);
             }
             throw failure;
         }
