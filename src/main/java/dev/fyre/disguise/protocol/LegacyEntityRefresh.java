@@ -74,20 +74,13 @@ public final class LegacyEntityRefresh {
             gear[slot] = item;
         }
 
+        // All packets are fully prepared before any client-side destroy.
+        // The transaction restores the captured spawn and current equipment
+        // if any send (including head rotation or armor) fails mid-sequence.
         tab.refresh(viewer, subject);
-        packets.sendServerPacket(viewer, destroy, false);
-        try {
-            packets.sendServerPacket(viewer, spawn, false);
-        } catch (InvocationTargetException | RuntimeException ex) {
-            try {
-                packets.sendServerPacket(viewer, tracked.getPacket(), false);
-            } catch (InvocationTargetException | RuntimeException recovery) {
-                ex.addSuppressed(recovery);
-            }
-            throw ex;
-        }
-        packets.sendServerPacket(viewer, head, false);
-        for (PacketContainer item : gear) packets.sendServerPacket(viewer, item, false);
+        EntityRefreshTransaction.execute(destroy, spawn, tracked.getPacket(), head,
+                java.util.Arrays.asList(gear),
+                packet -> packets.sendServerPacket(viewer, packet, false));
         return true;
     }
 
