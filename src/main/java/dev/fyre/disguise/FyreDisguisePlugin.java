@@ -1,7 +1,7 @@
 package dev.fyre.disguise;
 
-import com.comphenic.protocol.ProtocolLibrary;
-import com.comphenic.protocol.ProtocolManager;
+import com.comphenix.protocol.ProtocolLibrary;
+import com.comphenix.protocol.ProtocolManager;
 import dev.fyre.disguise.api.DisguiseService;
 import dev.fyre.disguise.core.InMemoryDisguiseService;
 import dev.fyre.disguise.core.ObservableDisguiseService;
