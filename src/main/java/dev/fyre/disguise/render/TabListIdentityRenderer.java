@@ -160,7 +160,8 @@ public final class TabListIdentityRenderer implements IdentityRenderer {
             }
         }
         // Defer excess entity work instead of silently downgrading it to tab-only updates.
-        int batchSize = entityRefresh == null ? maxPerTick : Math.min(maxPerTick, 8);
+        int batchSize = RefreshBatchPolicy.size(maxPerTick,
+                entityRefresh != null && entityGate.enabled());
         long started = System.nanoTime();
         java.util.List<RefreshQueue.Pair> work = pending.poll(batchSize);
         for (RefreshQueue.Pair pair : work) {
