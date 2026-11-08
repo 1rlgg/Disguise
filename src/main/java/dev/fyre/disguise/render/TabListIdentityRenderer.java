@@ -63,6 +63,23 @@ public final class TabListIdentityRenderer implements IdentityRenderer {
         if (!Bukkit.isPrimaryThread()) throw new IllegalStateException("Refresh requires primary thread");
     }
 
+    /**
+     * Operator-directed retry of an original tab entry. Avoid mutating unrelated
+     * clients, self entries, or an alias that is still desired. This does not
+     * send world entity packets and is always subject to the normal tick budget.
+     */
+    public boolean requestOriginalRestoration(UUID viewer, UUID subject) {
+        assertPrimaryThread();
+        Objects.requireNonNull(viewer, "viewer");
+        Objects.requireNonNull(subject, "subject");
+        boolean current = state != null && state.getDisguiseFor(viewer, subject).isPresent();
+        if (!ManualRestorationPolicy.allowed(applied.contains(viewer, subject),
+                current, viewer.equals(subject))) return false;
+        retries.newTransition(new RefreshQueue.Pair(viewer, subject));
+        enqueueRestoration(viewer, subject);
+        return true;
+    }
+
     public boolean wasApplied(UUID viewer, UUID subject) {
         assertPrimaryThread();
         return applied.contains(viewer, subject);
