@@ -89,11 +89,37 @@ public final class ObservableDisguiseService implements DisguiseService {
 
     @Override public void clearPlayer(UUID id) {
         mutationGuard.run();
-        delegate.clearPlayer(id);
+        Objects.requireNonNull(id, "id");
+        // Restoring a still-online subject must publish the same transitions as
+        // removing their global alias and all per-viewer overrides.
+        update(id, () -> delegate.clearPlayer(id));
     }
 
     @Override public void clear() {
         mutationGuard.run();
+        if (!(delegate instanceof DisguiseSubjectCatalog)) {
+            // A custom registry with no subject enumeration cannot offer
+            // guaranteed restoration, but clearing its state remains valid.
+            delegate.clear();
+            return;
+        }
+        Collection<UUID> recipients = new ArrayList<UUID>(viewers.get());
+        java.util.Map<UUID, java.util.Map<UUID, Disguise>> before =
+                new java.util.LinkedHashMap<UUID, java.util.Map<UUID, Disguise>>();
+        for (UUID subject : ((DisguiseSubjectCatalog) delegate).subjectIds()) {
+            java.util.Map<UUID, Disguise> identities = new java.util.LinkedHashMap<UUID, Disguise>();
+            for (UUID viewer : recipients) {
+                Disguise previous = delegate.getDisguiseFor(viewer, subject).orElse(null);
+                if (previous != null) identities.put(viewer, previous);
+            }
+            if (!identities.isEmpty()) before.put(subject, identities);
+        }
         delegate.clear();
+        for (java.util.Map.Entry<UUID, java.util.Map<UUID, Disguise>> subject : before.entrySet()) {
+            for (java.util.Map.Entry<UUID, Disguise> identity : subject.getValue().entrySet()) {
+                planner.plan(identity.getKey(), subject.getKey(), identity.getValue(), null)
+                        .ifPresent(renderer::render);
+            }
+        }
     }
 }
