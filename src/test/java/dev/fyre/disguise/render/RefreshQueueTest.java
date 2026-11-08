@@ -51,8 +51,8 @@ public class RefreshQueueTest {
         assertTrue(queue.offer(viewer, b));
         assertTrue(queue.offerRestoration(viewer, restored));
         assertEquals(2, queue.size());
-        assertEquals(b, queue.poll(1).get(0).getSubject());
         assertEquals(restored, queue.poll(1).get(0).getSubject());
+        assertEquals(a, queue.poll(1).get(0).getSubject());
         assertEquals(0, queue.size());
     }
 
@@ -62,6 +62,27 @@ public class RefreshQueueTest {
         assertTrue(queue.offer(viewer, subject));
         assertTrue(queue.offerRestoration(viewer, subject));
         assertEquals(1, queue.poll(10).size());
+    }
+
+    @Test public void restorationPromotesAlreadyQueuedPairAheadOfCosmeticWork() {
+        RefreshQueue queue = new RefreshQueue(3);
+        UUID viewer = UUID.randomUUID(), a = UUID.randomUUID(), b = UUID.randomUUID();
+        queue.offer(viewer, a);
+        queue.offer(viewer, b);
+        queue.offerRestoration(viewer, b);
+        assertEquals(2, queue.size());
+        assertEquals(b, queue.poll(1).get(0).getSubject());
+        assertEquals(a, queue.poll(1).get(0).getSubject());
+    }
+
+    @Test public void restoredEntriesSurviveWhenCosmeticQueueOverflows() {
+        RefreshQueue queue = new RefreshQueue(2);
+        UUID viewer = UUID.randomUUID(), a = UUID.randomUUID(), b = UUID.randomUUID(), c = UUID.randomUUID();
+        queue.offerRestoration(viewer, a);
+        queue.offer(viewer, b);
+        queue.offerRestoration(viewer, c);
+        assertEquals(a, queue.poll(1).get(0).getSubject());
+        assertEquals(c, queue.poll(1).get(0).getSubject());
     }
 
     @Test(expected = IllegalArgumentException.class)
