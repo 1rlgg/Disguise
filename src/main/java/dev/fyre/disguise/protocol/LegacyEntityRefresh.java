@@ -54,6 +54,10 @@ public final class LegacyEntityRefresh {
         spawn.getBytes().write(0, angle(loc.getYaw()));
         spawn.getBytes().write(1, angle(loc.getPitch()));
         spawn.getDataWatcherModifier().write(0, WrappedDataWatcher.getEntityWatcher(subject));
+        // The 1.8 player spawn packet also encodes the CURRENT held item as
+        // a short. Do not replay a stale item ID from a captured spawn.
+        ItemStack hand = subject.getItemInHand();
+        spawn.getShorts().write(0, heldItemId(hand == null ? 0 : hand.getTypeId()));
 
         PacketContainer destroy = packets.createPacket(PacketType.Play.Server.ENTITY_DESTROY);
         destroy.getIntegerArrays().write(0, new int[]{tracked.getEntityId()});
@@ -87,6 +91,12 @@ public final class LegacyEntityRefresh {
                 java.util.Arrays.asList(gear),
                 packet -> packets.sendServerPacket(viewer, packet, false));
         return true;
+    }
+
+    /** The 1.8 spawn-player current-item field is a non-negative short. */
+    public static short heldItemId(int id) {
+        if (id < 0 || id > Short.MAX_VALUE) throw new IllegalArgumentException("Invalid legacy item ID");
+        return (short) id;
     }
 
     /** In Minecraft 1.8 equipment indices are shorts 0=hand, 1-4=armor. */

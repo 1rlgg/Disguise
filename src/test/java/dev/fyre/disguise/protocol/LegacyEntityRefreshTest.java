@@ -4,6 +4,18 @@ import org.junit.Test;
 import static org.junit.Assert.*;
 
 public class LegacyEntityRefreshTest {
+    @Test public void playerSpawnHeldItemReflectsCurrentItemId() {
+        assertEquals((short) 0, LegacyEntityRefresh.heldItemId(0));
+        assertEquals((short) 276, LegacyEntityRefresh.heldItemId(276));
+        assertEquals(Short.MAX_VALUE, LegacyEntityRefresh.heldItemId(Short.MAX_VALUE));
+    }
+
+    @Test(expected = IllegalArgumentException.class)
+    public void rejectsNegativeHeldItemId() { LegacyEntityRefresh.heldItemId(-1); }
+
+    @Test(expected = IllegalArgumentException.class)
+    public void rejectsOverflowingHeldItemId() { LegacyEntityRefresh.heldItemId(Short.MAX_VALUE + 1); }
+
     @Test public void legacyEquipmentSlotsAreShortAndBounded() {
         for (int slot = 0; slot <= 4; slot++) {
             assertEquals((short) slot, LegacyEntityRefresh.equipmentSlot(slot));
