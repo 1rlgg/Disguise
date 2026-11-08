@@ -52,8 +52,22 @@ public class RefreshQueueTest {
         assertTrue(queue.offerRestoration(viewer, restored));
         assertEquals(2, queue.size());
         assertEquals(restored, queue.poll(1).get(0).getSubject());
-        assertEquals(a, queue.poll(1).get(0).getSubject());
+        assertEquals(b, queue.poll(1).get(0).getSubject());
         assertEquals(0, queue.size());
+    }
+
+    @Test public void saturationEvictsOldestCosmeticWithoutTouchingUrgentWork() {
+        RefreshQueue queue = new RefreshQueue(3);
+        UUID viewer = UUID.randomUUID(), first = UUID.randomUUID(),
+                second = UUID.randomUUID(), third = UUID.randomUUID(), restore = UUID.randomUUID();
+        queue.offer(viewer, first);
+        queue.offer(viewer, second);
+        queue.offer(viewer, third);
+        queue.offerRestoration(viewer, restore);
+        assertEquals(restore, queue.poll(1).get(0).getSubject());
+        assertEquals(second, queue.poll(1).get(0).getSubject());
+        assertEquals(third, queue.poll(1).get(0).getSubject());
+        assertEquals(1, queue.droppedCosmetic());
     }
 
     @Test public void restoringAlreadyQueuedPairDoesNotDuplicate() {

@@ -88,7 +88,9 @@ public final class RefreshQueue {
                 droppedRestoration++;
                 return false;
             }
-            Pair evicted = takeLast(normal);
+            // Evict the oldest cosmetic in O(1) iterator work instead of
+            // scanning the entire queue to find the newest entry.
+            Pair evicted = takeFirst(normal);
             queued.remove(evicted);
             droppedCosmetic++;
         }
@@ -102,14 +104,6 @@ public final class RefreshQueue {
         Pair next = it.next();
         it.remove();
         return next;
-    }
-
-    private static Pair takeLast(LinkedHashSet<Pair> entries) {
-        Iterator<Pair> it = entries.iterator();
-        Pair last = null;
-        while (it.hasNext()) last = it.next();
-        entries.remove(last);
-        return last;
     }
 
     public List<Pair> poll(int limit) {
