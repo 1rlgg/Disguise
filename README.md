@@ -2,25 +2,28 @@
 
 Experimental Java 8 / Spigot 1.8.8 disguise framework for Minecraft 1.8.9 clients.
 
-## Implemented and testable
+## Implemented
 
-- Public disguise state API with global/per-viewer aliases and lifecycle cleanup.
-- Main-thread enforcement on mutation methods, including retained service references.
-- ProtocolLib 4.8.0 rewriting of outgoing `PLAYER_INFO ADD_PLAYER` packet identities, with fail-open circuit breaker.
-- Optional experimental live tab-list update (disabled by default).
-- Admin commands for global and per-viewer testing.
-- Async Mojang skin-property requests with bounded workers, coalescing, cache expiry and safe shutdown.
-- Java 8 Maven verification and development JAR artifact in GitHub Actions.
+- Global and per-viewer alias registry, server-main-thread mutations, quit cleanup.
+- ProtocolLib 4.8.0 outgoing `PLAYER_INFO ADD_PLAYER` rewriting, preserving UUID and unrelated profile properties.
+- Optional **tab-list-only** updates, disabled by default, now queued and deduplicated with a cap of 2,048 pending pairs and 32 refresh attempts per tick.
+- Experimental tab-list resynchronization after login, respawn and world changes.
+- Best-effort re-add of original player-info data if a custom tab-list ADD fails.
+- Admin testing commands for global/per-viewer alias state.
+- Async Mojang skin-property lookups, expiry/caching, coalescing and bounded request workers.
+- Java 8 Maven tests, GitHub Actions builds and a downloadable development JAR artifact.
 
-## Build
+## Build and testing
+
+Use Java 8, Maven, Spigot 1.8.8 and **ProtocolLib 4.8.0** installed separately:
 
 ```sh
 mvn clean verify
 ```
 
-Runtime requires Spigot 1.8.8 and ProtocolLib 4.8.0 installed separately. This is not a tested production plugin.
+To try tab-list updates in a disposable test server, set `experimental-tab-refresh: true` in `plugins/FyreDisguise/config.yml` and restart. It remains off by default. Check with two Minecraft 1.8.9 clients: join, apply and remove an alias, viewer-only override, death/respawn, world change, disconnect and reconnect. Verify no unexpected tab entries, missing skins or invisibility. The queue may drop updates when full, and must not be treated as a guaranteed delivery mechanism.
 
-## Test commands (requires `fyredisguise.admin`, defaults to operators)
+### Test commands (permission: `fyredisguise.admin`, operator by default)
 
 ```text
 /fyredisguise set <online-player> <alias>
@@ -31,14 +34,12 @@ Runtime requires Spigot 1.8.8 and ProtocolLib 4.8.0 installed separately. This i
 /fyredisguise viewstatus <viewer> <online-player>
 ```
 
-For isolated testing only, set `experimental-tab-refresh: true` in `plugins/FyreDisguise/config.yml` and restart. Leave the option **false** on PvP production servers. Tab-list changes are not full entity disguises.
+## Still missing before a production release
 
-## Missing before release
+1. Full **in-world entity name and skin disguise rendering**, and safe live entity refresh.
+2. Guaranteed restoration of client identity, including plugin disable, reconnect, respawn and world transitions.
+3. Overhead nametag/team and vanish/NPC/spectator interoperability.
+4. Real 1.8.8 server / 1.8.9 client protocol tests, combat and performance profiling.
+5. Owner-selected open-source license, versioned releases and compatibility documentation.
 
-1. True client-visible world entity name/skin changes, with safe entity tracking and refresh.
-2. Full restoration on undisguise/disable, reconnect, respawn and cross-world transitions.
-3. Compatibility with vanish, scoreboard-team nametags, NPC and spectator plugins.
-4. Integration tests on Spigot 1.8.8 and Minecraft 1.8.9 clients, including combat visibility and performance.
-5. Owner-approved open-source license and release documentation.
-
-Unit test success does **not** establish working world disguises or production safety.
+**A green Maven CI build does not demonstrate working world disguises.** Do not deploy this experimental plugin on a production PvP server.
