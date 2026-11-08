@@ -1,12 +1,14 @@
 package dev.fyre.disguise.api;
 
+import java.util.Base64;
 import java.util.Objects;
 
 /**
- * Authenticated textures property data. Cryptographic signature verification
- * and skin retrieval are NOT implemented by this class.
+ * Validated texture property encoding. A signature being present is NOT proof
+ * of authenticity; RSA signature verification is not performed here.
  */
 public final class SkinProperty {
+    private static final int MAX_ENCODED_LENGTH = 32768;
     private final String value;
     private final String signature;
 
@@ -17,13 +19,17 @@ public final class SkinProperty {
 
     private static String requireBase64(String input, String field) {
         Objects.requireNonNull(input, field);
-        if (input.length() == 0 || input.length() > 32768 || !input.matches("[A-Za-z0-9+/]+={0,2}")) {
+        if (input.length() == 0 || input.length() > MAX_ENCODED_LENGTH
+                || !input.matches("[A-Za-z0-9+/]+={0,2}")) {
             throw new IllegalArgumentException("Invalid Base64 " + field);
         }
         try {
-            java.util.Base64.getDecoder().decode(input);
-        } catch (IllegalArgumentException exception) {
-            throw new IllegalArgumentException("Invalid Base64 " + field, exception);
+            byte[] decoded = Base64.getDecoder().decode(input);
+            if (decoded.length == 0 || !Base64.getEncoder().encodeToString(decoded).equals(input)) {
+                throw new IllegalArgumentException("Noncanonical Base64 " + field);
+            }
+        } catch (IllegalArgumentException ex) {
+            throw new IllegalArgumentException("Invalid Base64 " + field, ex);
         }
         return input;
     }
