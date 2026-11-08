@@ -27,11 +27,16 @@ public final class EntityRefreshPolicy {
                 && !spectator && inTrackingRange && hasMatchingSpawn;
     }
 
-    /** Conservative ceiling; view-distance is in chunks, not blocks. */
+    /**
+     * A chunk view distance does not prove the player entity is tracked by the
+     * client. Default 1.8 player tracking is substantially shorter. Limit
+     * experimental entity recreation to 48 blocks even on 16-chunk servers;
+     * the observed spawn snapshot must also still match.
+     */
     public static boolean withinTrackingRange(double distanceSquared, int viewDistanceChunks) {
         if (Double.isNaN(distanceSquared) || Double.isInfinite(distanceSquared) || distanceSquared < 0
                 || viewDistanceChunks < 1) return false;
-        double limit = Math.min(viewDistanceChunks, 16) * 16.0D;
+        double limit = Math.min(viewDistanceChunks * 16.0D, 48.0D);
         return distanceSquared <= limit * limit;
     }
 }

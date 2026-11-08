@@ -24,12 +24,15 @@ public class EntityRefreshPolicyTest {
     }
 
     @Test public void rejectsInvalidAndOutOfRangeDistance() {
-        assertTrue(EntityRefreshPolicy.withinTrackingRange(256.0D * 256.0D, 16));
-        assertFalse(EntityRefreshPolicy.withinTrackingRange(257.0D * 257.0D, 16));
+        assertTrue(EntityRefreshPolicy.withinTrackingRange(48.0D * 48.0D, 16));
+        assertFalse(EntityRefreshPolicy.withinTrackingRange(49.0D * 49.0D, 16));
+        assertFalse(EntityRefreshPolicy.withinTrackingRange(256.0D * 256.0D, 16));
         assertFalse(EntityRefreshPolicy.withinTrackingRange(Double.NaN, 16));
         assertFalse(EntityRefreshPolicy.withinTrackingRange(Double.POSITIVE_INFINITY, 16));
         assertFalse(EntityRefreshPolicy.withinTrackingRange(-1.0D, 16));
         assertFalse(EntityRefreshPolicy.withinTrackingRange(1.0D, 0));
         assertFalse(EntityRefreshPolicy.withinTrackingRange(100.0D * 100.0D, 4));
+        assertTrue(EntityRefreshPolicy.withinTrackingRange(16.0D * 16.0D, 1));
+        assertFalse(EntityRefreshPolicy.withinTrackingRange(17.0D * 17.0D, 1));
     }
 }
