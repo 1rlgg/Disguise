@@ -1,44 +1,50 @@
 # FyreDisguise
 
-Work-in-progress player-disguise framework for **Spigot 1.8.8** servers and **Minecraft 1.8.9 clients**.
+Experimental Java 8 / Spigot 1.8.8 disguise framework, targeting Minecraft 1.8.9 clients.
 
 ## Implemented
 
-- Java 8, Maven, Bukkit integration, typed disguise API and per-viewer overrides.
-- Thread-safe identity registry reads for packet callbacks and main-thread-only state mutations.
-- **ProtocolLib 4.8.0 PLAYER_INFO ADD_PLAYER rewriting:** outgoing profile entries can show an alias and optionally custom signed textures. Original subject UUID, gamemode, latency and display name are retained.
-- Mojang texture retrieval, async bounded executor, timeouts and expiring LRU cache.
-- Non-mutating render transitions and automated unit tests.
+- In-memory global and per-viewer disguise API.
+- ProtocolLib 4.8.0 rewriting of outgoing `PLAYER_INFO ADD_PLAYER` entries.
+- Optional **experimental tab-list live refresh**, using targeted `REMOVE_PLAYER` and `ADD_PLAYER` messages.
+- Viewer visibility checks; no `hidePlayer/showPlayer` calls that could disrupt combat or vanish plugins.
+- Mojang skin-property lookups with bounded asynchronous workers and expiring cache.
+- Unit tests and Maven CI.
 
-## Important limitations
+**Important:** This is not a full player disguise plugin. World entities, overhead nameplates, entity spawns, and client-side skin reloads are not consistently updated. No production release is recommended.
 
-**This is not yet a complete working in-game disguise plugin.**
+## Build
 
-The protocol hook rewrites only outgoing `PLAYER_INFO ADD_PLAYER` packets. Already visible entities/old tab entries are **not** refreshed when you call `setDisguise`; identity restoration in clients is not implemented. Existing players may need a normal server-driven respawn/refresh for a change to be visible, but no disruptive hide/show workaround is performed automatically. Skin signature bytes are not cryptographically checked by the library.
+Requires Java 8, Maven, Spigot 1.8.8, and **ProtocolLib 4.8.0 installed on the server**.
 
-### Runtime requirements
-
-- Spigot 1.8.8 and Java 8.
-- Install **ProtocolLib 4.8.0**, compatible with legacy 1.8 servers (not current Java-17-only ProtocolLib versions).
-- Compile with `mvn clean verify`. The dependency is provided, not bundled.
-
-### API sample
-
-```java
-FyreDisguisePlugin plugin = JavaPlugin.getPlugin(FyreDisguisePlugin.class);
-DisguiseService service = plugin.getDisguiseService();
-service.setDisguise(new Disguise(subject.getUniqueId(), "PlayerAlias"));
-service.setDisguiseFor(viewer.getUniqueId(), new Disguise(subject.getUniqueId(), "PrivateAlias"));
+```sh
+mvn clean verify
 ```
 
-These state mutations must happen on the server primary thread.
+## Configuration
 
-## Release blockers
+`plugins/FyreDisguise/config.yml`:
 
-1. On-server tests of outgoing packet rewriting, list synchronization and client compatibility.
-2. Implement safe live refresh and restoration for existing viewers, without bypassing vanish/visibility plugins.
-3. Handle rejoin, respawn, world transitions, NPCs, scoreboard teams/nametags and skin switching.
-4. Add packet integration tests and network performance profiling.
-5. Add an open-source license before treating the repository as publicly reusable.
+```yaml
+experimental-tab-refresh: false
+```
 
-**No production release is recommended yet.**
+The tab refresh feature is disabled by default. Only opt in on a disposable test server. It updates tab-list metadata without forcing entity respawns. To change desired identity state, another plugin must call the API; no admin command has been added yet.
+
+## Manual testing required
+
+1. Connect two Minecraft 1.8.9 clients to a Spigot 1.8.8 test server with ProtocolLib 4.8.0.
+2. Confirm normal tab and world appearance with the option disabled.
+3. Set global alias, change alias, remove alias, and check the viewer's tab entry.
+4. Set a viewer-only alias and confirm unrelated viewers retain the global identity.
+5. Test a vanished target, spectator mode, world changes, death/respawn, and reconnect.
+6. Confirm combat reach, hit registration, entity visibility and tab sync are unaffected.
+7. Observe CPU, tick time, network traffic and packet exceptions under realistic player counts.
+
+## Remaining blockers
+
+- Safe live entity refresh and nameplate replacement without altering combat visibility.
+- Safe skin/profile restoration after reconnect, respawn, world changes and plugin disable.
+- Vanish, scoreboard, NPC, and third-party plugin compatibility.
+- Integration tests on the actual 1.8.8 server and 1.8.9 clients.
+- Select an open-source license before public distribution.
