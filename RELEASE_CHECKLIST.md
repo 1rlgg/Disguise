@@ -62,3 +62,23 @@ disable both experimental options immediately and revert the faulty commit norma
       stale identity state
 - [ ] Measure main-thread shutdown delay, packet rate and client appearance
       before considering a larger shutdown packet budget
+
+
+## Tab identity restoration acceptance gates (cycle 33)
+
+- [ ] With a global alias applied to A, remove it and verify B sees A's
+      authentic tab profile name and original skin after a bounded refresh
+- [ ] With a viewer-specific override, remove it and verify the affected
+      viewer sees the global alias, while unrelated viewers remain unchanged
+- [ ] Remove an alias immediately before respawn or world change; the
+      delayed resync must include any previously applied alias still awaiting
+      restoration, even if the disguise registry is already empty
+- [ ] With another plugin hiding A from B, reconciliation must not send
+      restore packets that would reveal A; when visible again, verify the
+      queued restoration reaches B without duplicated tab entries
+- [ ] Inject an exception after REMOVE or ADD and verify the recovery sequence
+      attempts REMOVE plus the original ADD even if cleanup itself fails
+- [ ] Disable while alias state is still populated and verify the dedicated
+      shutdown path sends only original GameProfile data, not a rewritten alias
+- [ ] Record actual 1.8.9 client identity after each failure; successful
+      transaction tests alone are not evidence that the client recovered

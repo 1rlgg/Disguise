@@ -47,6 +47,28 @@ public class TabRefreshTransactionTest {
         }
     }
 
+    @Test public void everyRecoveryFailureIsPreservedInOrder() {
+        List<String> calls = new ArrayList<String>();
+        final int[] removed = {0};
+        try {
+            TabRefreshTransaction.execute("remove", "alias", "original", packet -> {
+                calls.add(packet);
+                if ("alias".equals(packet))
+                    throw new InvocationTargetException(new Exception("alias failure"));
+                if ("remove".equals(packet) && ++removed[0] == 2)
+                    throw new InvocationTargetException(new Exception("cleanup failure"));
+                if ("original".equals(packet))
+                    throw new IllegalStateException("original failure");
+            });
+            fail("Original failure must propagate");
+        } catch (InvocationTargetException expected) {
+            assertEquals(Arrays.asList("remove", "alias", "remove", "original"), calls);
+            assertEquals(2, expected.getSuppressed().length);
+            assertEquals("cleanup failure", expected.getSuppressed()[0].getCause().getMessage());
+            assertEquals("original failure", expected.getSuppressed()[1].getMessage());
+        }
+    }
+
     @Test public void secondaryRemoveFailureDoesNotAbortOriginalProfileRestoration() {
         List<String> sent = new ArrayList<String>();
         final int[] removes = {0};

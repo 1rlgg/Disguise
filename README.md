@@ -330,3 +330,26 @@ Minecraft 1.8.9 multi-client appearance and original-skin restoration,
 safe per-viewer overhead nametag integration with scoreboard plugins,
 vanish/spectator/NPC behavior, and measured PvP hit registration,
 packet load and server TPS.
+
+
+## Restoration-first development cycle 33
+
+The join/respawn/world-change refresh planner now considers not only current
+disguises but also tab aliases the plugin **previously applied**. If an
+alias has been removed and the client still needs a real-profile restore,
+the renderer prioritizes that restoration instead of dropping it as an
+obsolete cosmetic request.
+
+When a player-info replacement fails ambiguously, the recovery transaction
+now performs a best-effort REMOVE of any potentially stale entry before
+attempting ADD of the original profile. Both recovery actions are attempted
+independently and their failures are attached to the original error. Plugin
+shutdown uses an explicit original-profile sender that does **not** ask the
+alias rewriter for its desired identity.
+
+Periodic restoration scans skip offline, vanished or self-targeted pairs,
+keeping applied bookkeeping for later eligible scans. These improvements
+are covered by deterministic unit tests but remain **unverified against
+running Minecraft 1.8.9 clients**. A real-server test is still required
+to demonstrate correct skins, world entities, overhead names and PvP
+visibility. Experimental rendering remains disabled by default.
