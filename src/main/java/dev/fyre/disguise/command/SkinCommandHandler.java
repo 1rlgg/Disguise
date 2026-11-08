@@ -102,9 +102,15 @@ public final class SkinCommandHandler {
                         requests.finish(viewerId, subjectId, token);
                     }
                 });
-            } catch (IllegalStateException ex) {
+            } catch (RuntimeException ex) {
+                // Bukkit may reject scheduling with IllegalPluginAccessException
+                // (a RuntimeException, not necessarily IllegalStateException)
+                // during disable. Never leave an in-flight target reserved.
                 requests.finish(viewerId, subjectId, token);
-                // Plugin may be shutting down.
+                if (plugin.isEnabled()) {
+                    plugin.getLogger().log(Level.WARNING,
+                            "Could not schedule the signed texture callback", ex);
+                }
             }
         });
     }
