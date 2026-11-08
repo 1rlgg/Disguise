@@ -36,6 +36,15 @@ public class DisguiseDiagnosticsTest {
         assertTrue(report.lines().get(9).contains("9"));
     }
 
+    @Test public void showsMeasuredFlushCostAndPacketWork() {
+        DisguiseDiagnostics report = new DisguiseDiagnostics(true, true,
+                0, 2, 1, 0, 0, 0, 0, false, 0, 0, 0, 0,
+                80, 120, 24, 100);
+        assertTrue(report.lines().get(10).contains("80"));
+        assertTrue(report.lines().get(10).contains("120"));
+        assertTrue(report.lines().get(11).contains("24 / 100"));
+    }
+
     @Test(expected = IllegalArgumentException.class)
     public void refusesEntityWithoutTab() {
         new DisguiseDiagnostics(false, true, 0, 0, 0, 0);

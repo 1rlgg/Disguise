@@ -24,6 +24,7 @@ public final class TabListIdentityRenderer implements IdentityRenderer {
     private final AppliedTabEntries applied = new AppliedTabEntries();
     private final RefreshRetryLedger retries;
     private final RestorationReconciler reconciler = new RestorationReconciler();
+    private final RefreshWorkMeter workMeter = new RefreshWorkMeter();
     private int ticksSinceReconcile;
     private final DisguiseService state;
     private final LegacyEntityRefresh entityRefresh;
@@ -98,6 +99,10 @@ public final class TabListIdentityRenderer implements IdentityRenderer {
     public int pendingCount() { return pending.size(); }
     public int pendingRestorationCount() { return pending.pendingRestorations(); }
     public int retryCount() { return retries.size(); }
+    public long measuredFlushes() { return workMeter.flushes(); }
+    public long measuredPairs() { return workMeter.pairs(); }
+    public long averageFlushMicros() { return workMeter.averageMicros(); }
+    public long peakFlushMicros() { return workMeter.peakMicros(); }
     public long exhaustedRetryCount() { return retries.exhaustedCount(); }
     public long rejectedRetryCount() { return retries.overflowCount(); }
     public long droppedCosmeticCount() { return pending.droppedCosmetic(); }
@@ -138,7 +143,9 @@ public final class TabListIdentityRenderer implements IdentityRenderer {
         }
         // Defer excess entity work instead of silently downgrading it to tab-only updates.
         int batchSize = entityRefresh == null ? maxPerTick : Math.min(maxPerTick, 8);
-        for (RefreshQueue.Pair pair : pending.poll(batchSize)) {
+        long started = System.nanoTime();
+        java.util.List<RefreshQueue.Pair> work = pending.poll(batchSize);
+        for (RefreshQueue.Pair pair : work) {
             Player viewer = Bukkit.getPlayer(pair.getViewer());
             Player subject = Bukkit.getPlayer(pair.getSubject());
             if (viewer == null || subject == null || !viewer.isOnline() || !subject.isOnline()
@@ -184,6 +191,7 @@ public final class TabListIdentityRenderer implements IdentityRenderer {
                         + " subject " + subject.getUniqueId(), ex);
             }
         }
+        workMeter.record(work.size(), Math.max(0L, System.nanoTime() - started));
         if (pending.size() == 0) capacityWarning = false;
     }
 
@@ -208,6 +216,7 @@ public final class TabListIdentityRenderer implements IdentityRenderer {
         pending.clear();
         retries.clear();
         reconciler.reset();
+        workMeter.reset();
         ticksSinceReconcile = 0;
         applied.clear();
         capacityWarning = false;

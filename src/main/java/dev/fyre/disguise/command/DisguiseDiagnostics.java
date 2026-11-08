@@ -20,6 +20,10 @@ public final class DisguiseDiagnostics {
     private final long exhaustedRetries;
     private final long rejectedRetries;
     private final int coolingDownSkins;
+    private final long flushes;
+    private final long processedPairs;
+    private final long averageMicros;
+    private final long peakMicros;
 
     public DisguiseDiagnostics(boolean tabEnabled, boolean entityEnabled,
                               int pendingRefreshes, int appliedEntries,
@@ -55,6 +59,22 @@ public final class DisguiseDiagnostics {
                               long lostRestorations, boolean entityCircuitOpen,
                               int queuedRetries, long exhaustedRetries, long rejectedRetries,
                               int coolingDownSkins) {
+        this(tabEnabled, entityEnabled, pendingRefreshes, appliedEntries,
+                trackedSpawns, pendingSkins, urgentRestorations, lostCosmetic,
+                lostRestorations, entityCircuitOpen, queuedRetries, exhaustedRetries,
+                rejectedRetries, coolingDownSkins, 0, 0, 0, 0);
+    }
+
+    public DisguiseDiagnostics(boolean tabEnabled, boolean entityEnabled,
+                              int pendingRefreshes, int appliedEntries,
+                              int trackedSpawns, int pendingSkins,
+                              int urgentRestorations, long lostCosmetic,
+                              long lostRestorations, boolean entityCircuitOpen,
+                              int queuedRetries, long exhaustedRetries, long rejectedRetries,
+                              int coolingDownSkins, long flushes, long processedPairs,
+                              long averageMicros, long peakMicros) {
+        if (flushes < 0 || processedPairs < 0 || averageMicros < 0 || peakMicros < 0)
+            throw new IllegalArgumentException("Refresh timing metrics cannot be negative");
         if (coolingDownSkins < 0) throw new IllegalArgumentException("Cooldown count cannot be negative");
         if (queuedRetries < 0 || exhaustedRetries < 0 || rejectedRetries < 0) {
             throw new IllegalArgumentException("Retry counters cannot be negative");
@@ -80,6 +100,10 @@ public final class DisguiseDiagnostics {
         this.exhaustedRetries = exhaustedRetries;
         this.rejectedRetries = rejectedRetries;
         this.coolingDownSkins = coolingDownSkins;
+        this.flushes = flushes;
+        this.processedPairs = processedPairs;
+        this.averageMicros = averageMicros;
+        this.peakMicros = peakMicros;
     }
 
     public List<String> lines() {
@@ -95,7 +119,9 @@ public final class DisguiseDiagnostics {
                 "Entity refresh circuit: " + (entityEnabled && entityCircuitOpen ? "OPEN (tab only)" : "not tripped"),
                 "Pending refresh retries: " + queuedRetries + "; exhausted: " + exhaustedRetries
                         + "; denied by capacity: " + rejectedRetries,
-                "Skin sources in short failure cooldown: " + coolingDownSkins
+                "Skin sources in short failure cooldown: " + coolingDownSkins,
+                "Refresh flushes: " + flushes + "; processed pairs: " + processedPairs,
+                "Refresh flush CPU us (average / peak): " + averageMicros + " / " + peakMicros
         ));
     }
 }
