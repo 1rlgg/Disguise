@@ -27,6 +27,7 @@ public final class TabListIdentityRenderer implements IdentityRenderer {
     private final DeferredRefreshBacklog deferred;
     private final RestorationReconciler reconciler = new RestorationReconciler();
     private final RefreshWorkMeter workMeter = new RefreshWorkMeter();
+    private final ShutdownRestorationBudget shutdownBudget = new ShutdownRestorationBudget(256);
     private int ticksSinceReconcile;
     private final DisguiseService state;
     private final LegacyEntityRefresh entityRefresh;
@@ -223,7 +224,9 @@ public final class TabListIdentityRenderer implements IdentityRenderer {
         int restored = 0;
         int failed = 0;
         int unavailable = 0;
-        for (RefreshQueue.Pair pair : applied.snapshot()) {
+        java.util.Set<RefreshQueue.Pair> remaining = applied.snapshot();
+        int omitted = shutdownBudget.omitted(remaining.size());
+        for (RefreshQueue.Pair pair : shutdownBudget.select(remaining)) {
             Player viewer = Bukkit.getPlayer(pair.getViewer());
             Player subject = Bukkit.getPlayer(pair.getSubject());
             if (viewer == null || subject == null || !viewer.isOnline() || !subject.isOnline()
@@ -245,10 +248,11 @@ public final class TabListIdentityRenderer implements IdentityRenderer {
                         "Tab identity restoration failed during plugin disable (further errors summarized)", ex);
             }
         }
-        if (failed > 0 || unavailable > 0) {
-            logger.warning("Shutdown restoration: " + restored + " tab entries restored; "
+        if (failed > 0 || unavailable > 0 || omitted > 0) {
+            logger.warning("Shutdown restoration: " + restored + " tab entries attempted successfully; "
                     + failed + " packet failures; " + unavailable
-                    + " unavailable/hidden pairs. Live client restoration still requires validation.");
+                    + " unavailable/hidden pairs; " + omitted
+                    + " not attempted due to safety budget. Restart/reconnect clients if stale identities remain.");
         }
     }
 
