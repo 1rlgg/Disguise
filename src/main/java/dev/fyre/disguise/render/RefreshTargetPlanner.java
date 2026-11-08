@@ -7,6 +7,7 @@ import java.util.LinkedHashSet;
 import java.util.Objects;
 import java.util.Set;
 import java.util.UUID;
+import java.util.function.Predicate;
 
 /**
  * Plans the smallest useful tab-list resynchronization after a join/respawn/world change.
@@ -20,17 +21,24 @@ public final class RefreshTargetPlanner {
     }
 
     public Collection<RefreshQueue.Pair> around(UUID changedPlayer, Collection<UUID> onlinePlayers) {
+        return around(changedPlayer, onlinePlayers, pair -> false);
+    }
+
+    /** Include pairs the plugin may already have changed even after state removal. */
+    public Collection<RefreshQueue.Pair> around(UUID changedPlayer, Collection<UUID> onlinePlayers,
+                                                Predicate<RefreshQueue.Pair> previouslyApplied) {
+        Objects.requireNonNull(previouslyApplied, "previouslyApplied");
         Objects.requireNonNull(changedPlayer, "changedPlayer");
         Objects.requireNonNull(onlinePlayers, "onlinePlayers");
         Set<RefreshQueue.Pair> targets = new LinkedHashSet<RefreshQueue.Pair>();
         for (UUID other : new ArrayList<UUID>(onlinePlayers)) {
             if (other == null || other.equals(changedPlayer)) continue;
-            if (disguises.getDisguiseFor(changedPlayer, other).isPresent()) {
-                targets.add(new RefreshQueue.Pair(changedPlayer, other));
-            }
-            if (disguises.getDisguiseFor(other, changedPlayer).isPresent()) {
-                targets.add(new RefreshQueue.Pair(other, changedPlayer));
-            }
+            RefreshQueue.Pair asViewer = new RefreshQueue.Pair(changedPlayer, other);
+            RefreshQueue.Pair asSubject = new RefreshQueue.Pair(other, changedPlayer);
+            if (disguises.getDisguiseFor(changedPlayer, other).isPresent()
+                    || previouslyApplied.test(asViewer)) targets.add(asViewer);
+            if (disguises.getDisguiseFor(other, changedPlayer).isPresent()
+                    || previouslyApplied.test(asSubject)) targets.add(asSubject);
         }
         return targets;
     }

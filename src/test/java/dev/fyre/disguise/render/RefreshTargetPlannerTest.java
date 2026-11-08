@@ -27,6 +27,16 @@ public class RefreshTargetPlannerTest {
         assertTrue(planned.contains(new RefreshQueue.Pair(other, joining)));
     }
 
+    @Test public void restoresPreviouslyAppliedAliasesEvenAfterRegistryClear() {
+        InMemoryDisguiseService registry = new InMemoryDisguiseService();
+        UUID joining = UUID.randomUUID(), other = UUID.randomUUID(), unrelated = UUID.randomUUID();
+        RefreshQueue.Pair toRestore = new RefreshQueue.Pair(other, joining);
+        Collection<RefreshQueue.Pair> planned = new RefreshTargetPlanner(registry).around(
+                joining, Arrays.asList(other, unrelated), toRestore::equals);
+        assertEquals(1, planned.size());
+        assertTrue(planned.contains(toRestore));
+    }
+
     @Test public void fallsBackToGlobalForViewerWithoutOverride() {
         InMemoryDisguiseService registry = new InMemoryDisguiseService();
         UUID joining = UUID.randomUUID(), other = UUID.randomUUID();
