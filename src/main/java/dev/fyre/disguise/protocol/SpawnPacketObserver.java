@@ -25,6 +25,8 @@ public final class SpawnPacketObserver extends PacketAdapter {
     }
 
     @Override public void onPacketSending(PacketEvent event) {
+        // A cancelled outgoing packet did not establish client entity tracking.
+        if (event.isCancelled()) return;
         try {
             UUID viewer = event.getPlayer().getUniqueId();
             if (event.getPacketType() == PacketType.Play.Server.NAMED_ENTITY_SPAWN) {

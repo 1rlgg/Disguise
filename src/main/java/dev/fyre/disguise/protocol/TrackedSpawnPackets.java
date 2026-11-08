@@ -3,6 +3,8 @@ package dev.fyre.disguise.protocol;
 import com.comphenix.protocol.events.PacketContainer;
 import dev.fyre.disguise.render.RefreshQueue;
 import java.util.Iterator;
+import java.util.HashSet;
+import java.util.Set;
 import java.util.LinkedHashMap;
 import java.util.Map;
 import java.util.Objects;
@@ -63,17 +65,24 @@ public final class TrackedSpawnPackets {
             cache.remove(new RefreshQueue.Pair(viewer, subject));
             return null;
         }
-        return new Snapshot(entry.entityId, entry.packet.deepClone(), entry.capturedAt);
+        // Snapshot.getPacket() clones for the consumer: avoid cloning twice here.
+        return new Snapshot(entry.entityId, entry.packet, entry.capturedAt);
     }
 
     public synchronized void destroy(UUID viewer, int[] entityIds) {
         Objects.requireNonNull(viewer, "viewer");
         if (entityIds == null) return;
-        cache.entrySet().removeIf(entry -> {
-            if (!entry.getKey().getViewer().equals(viewer)) return false;
-            for (int id : entityIds) if (id == entry.getValue().entityId) return true;
-            return false;
-        });
+        if (entityIds.length == 0) return;
+        if (entityIds.length == 1) {
+            int id = entityIds[0];
+            cache.entrySet().removeIf(entry -> entry.getKey().getViewer().equals(viewer)
+                    && entry.getValue().entityId == id);
+            return;
+        }
+        Set<Integer> ids = new HashSet<Integer>();
+        for (int id : entityIds) ids.add(id);
+        cache.entrySet().removeIf(entry -> entry.getKey().getViewer().equals(viewer)
+                && ids.contains(entry.getValue().entityId));
     }
 
     public synchronized void forget(UUID playerId) {

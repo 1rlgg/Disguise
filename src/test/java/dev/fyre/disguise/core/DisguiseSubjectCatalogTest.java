@@ -22,6 +22,20 @@ public class DisguiseSubjectCatalogTest {
         assertEquals(1, registry.subjectIds().size());
     }
 
+    @Test public void fastEmptyCheckTracksViewerOnlyAndGlobalMutations() {
+        InMemoryDisguiseService registry = new InMemoryDisguiseService();
+        UUID viewer = UUID.randomUUID(), subject = UUID.randomUUID();
+        assertFalse(registry.hasAnySubjects());
+        registry.setDisguiseFor(viewer, new Disguise(subject, "HiddenAlias"));
+        assertTrue(registry.hasAnySubjects());
+        registry.removeDisguiseFor(viewer, subject);
+        assertFalse(registry.hasAnySubjects());
+        registry.setDisguise(new Disguise(subject, "GlobalAlias"));
+        assertTrue(registry.hasAnySubjects());
+        registry.clear();
+        assertFalse(registry.hasAnySubjects());
+    }
+
     @Test(expected = UnsupportedOperationException.class)
     public void snapshotIsImmutable() {
         new InMemoryDisguiseService().subjectIds().add(UUID.randomUUID());

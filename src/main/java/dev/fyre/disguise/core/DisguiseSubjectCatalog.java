@@ -9,4 +9,7 @@ import java.util.UUID;
  */
 public interface DisguiseSubjectCatalog {
     Set<UUID> subjectIds();
+
+    /** Cheap hot-path test for outgoing player-info packets. */
+    default boolean hasAnySubjects() { return !subjectIds().isEmpty(); }
 }

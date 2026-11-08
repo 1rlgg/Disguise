@@ -32,6 +32,10 @@ public final class InMemoryDisguiseService implements DisguiseService, DisguiseS
         return global.remove(Objects.requireNonNull(playerId, "playerId")) != null;
     }
 
+    @Override public synchronized boolean hasAnySubjects() {
+        return !global.isEmpty() || !perViewer.isEmpty();
+    }
+
     @Override public synchronized Set<UUID> subjectIds() {
         Set<UUID> ids = new HashSet<UUID>(global.keySet());
         for (Map<UUID, Disguise> overrides : perViewer.values()) {

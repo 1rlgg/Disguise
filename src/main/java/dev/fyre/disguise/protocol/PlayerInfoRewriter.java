@@ -6,6 +6,7 @@ import com.comphenix.protocol.wrappers.WrappedGameProfile;
 import com.comphenix.protocol.wrappers.WrappedSignedProperty;
 import dev.fyre.disguise.api.Disguise;
 import dev.fyre.disguise.api.DisguiseService;
+import dev.fyre.disguise.core.DisguiseSubjectCatalog;
 import dev.fyre.disguise.api.SkinProperty;
 import java.util.ArrayList;
 import java.util.List;
@@ -29,6 +30,10 @@ public final class PlayerInfoRewriter {
     public List<PlayerInfoData> rewrite(UUID viewerId, List<PlayerInfoData> original) {
         Objects.requireNonNull(viewerId, "viewerId");
         Objects.requireNonNull(original, "original");
+        // Most packets on a normal server need no profile rewrite. Avoid
+        // allocating/copying profile structures when the registry is empty.
+        if (disguises instanceof DisguiseSubjectCatalog
+                && !((DisguiseSubjectCatalog) disguises).hasAnySubjects()) return original;
         List<PlayerInfoData> result = null;
         for (int index = 0; index < original.size(); index++) {
             PlayerInfoData info = original.get(index);
