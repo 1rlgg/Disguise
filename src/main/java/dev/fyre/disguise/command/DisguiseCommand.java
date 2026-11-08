@@ -10,12 +10,18 @@ import org.bukkit.command.CommandExecutor;
 import org.bukkit.command.CommandSender;
 import org.bukkit.entity.Player;
 
-/** Admin-only test commands. Modifies identity state, not world entity appearance. */
+/** Admin-only test commands. Do not change world entity appearance. */
 public final class DisguiseCommand implements CommandExecutor {
     private final DisguiseService disguises;
+    private final SkinCommandHandler skinHandler;
 
     public DisguiseCommand(DisguiseService disguises) {
+        this(disguises, null);
+    }
+
+    public DisguiseCommand(DisguiseService disguises, SkinCommandHandler skinHandler) {
         this.disguises = Objects.requireNonNull(disguises, "disguises");
+        this.skinHandler = skinHandler;
     }
 
     private Player find(CommandSender sender, String name) {
@@ -27,6 +33,16 @@ public final class DisguiseCommand implements CommandExecutor {
     @Override public boolean onCommand(CommandSender sender, Command command, String label, String[] args) {
         if (!sender.hasPermission("fyredisguise.admin")) {
             sender.sendMessage(ChatColor.RED + "You do not have permission.");
+            return true;
+        }
+        if (args.length == 3 && args[0].equalsIgnoreCase("skin")) {
+            if (skinHandler == null) {
+                sender.sendMessage(ChatColor.RED + "Skin lookup is unavailable.");
+                return true;
+            }
+            Player target = find(sender, args[1]);
+            Player source = find(sender, args[2]);
+            if (target != null && source != null) skinHandler.apply(sender, target, source);
             return true;
         }
         if (args.length == 3 && args[0].equalsIgnoreCase("set")) {
@@ -86,5 +102,6 @@ public final class DisguiseCommand implements CommandExecutor {
         sender.sendMessage(ChatColor.YELLOW + "/" + label + " set|clear|status <player> [alias]");
         sender.sendMessage(ChatColor.YELLOW + "/" + label + " view <viewer> <player> <alias>");
         sender.sendMessage(ChatColor.YELLOW + "/" + label + " unview|viewstatus <viewer> <player>");
+        sender.sendMessage(ChatColor.YELLOW + "/" + label + " skin <online-target> <online-skin-source>");
     }
 }

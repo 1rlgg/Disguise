@@ -4,6 +4,7 @@ import com.comphenix.protocol.ProtocolLibrary;
 import com.comphenix.protocol.ProtocolManager;
 import dev.fyre.disguise.api.DisguiseService;
 import dev.fyre.disguise.command.DisguiseCommand;
+import dev.fyre.disguise.command.SkinCommandHandler;
 import dev.fyre.disguise.core.InMemoryDisguiseService;
 import dev.fyre.disguise.core.ObservableDisguiseService;
 import dev.fyre.disguise.protocol.PlayerInfoPacketListener;
@@ -54,7 +55,8 @@ public final class FyreDisguisePlugin extends JavaPlugin implements Listener {
         disguises = new ObservableDisguiseService(registry, renderer, this::onlineViewerIds, this::assertMainThread);
         skins = new AsyncSkinService(new MojangSkinSource(3000, 5000),
                 new SkinCache(512, TimeUnit.MINUTES.toNanos(30)), 2, 128);
-        getCommand("fyredisguise").setExecutor(new DisguiseCommand(disguises));
+        getCommand("fyredisguise").setExecutor(new DisguiseCommand(disguises,
+                new SkinCommandHandler(this, disguises, skins)));
         packets.addPacketListener(new PlayerInfoPacketListener(this, new PlayerInfoRewriter(registry)));
         Bukkit.getPluginManager().registerEvents(this, this);
         if (tabRenderer != null) Bukkit.getScheduler().runTaskTimer(this, () -> tabRenderer.flush(32), 1L, 1L);
@@ -95,8 +97,6 @@ public final class FyreDisguisePlugin extends JavaPlugin implements Listener {
     }
 
     @Override public void onDisable() {
-        // Remove desired disguise state before sending the original tab profile.
-        // This is best effort: it does not guarantee that all clients updated successfully.
         if (registry != null) registry.clear();
         if (tabRenderer != null) {
             tabRenderer.restoreApplied();
