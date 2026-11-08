@@ -2,14 +2,14 @@ package dev.fyre.disguise.render;
 
 import java.util.ArrayList;
 import java.util.Collections;
-import java.util.HashSet;
+import java.util.LinkedHashSet;
 import java.util.Objects;
 import java.util.Set;
 import java.util.UUID;
 
 /** Main-thread-only bookkeeping for tab entries this plugin successfully refreshed. */
 public final class AppliedTabEntries {
-    private final Set<RefreshQueue.Pair> applied = new HashSet<RefreshQueue.Pair>();
+    private final Set<RefreshQueue.Pair> applied = new LinkedHashSet<RefreshQueue.Pair>();
 
     public void applied(UUID viewer, UUID subject) {
         applied.add(new RefreshQueue.Pair(viewer, subject));
@@ -29,7 +29,7 @@ public final class AppliedTabEntries {
     }
 
     public Set<RefreshQueue.Pair> snapshot() {
-        return Collections.unmodifiableSet(new HashSet<RefreshQueue.Pair>(applied));
+        return Collections.unmodifiableSet(new LinkedHashSet<RefreshQueue.Pair>(applied));
     }
 
     public int size() { return applied.size(); }

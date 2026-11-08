@@ -30,6 +30,22 @@ public class AppliedTabEntriesTest {
         assertTrue(entries.snapshot().contains(new RefreshQueue.Pair(viewer, other)));
     }
 
+    @Test public void reconciliationSnapshotPreservesAppliedInsertionOrder() {
+        AppliedTabEntries entries = new AppliedTabEntries();
+        UUID viewer = UUID.randomUUID(), a = UUID.randomUUID(), b = UUID.randomUUID(), c = UUID.randomUUID();
+        entries.applied(viewer, a);
+        entries.applied(viewer, b);
+        entries.applied(viewer, c);
+        java.util.List<RefreshQueue.Pair> ordered = new java.util.ArrayList<RefreshQueue.Pair>(entries.snapshot());
+        assertEquals(a, ordered.get(0).getSubject());
+        assertEquals(b, ordered.get(1).getSubject());
+        assertEquals(c, ordered.get(2).getSubject());
+        entries.restored(viewer, b);
+        entries.applied(viewer, b);
+        ordered = new java.util.ArrayList<RefreshQueue.Pair>(entries.snapshot());
+        assertEquals(b, ordered.get(2).getSubject());
+    }
+
     @Test public void forgetClearsBothViewerAndSubjectReferences() {
         AppliedTabEntries entries = new AppliedTabEntries();
         UUID id = UUID.randomUUID(), a = UUID.randomUUID(), b = UUID.randomUUID();

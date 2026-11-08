@@ -206,3 +206,29 @@ If entity-packet recovery is necessary after a player moved, recovery uses
 Superseded async skin callbacks are filtered before queuing a main-thread
 Bukkit task. These are software reliability improvements, not a substitute
 for live multi-client 1.8.9 PvP compatibility testing.
+
+
+## Recovery convergence and performance counters
+
+The tab-list renderer now performs a **bounded, round-robin restoration
+reconciliation once per 20 ticks**. It examines at most 128 previously applied
+viewer/subject entries per scan and queues a restore when the disguise state
+has been removed. This provides a recovery path for undisguise work displaced
+by a saturated priority queue. Applied entries use stable insertion ordering
+to keep the scan fair. After packet retries are exhausted, the pair enters a
+bounded terminal quarantine and is not automatically requeued indefinitely;
+a new explicit identity transition clears that quarantine. Existing retry
+exhaustion and displaced-restore counters reveal these conditions.
+
+`/fyredisguise stats` additionally reports total refresh batches, processed
+viewer/subject pairs, and average/peak flush **elapsed wall time** in
+microseconds. These are diagnostic wall-clock measurements that include
+packet-send call duration, **not** a dedicated server CPU profiler, combat
+latency measurement, or proof of production performance. Compare against a
+vanilla test-server baseline and packet-rate/TPS measurements.
+
+Failed upstream skin cooldowns are now pruned when queried or updated, so
+expired Mojang failures do not inflate the displayed active-cooldown count.
+No new gameplay-changing options were enabled. In-world refresh remains
+disabled by default; real 1.8.9 multi-client PvP validation and overhead
+nametag integration remain release blockers.

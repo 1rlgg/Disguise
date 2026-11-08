@@ -121,7 +121,7 @@ public final class DisguiseDiagnostics {
                         + "; denied by capacity: " + rejectedRetries,
                 "Skin sources in short failure cooldown: " + coolingDownSkins,
                 "Refresh flushes: " + flushes + "; processed pairs: " + processedPairs,
-                "Refresh flush CPU us (average / peak): " + averageMicros + " / " + peakMicros
+                "Refresh flush wall us (average / peak): " + averageMicros + " / " + peakMicros
         ));
     }
 }
