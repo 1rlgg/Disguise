@@ -34,7 +34,7 @@ public final class PlayerInfoRewriter {
             PlayerInfoData info = original.get(index);
             if (info == null || info.getProfile() == null) continue;
             UUID subjectId = info.getProfile().getUUID();
-            if (subjectId == null) continue;
+            if (subjectId == null || !PlayerInfoRewritePolicy.mayRewrite(viewerId, subjectId)) continue;
             Optional<Disguise> wanted = disguises.getDisguiseFor(viewerId, subjectId);
             if (!wanted.isPresent()) continue;
             Disguise disguise = wanted.get();
