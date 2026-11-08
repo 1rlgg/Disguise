@@ -22,6 +22,7 @@ public final class TabListIdentityRenderer implements IdentityRenderer {
     private final Logger logger;
     private final RefreshQueue pending;
     private final AppliedTabEntries applied = new AppliedTabEntries();
+    private final RefreshRetryLedger retries;
     private final DisguiseService state;
     private final LegacyEntityRefresh entityRefresh;
     private final EntityRefreshFailureGate entityGate = new EntityRefreshFailureGate(3);
@@ -45,6 +46,7 @@ public final class TabListIdentityRenderer implements IdentityRenderer {
         this.transport = Objects.requireNonNull(transport, "transport");
         this.logger = Objects.requireNonNull(logger, "logger");
         this.pending = new RefreshQueue(maxQueue);
+        this.retries = new RefreshRetryLedger(2, maxQueue);
         this.state = state;
         this.entityRefresh = entityRefresh;
     }
@@ -84,11 +86,13 @@ public final class TabListIdentityRenderer implements IdentityRenderer {
     public void forget(UUID id) {
         assertPrimaryThread();
         pending.forget(id);
+        retries.forget(id);
         applied.forget(id);
     }
 
     public int pendingCount() { return pending.size(); }
     public int pendingRestorationCount() { return pending.pendingRestorations(); }
+    public int retryCount() { return retries.size(); }
     public long droppedCosmeticCount() { return pending.droppedCosmetic(); }
     public long displacedRestorationCount() { return pending.droppedRestoration(); }
     public boolean entityRefreshCircuitOpen() { return entityRefresh != null && !entityGate.enabled(); }
@@ -118,10 +122,14 @@ public final class TabListIdentityRenderer implements IdentityRenderer {
         for (RefreshQueue.Pair pair : pending.poll(batchSize)) {
             Player viewer = Bukkit.getPlayer(pair.getViewer());
             Player subject = Bukkit.getPlayer(pair.getSubject());
-            if (viewer == null || subject == null || !viewer.isOnline() || !subject.isOnline()) continue;
-            if (viewer.equals(subject) || !viewer.canSee(subject)) continue;
+            if (viewer == null || subject == null || !viewer.isOnline() || !subject.isOnline()
+                    || viewer.equals(subject) || !viewer.canSee(subject)) {
+                retries.succeeded(pair);
+                continue;
+            }
             try {
                 deliver(viewer, subject, true);
+                retries.succeeded(pair);
                 if (state != null) {
                     if (state.getDisguiseFor(pair.getViewer(), pair.getSubject()).isPresent()) {
                         applied.applied(pair.getViewer(), pair.getSubject());
@@ -130,7 +138,20 @@ public final class TabListIdentityRenderer implements IdentityRenderer {
                     }
                 }
             } catch (InvocationTargetException | RuntimeException ex) {
-                logger.log(Level.WARNING, "Refresh failed for viewer " + viewer.getUniqueId()
+                boolean retry = retries.shouldRetry(pair);
+                if (retry) {
+                    // Never retry in this same flush; defer until the next tick.
+                    // Urgent undisguise restoration gets precedence over cosmetics.
+                    boolean restore = state != null
+                            && !state.getDisguiseFor(pair.getViewer(), pair.getSubject()).isPresent();
+                    if (restore) pending.offerRestoration(pair.getViewer(), pair.getSubject());
+                    else if (!pending.offer(pair.getViewer(), pair.getSubject())) {
+                        retries.succeeded(pair);
+                        retry = false;
+                    }
+                }
+                logger.log(Level.WARNING, (retry ? "Retrying" : "Giving up on")
+                        + " failed refresh for viewer " + viewer.getUniqueId()
                         + " subject " + subject.getUniqueId(), ex);
             }
         }
@@ -156,6 +177,7 @@ public final class TabListIdentityRenderer implements IdentityRenderer {
     public void clear() {
         assertPrimaryThread();
         pending.clear();
+        retries.clear();
         applied.clear();
         capacityWarning = false;
     }
