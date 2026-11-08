@@ -7,8 +7,8 @@ import java.util.Objects;
 import java.util.UUID;
 
 /**
- * Applies a fetched skin to an existing global alias only if its immutable
- * identity request is still current. Invoke only on the server main thread.
+ * Applies signed texture values to immutable disguise requests. Must run on the
+ * Bukkit primary thread; a stale asynchronous response is rejected by identity.
  */
 public final class SkinAssignment {
     private final DisguiseService disguises;
@@ -17,18 +17,33 @@ public final class SkinAssignment {
         this.disguises = Objects.requireNonNull(disguises, "disguises");
     }
 
-    /**
-     * Returns false when the disguise changed or was removed while I/O ran.
-     * Object identity intentionally prevents stale responses overwriting newer requests.
-     */
-    public boolean applyIfCurrent(UUID playerId, Disguise expected, SkinProperty skin) {
+    private void validate(UUID playerId, Disguise expected, SkinProperty skin) {
         Objects.requireNonNull(playerId, "playerId");
         Objects.requireNonNull(expected, "expected");
         Objects.requireNonNull(skin, "skin");
         if (!skin.isSigned()) throw new IllegalArgumentException("Skin must include a signature");
         if (!playerId.equals(expected.getPlayerId())) throw new IllegalArgumentException("Target mismatch");
+    }
+
+    public boolean applyIfCurrent(UUID playerId, Disguise expected, SkinProperty skin) {
+        validate(playerId, expected, skin);
         if (disguises.getDisguise(playerId).orElse(null) != expected) return false;
         disguises.setDisguise(new Disguise(playerId, expected.getName(), skin));
+        return true;
+    }
+
+    /**
+     * A viewer-specific override must still be present; a global disguise
+     * fallback is not eligible for per-viewer mutation.
+     */
+    public boolean applyForViewerIfCurrent(UUID viewerId, UUID playerId,
+                                           Disguise expected, SkinProperty skin) {
+        Objects.requireNonNull(viewerId, "viewerId");
+        validate(playerId, expected, skin);
+        if (disguises.getDisguiseFor(viewerId, playerId).orElse(null) != expected) return false;
+        // A fallback to the global request must never become a new viewer override.
+        if (disguises.getDisguise(playerId).orElse(null) == expected) return false;
+        disguises.setDisguiseFor(viewerId, new Disguise(playerId, expected.getName(), skin));
         return true;
     }
 }
