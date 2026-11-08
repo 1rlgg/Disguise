@@ -3,6 +3,7 @@ package dev.fyre.disguise.render;
 import dev.fyre.disguise.api.DisguiseService;
 import dev.fyre.disguise.protocol.LegacyEntityRefresh;
 import dev.fyre.disguise.protocol.EntityRefreshFailureGate;
+import dev.fyre.disguise.protocol.EntityRefreshAttempt;
 import dev.fyre.disguise.protocol.PlayerInfoTabRefresh;
 import java.lang.reflect.InvocationTargetException;
 import java.util.Collection;
@@ -30,6 +31,7 @@ public final class TabListIdentityRenderer implements IdentityRenderer {
     private final DisguiseService state;
     private final LegacyEntityRefresh entityRefresh;
     private final EntityRefreshFailureGate entityGate = new EntityRefreshFailureGate(3);
+    private final EntityRefreshAttempt entityAttempt = new EntityRefreshAttempt(entityGate);
     private boolean capacityWarning;
 
     public TabListIdentityRenderer(PlayerInfoTabRefresh transport, Logger logger) {
@@ -124,15 +126,14 @@ public final class TabListIdentityRenderer implements IdentityRenderer {
             return;
         }
         try {
-            boolean changed = entityRefresh.refresh(viewer, subject);
-            // A no-op (untracked, unsafe or out of range) must NOT reset
-            // consecutive actual packet-delivery failures. Otherwise one
-            // harmless refresh could mask a broken experimental backend.
-            if (changed) entityGate.success();
-            else transport.refresh(viewer, subject);
+            entityAttempt.deliver(() -> entityRefresh.refresh(viewer, subject),
+                    () -> transport.refresh(viewer, subject));
         } catch (InvocationTargetException | RuntimeException failure) {
-            if (entityGate.failure()) {
-                logger.warning("Entity refresh disabled after repeated errors; tab-only rendering remains enabled");
+            for (Throwable suppressed : failure.getSuppressed()) {
+                if (suppressed instanceof EntityRefreshAttempt.EntityCircuitOpenedException) {
+                    logger.warning("Entity refresh disabled after repeated errors; tab-only rendering remains enabled");
+                    break;
+                }
             }
             throw failure;
         }
