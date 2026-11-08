@@ -46,6 +46,28 @@ public class AppliedTabEntriesTest {
         assertEquals(b, ordered.get(2).getSubject());
     }
 
+    @Test public void snapshotsAreCachedUntilMutationAndRemainImmutable() {
+        AppliedTabEntries entries = new AppliedTabEntries();
+        UUID viewer = UUID.randomUUID(), first = UUID.randomUUID(), next = UUID.randomUUID();
+        entries.applied(viewer, first);
+        Set<RefreshQueue.Pair> firstSnapshot = entries.snapshot();
+        assertSame(firstSnapshot, entries.snapshot());
+        entries.applied(viewer, first);
+        assertSame(firstSnapshot, entries.snapshot());
+        entries.applied(viewer, next);
+        assertNotSame(firstSnapshot, entries.snapshot());
+        assertEquals(1, firstSnapshot.size());
+        assertEquals(2, entries.snapshot().size());
+        try {
+            firstSnapshot.clear();
+            fail("snapshot must be immutable");
+        } catch (UnsupportedOperationException expected) {
+            // expected
+        }
+        entries.forget(viewer);
+        assertTrue(entries.snapshot().isEmpty());
+    }
+
     @Test public void forgetClearsBothViewerAndSubjectReferences() {
         AppliedTabEntries entries = new AppliedTabEntries();
         UUID id = UUID.randomUUID(), a = UUID.randomUUID(), b = UUID.randomUUID();
