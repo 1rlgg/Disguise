@@ -1,24 +1,27 @@
 package dev.fyre.disguise;
 
-import dev.fyre.disguise.api.Disguise;
 import dev.fyre.disguise.api.DisguiseService;
-import java.util.HashMap;
-import java.util.Map;
-import java.util.Objects;
-import java.util.Optional;
-import java.util.UUID;
+import dev.fyre.disguise.core.InMemoryDisguiseService;
+import org.bukkit.Bukkit;
+import org.bukkit.event.EventHandler;
+import org.bukkit.event.Listener;
+import org.bukkit.event.player.PlayerQuitEvent;
 import org.bukkit.plugin.java.JavaPlugin;
 
 /**
- * Foundation plugin. Disguise state is memory-only and does not yet alter player appearance.
- * Bukkit-facing callers must use the primary server thread.
+ * Foundation plugin. State registration is not a packet disguise.
  */
-public final class FyreDisguisePlugin extends JavaPlugin {
+public final class FyreDisguisePlugin extends JavaPlugin implements Listener {
     private DisguiseService disguises;
 
     @Override public void onEnable() {
-        disguises = new MemoryDisguiseService();
-        getLogger().info("FyreDisguise API initialized (packet disguises not yet implemented)");
+        disguises = new InMemoryDisguiseService();
+        Bukkit.getPluginManager().registerEvents(this, this);
+        getLogger().info("FyreDisguise state API enabled; packet rendering is not implemented");
+    }
+
+    @EventHandler public void onQuit(PlayerQuitEvent event) {
+        if (disguises != null) disguises.clearPlayer(event.getPlayer().getUniqueId());
     }
 
     @Override public void onDisable() {
@@ -29,24 +32,5 @@ public final class FyreDisguisePlugin extends JavaPlugin {
     public DisguiseService getDisguiseService() {
         if (disguises == null) throw new IllegalStateException("Plugin is not enabled");
         return disguises;
-    }
-
-    private static final class MemoryDisguiseService implements DisguiseService {
-        private final Map<UUID, Disguise> disguises = new HashMap<UUID, Disguise>();
-
-        @Override public void setDisguise(Disguise disguise) {
-            Objects.requireNonNull(disguise, "disguise");
-            disguises.put(disguise.getPlayerId(), disguise);
-        }
-
-        @Override public Optional<Disguise> getDisguise(UUID playerId) {
-            return Optional.ofNullable(disguises.get(Objects.requireNonNull(playerId, "playerId")));
-        }
-
-        @Override public boolean removeDisguise(UUID playerId) {
-            return disguises.remove(Objects.requireNonNull(playerId, "playerId")) != null;
-        }
-
-        @Override public void clear() { disguises.clear(); }
     }
 }
