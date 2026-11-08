@@ -3,6 +3,7 @@ package dev.fyre.disguise;
 import com.comphenix.protocol.ProtocolLibrary;
 import com.comphenix.protocol.ProtocolManager;
 import dev.fyre.disguise.api.DisguiseService;
+import dev.fyre.disguise.command.DisguiseCommand;
 import dev.fyre.disguise.core.InMemoryDisguiseService;
 import dev.fyre.disguise.core.ObservableDisguiseService;
 import dev.fyre.disguise.protocol.PlayerInfoPacketListener;
@@ -25,9 +26,7 @@ import org.bukkit.event.Listener;
 import org.bukkit.event.player.PlayerQuitEvent;
 import org.bukkit.plugin.java.JavaPlugin;
 
-/**
- * Packet-only tab-list alias support. World entities are not respawned/renamed.
- */
+/** Experimental tab-list aliases; entity/skin refresh remains unimplemented. */
 public final class FyreDisguisePlugin extends JavaPlugin implements Listener {
     private DisguiseService disguises;
     private AsyncSkinService skins;
@@ -44,10 +43,11 @@ public final class FyreDisguisePlugin extends JavaPlugin implements Listener {
         disguises = new ObservableDisguiseService(registry, renderer, this::onlineViewerIds);
         skins = new AsyncSkinService(new MojangSkinSource(3000, 5000),
                 new SkinCache(512, TimeUnit.MINUTES.toNanos(30)), 2, 128);
+        getCommand("fyredisguise").setExecutor(new DisguiseCommand(disguises));
         packets.addPacketListener(new PlayerInfoPacketListener(this, new PlayerInfoRewriter(registry)));
         Bukkit.getPluginManager().registerEvents(this, this);
-        getLogger().info("Player-info alias listener enabled. Experimental tab refresh: "
-                + experimentalRefresh + ". World entity disguises NOT implemented.");
+        getLogger().info("Player-info aliases enabled; experimental tab refresh: " + experimentalRefresh
+                + "; world entity refresh NOT implemented.");
     }
 
     private Collection<UUID> onlineViewerIds() {
