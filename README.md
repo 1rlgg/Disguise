@@ -86,3 +86,31 @@ respawn switch remains **off by default**. Release still requires two-client
 Spigot 1.8.8 / Minecraft 1.8.9 integration tests, real restoration checks,
 scoreboard/vanish interoperability, performance measurements and a selected
 open-source license.
+
+
+## Scoreboard coexistence and admin diagnostics
+
+The experimental 1.8 client-side entity destroy/respawn now **skips** a
+viewer/subject pair when the viewer's scoreboard already owns the subject's
+real-name entry through a team. This avoids interfering with an existing
+team's nameplate prefix, visibility and friendly-invisibility rules.
+The ordinary tab-list refresh path can still run. It does **not** make
+scoreboard overhead nametags display per-viewer disguise aliases; full
+team/nametag integration and live compatibility testing remain release blockers.
+
+Operators with `fyredisguise.admin` can run:
+
+```text
+/fyredisguise stats
+```
+
+The command reports configured experimental refresh flags, queued tab/entity
+refresh pairs, tracked spawn snapshots, applied tab pairs and outstanding
+skin lookups. These are **runtime diagnostics**, not proof that a Minecraft
+client visibly applied the disguise. The reported entity flag reflects
+configuration, not whether the runtime fail-open breaker has activated.
+
+Both `experimental-tab-refresh` and `experimental-entity-refresh`
+remain **false by default**. Do not deploy experimental respawns on a live
+PvP server before verifying entity tracking, nametags, skins, vanish behavior
+and combat with real Spigot 1.8.8 / Minecraft 1.8.9 clients.
