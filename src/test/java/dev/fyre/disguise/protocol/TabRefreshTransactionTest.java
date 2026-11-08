@@ -23,7 +23,7 @@ public class TabRefreshTransactionTest {
             });
             fail("Must propagate failure");
         } catch (IllegalStateException expected) {
-            assertEquals(Arrays.asList("remove", "original"), sent);
+            assertEquals(Arrays.asList("remove", "remove", "original"), sent);
         } catch (InvocationTargetException unexpected) {
             fail("Wrong exception");
         }
@@ -39,9 +39,29 @@ public class TabRefreshTransactionTest {
             });
             fail("Must propagate failure");
         } catch (IllegalStateException expected) {
-            assertEquals(Arrays.asList("remove", "alias", "original"), sent);
+            assertEquals(Arrays.asList("remove", "alias", "remove", "original"), sent);
             assertEquals(1, expected.getSuppressed().length);
             assertEquals("restore", expected.getSuppressed()[0].getMessage());
+        } catch (InvocationTargetException unexpected) {
+            fail("Wrong exception");
+        }
+    }
+
+    @Test public void secondaryRemoveFailureDoesNotAbortOriginalProfileRestoration() {
+        List<String> sent = new ArrayList<String>();
+        final int[] removes = {0};
+        try {
+            TabRefreshTransaction.execute("remove", "alias", "original", packet -> {
+                sent.add(packet);
+                if ("alias".equals(packet)) throw new IllegalStateException("alias send");
+                if ("remove".equals(packet) && ++removes[0] == 2)
+                    throw new IllegalArgumentException("cleanup remove");
+            });
+            fail("Must propagate the alias failure");
+        } catch (IllegalStateException expected) {
+            assertEquals(Arrays.asList("remove", "alias", "remove", "original"), sent);
+            assertEquals(1, expected.getSuppressed().length);
+            assertEquals("cleanup remove", expected.getSuppressed()[0].getMessage());
         } catch (InvocationTargetException unexpected) {
             fail("Wrong exception");
         }

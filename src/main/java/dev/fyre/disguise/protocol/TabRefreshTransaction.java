@@ -21,12 +21,21 @@ public final class TabRefreshTransaction {
             sender.send(remove);
             sender.send(aliasAdd);
         } catch (InvocationTargetException | RuntimeException failure) {
-            try {
-                sender.send(originalAdd);
-            } catch (InvocationTargetException | RuntimeException recovery) {
-                if (recovery != failure) failure.addSuppressed(recovery);
-            }
+            // Packet sends are ambiguous. The alias may already have reached
+            // the client even if its transport call threw. Clear that slot
+            // first, then restore the original profile regardless of whether
+            // cleanup itself fails. Preserve every secondary error.
+            attempt(sender, remove, failure);
+            attempt(sender, originalAdd, failure);
             throw failure;
+        }
+    }
+
+    private static <T> void attempt(Sender<T> sender, T packet, Throwable primary) {
+        try {
+            sender.send(packet);
+        } catch (InvocationTargetException | RuntimeException recovery) {
+            if (recovery != primary) primary.addSuppressed(recovery);
         }
     }
 }
