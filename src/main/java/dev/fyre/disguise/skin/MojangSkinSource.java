@@ -1,9 +1,5 @@
 package dev.fyre.disguise.skin;
 
-import com.google.gson.JsonArray;
-import com.google.gson.JsonElement;
-import com.google.gson.JsonObject;
-import com.google.gson.JsonParser;
 import dev.fyre.disguise.api.SkinProperty;
 import java.io.IOException;
 import java.io.InputStream;
@@ -15,10 +11,7 @@ import java.nio.charset.StandardCharsets;
 import java.util.Objects;
 import java.util.UUID;
 
-/**
- * Blocking HTTPS lookup for Mojang-signed texture properties.
- * Run only off the Minecraft main thread. Never accepts a caller-provided URL.
- */
+/** Blocking HTTPS lookup with fixed host and bounded response size; call off the Bukkit tick thread. */
 public final class MojangSkinSource implements SkinSource {
     private static final int MAX_BODY_CHARS = 32768;
     private final int connectTimeoutMillis;
@@ -53,22 +46,7 @@ public final class MojangSkinSource implements SkinSource {
                     if (body.length() + count > MAX_BODY_CHARS) throw new IOException("Skin response too large");
                     body.append(buffer, 0, count);
                 }
-                try {
-                    JsonObject root = new JsonParser().parse(body.toString()).getAsJsonObject();
-                    JsonArray properties = root.getAsJsonArray("properties");
-                    if (properties == null) throw new IOException("Skin response lacks properties");
-                    for (JsonElement element : properties) {
-                        JsonObject property = element.getAsJsonObject();
-                        if (property.has("name") && "textures".equals(property.get("name").getAsString())
-                                && property.has("value") && property.has("signature")) {
-                            return new SkinProperty(property.get("value").getAsString(),
-                                    property.get("signature").getAsString());
-                        }
-                    }
-                    throw new IOException("No signed textures property returned");
-                } catch (IllegalStateException | IllegalArgumentException | NullPointerException ex) {
-                    throw new IOException("Malformed skin response", ex);
-                }
+                return MojangProfileParser.signedTextures(playerId, body.toString());
             }
         } finally {
             connection.disconnect();
