@@ -149,3 +149,41 @@ proof the client received the original skin or name.
 The experimental entity destroy/respawn path and tab refresh remain **OFF by
 default** and must not be deployed to a production competitive PvP server
 without the live acceptance checks in `RELEASE_CHECKLIST.md`.
+
+
+## Asynchronous skin isolation and retry telemetry
+
+Viewer-specific skin assignments now use `getViewerOverride(viewer, subject)`
+rather than treating `getDisguiseFor` (which may fall back to the global
+identity) as proof of an override. This prevents accidental override creation
+and also handles the legitimate case where a global and explicit viewer
+override initially reference the **same immutable Disguise object**.
+Custom `DisguiseService` implementations must override the new method to
+allow viewer-specific skin changes; its default behavior is conservative.
+
+Skin lookup requests use bounded **latest-request-wins** sequencing scoped
+to global subjects or individual viewer/subject pairs. A prior Mojang
+response cannot overwrite a more recent request for the same scope, even if
+the older request completes first. Request tokens are cleared on player
+disconnect and plugin disable. Global and per-viewer requests remain
+independent. UUID and signed texture checks still apply.
+
+`/fyredisguise stats` now additionally reports pending refresh retry
+pairs, exhausted retry attempts and attempts rejected by the bounded retry
+ledger. These counts are **not** proof of actual client-side restoration;
+they are operator-visible signals to investigate. Observing repeated
+exhaustion or rejected restores is a release blocker, not an invitation
+to increase packet budgets without load testing.
+
+### Remaining high-priority blockers
+
+- Full per-viewer in-world nametags and scoreboard coexistence without
+  overwriting existing PvP team entries
+- Correct original skin/name restoration across packet failures, disable,
+  death, world changes, spectator/vanish/NPC states and reconnect
+- Real Spigot 1.8.8 plus Minecraft 1.8.9 multi-client integration
+  with verified hit registration, visibility, and measured tick/packet cost
+- Explicit owner choice of a release license and production deployment plan
+
+Both `experimental-tab-refresh` and `experimental-entity-refresh`
+remain **false** by default. Maven/JUnit success does not validate live PvP.
