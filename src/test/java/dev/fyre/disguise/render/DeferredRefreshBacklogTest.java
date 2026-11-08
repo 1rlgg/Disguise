@@ -18,6 +18,15 @@ public class DeferredRefreshBacklogTest {
         assertEquals(0, deferred.size());
     }
 
+    @Test public void urgentRestorationCancelsStaleCosmeticWork() {
+        UUID viewer = UUID.randomUUID(), subject = UUID.randomUUID();
+        DeferredRefreshBacklog backlog = new DeferredRefreshBacklog(2);
+        backlog.offer(viewer, subject);
+        assertTrue(backlog.cancel(viewer, subject));
+        assertFalse(backlog.cancel(viewer, subject));
+        assertEquals(0, backlog.size());
+    }
+
     @Test public void duplicateOffersAreCoalescedAndOverflowIsCounted() {
         UUID viewer = UUID.randomUUID(), a = UUID.randomUUID(), b = UUID.randomUUID();
         DeferredRefreshBacklog deferred = new DeferredRefreshBacklog(1);

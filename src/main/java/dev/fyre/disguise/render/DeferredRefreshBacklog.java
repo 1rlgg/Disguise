@@ -43,6 +43,11 @@ public final class DeferredRefreshBacklog {
         return moved;
     }
 
+    /** A higher-priority restore supersedes any old cosmetic request. */
+    public boolean cancel(UUID viewer, UUID subject) {
+        return deferred.remove(new RefreshQueue.Pair(viewer, subject));
+    }
+
     public void forget(UUID playerId) {
         Objects.requireNonNull(playerId, "playerId");
         deferred.removeIf(pair -> playerId.equals(pair.getViewer())

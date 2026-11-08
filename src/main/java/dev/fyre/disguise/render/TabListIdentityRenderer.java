@@ -77,6 +77,7 @@ public final class TabListIdentityRenderer implements IdentityRenderer {
         retries.newTransition(new RefreshQueue.Pair(transition.getViewerId(), transition.getSubjectId()));
         // On saturation, never prefer a cosmetic alias update to a removal.
         if (!transition.getAfter().isPresent()) {
+            deferred.cancel(transition.getViewerId(), transition.getSubjectId());
             pending.offerRestoration(transition.getViewerId(), transition.getSubjectId());
         } else {
             enqueue(transition.getViewerId(), transition.getSubjectId());
