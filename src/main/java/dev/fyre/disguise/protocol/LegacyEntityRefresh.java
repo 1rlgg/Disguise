@@ -1,6 +1,7 @@
 package dev.fyre.disguise.protocol;
 
 import com.comphenix.protocol.PacketType;
+import dev.fyre.disguise.api.DisguiseService;
 import com.comphenix.protocol.ProtocolManager;
 import com.comphenix.protocol.events.PacketContainer;
 import com.comphenix.protocol.wrappers.WrappedDataWatcher;
@@ -19,12 +20,19 @@ public final class LegacyEntityRefresh {
     private final ProtocolManager packets;
     private final PlayerInfoTabRefresh tab;
     private final TrackedSpawnPackets snapshots;
+    private final DisguiseService disguises;
 
     public LegacyEntityRefresh(ProtocolManager packets, PlayerInfoTabRefresh tab,
                                TrackedSpawnPackets snapshots) {
+        this(packets, tab, snapshots, null);
+    }
+
+    public LegacyEntityRefresh(ProtocolManager packets, PlayerInfoTabRefresh tab,
+                               TrackedSpawnPackets snapshots, DisguiseService disguises) {
         this.packets = Objects.requireNonNull(packets, "packets");
         this.tab = Objects.requireNonNull(tab, "tab");
         this.snapshots = Objects.requireNonNull(snapshots, "snapshots");
+        this.disguises = disguises;
     }
 
     public boolean refresh(Player viewer, Player subject) throws InvocationTargetException {
@@ -36,8 +44,16 @@ public final class LegacyEntityRefresh {
         // 1.8 scoreboard teams may control nameplates, prefixes and invisibility.
         // Never replace an entity client-side while its real-name entry is
         // managed by another plugin; the caller can still refresh the tab list.
+        String alias = disguises == null ? null : disguises.getDisguiseFor(
+                viewer.getUniqueId(), subject.getUniqueId())
+                .map(disguise -> disguise.getName()).orElse(null);
+        Player conflicting = alias == null ? null : Bukkit.getPlayerExact(alias);
+        boolean aliasCollision = conflicting != null && conflicting.isOnline()
+                && !conflicting.getUniqueId().equals(subject.getUniqueId());
         if (!ScoreboardNameplatePolicy.mayRefreshEntity(
-                viewer.getScoreboard().getEntryTeam(subject.getName()) != null)) return false;
+                viewer.getScoreboard().getEntryTeam(subject.getName()) != null,
+                alias != null && viewer.getScoreboard().getEntryTeam(alias) != null,
+                aliasCollision)) return false;
 
         TrackedSpawnPackets.Snapshot tracked = snapshots.lookup(viewer.getUniqueId(), subject.getUniqueId());
         boolean matchingSpawn = tracked != null && tracked.getEntityId() == subject.getEntityId();

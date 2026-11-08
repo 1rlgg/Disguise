@@ -67,7 +67,7 @@ public final class FyreDisguisePlugin extends JavaPlugin implements Listener {
             if (entityRefresh) {
                 spawnPackets = new TrackedSpawnPackets(4096);
                 packets.addPacketListener(new SpawnPacketObserver(this, spawnPackets));
-                world = new LegacyEntityRefresh(packets, tab, spawnPackets);
+                world = new LegacyEntityRefresh(packets, tab, spawnPackets, registry);
             }
             tabRenderer = new TabListIdentityRenderer(tab, getLogger(), 2048, registry, world);
             refreshPlanner = new RefreshTargetPlanner(registry);
