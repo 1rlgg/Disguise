@@ -78,7 +78,10 @@ public final class LegacyEntityRefresh {
         // The transaction restores the captured spawn and current equipment
         // if any send (including head rotation or armor) fails mid-sequence.
         tab.refresh(viewer, subject);
-        EntityRefreshTransaction.execute(destroy, spawn, tracked.getPacket(), head,
+        // Recovery uses the same current-coordinate, current-metadata spawn
+        // packet, not the two-minute-old captured location. Both packets
+        // retain the real entity UUID and ID from the server's tracker.
+        EntityRefreshTransaction.execute(destroy, spawn, spawn.deepClone(), head,
                 java.util.Arrays.asList(gear),
                 packet -> packets.sendServerPacket(viewer, packet, false));
         return true;

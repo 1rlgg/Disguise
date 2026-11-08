@@ -9,8 +9,10 @@ import java.util.Objects;
  * The caller prepares all packets before invoking this class.
  *
  * A send may have reached the client even when the transport reports failure.
- * On any error after starting the destroy, replay the original snapshot and
- * current equipment as a best-effort recovery; do not mutate Bukkit entities.
+ * On any error after starting the destroy, replay a prepared recovery spawn
+ * with CURRENT coordinates and metadata plus current equipment. A stale
+ * captured spawn must never be used to recover a moving player.
+ * This is best effort; do not mutate Bukkit entities.
  */
 public final class EntityRefreshTransaction {
     private EntityRefreshTransaction() { }
@@ -19,12 +21,12 @@ public final class EntityRefreshTransaction {
         void send(T packet) throws InvocationTargetException;
     }
 
-    public static <T> void execute(T destroy, T respawn, T originalSpawn, T head,
+    public static <T> void execute(T destroy, T respawn, T recoverySpawn, T head,
                                    List<T> equipment, Sender<T> transport)
             throws InvocationTargetException {
         Objects.requireNonNull(destroy, "destroy");
         Objects.requireNonNull(respawn, "respawn");
-        Objects.requireNonNull(originalSpawn, "originalSpawn");
+        Objects.requireNonNull(recoverySpawn, "recoverySpawn");
         Objects.requireNonNull(head, "head");
         Objects.requireNonNull(equipment, "equipment");
         Objects.requireNonNull(transport, "transport");
@@ -40,7 +42,7 @@ public final class EntityRefreshTransaction {
             // step; preserving all failures on the original exception improves
             // diagnosis and gives the client the best chance to regain state.
             trySend(transport, destroy, failure);
-            trySend(transport, originalSpawn, failure);
+            trySend(transport, recoverySpawn, failure);
             trySend(transport, head, failure);
             for (T item : equipment) trySend(transport, item, failure);
             throw failure;

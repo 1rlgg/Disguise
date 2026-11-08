@@ -8,6 +8,23 @@ import org.junit.Test;
 import static org.junit.Assert.*;
 
 public class EntityRefreshTransactionTest {
+    @Test public void recoveryReceivesPreparedCurrentLocationRatherThanOldSnapshot() {
+        java.util.List<String> sent = new java.util.ArrayList<String>();
+        try {
+            EntityRefreshTransaction.execute("destroy", "current-spawn", "current-spawn-recovery",
+                    "head", java.util.Arrays.asList("armor"), packet -> {
+                        sent.add(packet);
+                        if ("current-spawn".equals(packet)) throw new IllegalStateException("packet rejected");
+                    });
+            fail("Expected failure");
+        } catch (IllegalStateException expected) {
+            assertEquals(java.util.Arrays.asList("destroy", "current-spawn", "destroy",
+                    "current-spawn-recovery", "head", "armor"), sent);
+        } catch (InvocationTargetException impossible) {
+            fail("Unexpected error");
+        }
+    }
+
     @Test public void sendsPreparedPacketsInOrderOnSuccess() throws Exception {
         List<String> sent = new ArrayList<String>();
         EntityRefreshTransaction.execute("destroy", "new-spawn", "original-spawn",
