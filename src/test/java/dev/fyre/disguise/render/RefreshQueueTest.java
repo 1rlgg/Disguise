@@ -56,6 +56,23 @@ public class RefreshQueueTest {
         assertEquals(0, queue.size());
     }
 
+    @Test public void evictionCallbackReportsOnlyActualDisplacedCosmetics() {
+        RefreshQueue queue = new RefreshQueue(2);
+        UUID viewer = UUID.randomUUID(), first = UUID.randomUUID(),
+                second = UUID.randomUUID(), restore = UUID.randomUUID(), extra = UUID.randomUUID();
+        java.util.List<RefreshQueue.Pair> evicted = new java.util.ArrayList<RefreshQueue.Pair>();
+        queue.offer(viewer, first);
+        queue.offer(viewer, second);
+        assertTrue(queue.offerRestoration(viewer, restore, evicted::add));
+        assertEquals(1, evicted.size());
+        assertEquals(first, evicted.get(0).getSubject());
+        assertTrue(queue.offerRestoration(viewer, restore, evicted::add));
+        assertEquals(1, evicted.size());
+        queue.offerRestoration(viewer, extra, evicted::add);
+        assertEquals(2, evicted.size());
+        assertEquals(second, evicted.get(1).getSubject());
+    }
+
     @Test public void saturationEvictsOldestCosmeticWithoutTouchingUrgentWork() {
         RefreshQueue queue = new RefreshQueue(3);
         UUID viewer = UUID.randomUUID(), first = UUID.randomUUID(),

@@ -9,6 +9,7 @@ import java.util.List;
 import java.util.Objects;
 import java.util.Set;
 import java.util.UUID;
+import java.util.function.Consumer;
 
 /**
  * Main-thread-only FIFO for tab-list refresh work. Duplicates are coalesced and
@@ -71,6 +72,17 @@ public final class RefreshQueue {
      * before sacrificing any pending restoration.
      */
     public boolean offerRestoration(UUID viewer, UUID subject) {
+        return offerRestoration(viewer, subject, evicted -> { });
+    }
+
+    /**
+     * A caller may requeue the cosmetic pair evicted to make room for an
+     * urgent restoration. The callback runs synchronously on the main thread
+     * and is called only for an actual evicted cosmetic update.
+     */
+    public boolean offerRestoration(UUID viewer, UUID subject,
+                                    Consumer<Pair> onCosmeticEvicted) {
+        Objects.requireNonNull(onCosmeticEvicted, "onCosmeticEvicted");
         Objects.requireNonNull(viewer, "viewer");
         Objects.requireNonNull(subject, "subject");
         if (viewer.equals(subject)) return true;
@@ -94,6 +106,7 @@ public final class RefreshQueue {
             Pair evicted = takeFirst(normal);
             queued.remove(evicted);
             droppedCosmetic++;
+            onCosmeticEvicted.accept(evicted);
         }
         urgent.add(pair);
                 queued.add(pair);
