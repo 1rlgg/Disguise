@@ -14,8 +14,17 @@ public final class EntityRefreshPolicy {
     public static boolean permitted(boolean sameWorld, boolean visible, boolean online,
                                     boolean dead, boolean sleeping, boolean mounted,
                                     boolean inTrackingRange, boolean hasMatchingSpawn) {
+        return permitted(sameWorld, visible, online, dead, sleeping, mounted,
+                false, inTrackingRange, hasMatchingSpawn);
+    }
+
+    /** Spectator-mode entities use special client semantics; never respawn them manually. */
+    public static boolean permitted(boolean sameWorld, boolean visible, boolean online,
+                                    boolean dead, boolean sleeping, boolean mounted,
+                                    boolean spectator, boolean inTrackingRange,
+                                    boolean hasMatchingSpawn) {
         return sameWorld && visible && online && !dead && !sleeping && !mounted
-                && inTrackingRange && hasMatchingSpawn;
+                && !spectator && inTrackingRange && hasMatchingSpawn;
     }
 
     /** Conservative ceiling; view-distance is in chunks, not blocks. */

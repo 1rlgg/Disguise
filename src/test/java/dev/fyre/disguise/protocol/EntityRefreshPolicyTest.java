@@ -16,6 +16,13 @@ public class EntityRefreshPolicyTest {
         assertFalse(EntityRefreshPolicy.permitted(true, true, true, false, false, false, true, false));
     }
 
+    @Test public void neverManuallyRespawnsSpectatorPlayers() {
+        assertFalse(EntityRefreshPolicy.permitted(true, true, true,
+                false, false, false, true, true, true));
+        assertTrue(EntityRefreshPolicy.permitted(true, true, true,
+                false, false, false, false, true, true));
+    }
+
     @Test public void rejectsInvalidAndOutOfRangeDistance() {
         assertTrue(EntityRefreshPolicy.withinTrackingRange(256.0D * 256.0D, 16));
         assertFalse(EntityRefreshPolicy.withinTrackingRange(257.0D * 257.0D, 16));

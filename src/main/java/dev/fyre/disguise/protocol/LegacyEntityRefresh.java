@@ -43,6 +43,8 @@ public final class LegacyEntityRefresh {
         boolean matchingSpawn = tracked != null && tracked.getEntityId() == subject.getEntityId();
         if (!EntityRefreshPolicy.permitted(true, viewer.canSee(subject), true,
                 subject.isDead(), subject.isSleeping(), subject.isInsideVehicle() || subject.getPassenger() != null,
+                "SPECTATOR".equals(subject.getGameMode().name())
+                        || "SPECTATOR".equals(viewer.getGameMode().name()),
                 EntityRefreshPolicy.withinTrackingRange(viewer.getLocation().distanceSquared(subject.getLocation()),
                         Bukkit.getViewDistance()), matchingSpawn)) return false;
 
