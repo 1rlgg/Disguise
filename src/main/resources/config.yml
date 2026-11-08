@@ -1,4 +1,7 @@
-# Experimental: refresh existing viewers' PLAYER_INFO tab-list entries on
-# identity changes. Does not rename or respawn world entities.
-# Keep disabled on production/competitive servers pending live protocol testing.
+# Opt-in experimental tab-list remove/add. Not yet validated on live PvP servers.
 experimental-tab-refresh: false
+
+# DANGEROUS/EXPERIMENTAL: client-side destroy/re-spawn of tracked player
+# entities to reload name and skin. May flicker or break third-party plugins.
+# Requires experimental-tab-refresh: true. Test on a disposable server only.
+experimental-entity-refresh: false

@@ -7,9 +7,12 @@ import dev.fyre.disguise.command.DisguiseCommand;
 import dev.fyre.disguise.command.SkinCommandHandler;
 import dev.fyre.disguise.core.InMemoryDisguiseService;
 import dev.fyre.disguise.core.ObservableDisguiseService;
+import dev.fyre.disguise.protocol.LegacyEntityRefresh;
 import dev.fyre.disguise.protocol.PlayerInfoPacketListener;
 import dev.fyre.disguise.protocol.PlayerInfoRewriter;
 import dev.fyre.disguise.protocol.PlayerInfoTabRefresh;
+import dev.fyre.disguise.protocol.SpawnPacketObserver;
+import dev.fyre.disguise.protocol.TrackedSpawnPackets;
 import dev.fyre.disguise.render.IdentityRenderer;
 import dev.fyre.disguise.render.LoggedIdentityRenderer;
 import dev.fyre.disguise.render.RefreshQueue;
@@ -32,7 +35,7 @@ import org.bukkit.event.player.PlayerQuitEvent;
 import org.bukkit.event.player.PlayerRespawnEvent;
 import org.bukkit.plugin.java.JavaPlugin;
 
-/** Experimental tab-list alias framework; world entity disguises not implemented. */
+/** Experimental 1.8 identity renderer. World respawn is disabled by default. */
 public final class FyreDisguisePlugin extends JavaPlugin implements Listener {
     private DisguiseService disguises;
     private InMemoryDisguiseService registry;
@@ -40,15 +43,27 @@ public final class FyreDisguisePlugin extends JavaPlugin implements Listener {
     private ProtocolManager packets;
     private TabListIdentityRenderer tabRenderer;
     private RefreshTargetPlanner refreshPlanner;
+    private TrackedSpawnPackets spawnPackets;
 
     @Override public void onEnable() {
         saveDefaultConfig();
         registry = new InMemoryDisguiseService();
         packets = ProtocolLibrary.getProtocolManager();
         boolean experimentalRefresh = getConfig().getBoolean("experimental-tab-refresh", false);
+        boolean entityRefresh = getConfig().getBoolean("experimental-entity-refresh", false);
+        if (entityRefresh && !experimentalRefresh) {
+            getLogger().warning("Entity refresh requires experimental-tab-refresh: true; disabling entity refresh");
+            entityRefresh = false;
+        }
         if (experimentalRefresh) {
-            tabRenderer = new TabListIdentityRenderer(new PlayerInfoTabRefresh(packets, registry),
-                    getLogger(), 2048, registry);
+            PlayerInfoTabRefresh tab = new PlayerInfoTabRefresh(packets, registry);
+            LegacyEntityRefresh world = null;
+            if (entityRefresh) {
+                spawnPackets = new TrackedSpawnPackets(4096);
+                packets.addPacketListener(new SpawnPacketObserver(this, spawnPackets));
+                world = new LegacyEntityRefresh(packets, tab, spawnPackets);
+            }
+            tabRenderer = new TabListIdentityRenderer(tab, getLogger(), 2048, registry, world);
             refreshPlanner = new RefreshTargetPlanner(registry);
         }
         IdentityRenderer renderer = experimentalRefresh ? tabRenderer : new LoggedIdentityRenderer(getLogger());
@@ -60,8 +75,7 @@ public final class FyreDisguisePlugin extends JavaPlugin implements Listener {
         packets.addPacketListener(new PlayerInfoPacketListener(this, new PlayerInfoRewriter(registry)));
         Bukkit.getPluginManager().registerEvents(this, this);
         if (tabRenderer != null) Bukkit.getScheduler().runTaskTimer(this, () -> tabRenderer.flush(32), 1L, 1L);
-        getLogger().info("Player-info aliases enabled; experimental tab refresh: " + experimentalRefresh
-                + "; world entity refresh NOT implemented.");
+        getLogger().info("Tab refresh: " + experimentalRefresh + "; EXPERIMENTAL entity refresh: " + entityRefresh);
     }
 
     private Collection<UUID> onlineViewerIds() {
@@ -93,6 +107,7 @@ public final class FyreDisguisePlugin extends JavaPlugin implements Listener {
     @EventHandler public void onQuit(PlayerQuitEvent event) {
         UUID id = event.getPlayer().getUniqueId();
         if (tabRenderer != null) tabRenderer.forget(id);
+        if (spawnPackets != null) spawnPackets.forget(id);
         if (disguises != null) disguises.clearPlayer(id);
     }
 
@@ -106,6 +121,8 @@ public final class FyreDisguisePlugin extends JavaPlugin implements Listener {
         refreshPlanner = null;
         if (packets != null) packets.removePacketListeners(this);
         packets = null;
+        if (spawnPackets != null) spawnPackets.clear();
+        spawnPackets = null;
         if (skins != null) skins.close();
         skins = null;
         disguises = null;
