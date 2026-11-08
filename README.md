@@ -411,3 +411,31 @@ confirmed by a Minecraft client.
 
 All experimental rendering is still disabled by default. Real multiplayer
 acceptance is mandatory before deployment.
+
+
+## Duplicate disguise aliases in experimental world rendering (cycle 36)
+
+Minecraft 1.8 entity identity is keyed by a real player UUID, but the tab
+profile rewrite can replace the visible username. Two different online
+subjects sharing the **same alias for one viewer** can conflict with legacy
+client name resolution, even when neither alias matches a real online
+username. The experimental world renderer now checks each other online
+subject's **effective alias for that exact viewer**, including global
+aliases and viewer-specific overrides. The test suite also checks
+case-insensitive matching, overrides that eliminate a collision for only
+one viewer, and offline subjects.
+
+A collision blocks only the synthetic destroy/respawn route; the existing
+tab-list fallback remains available. The read-only
+`/fyredisguise inspect <viewer> <player>` reports this additional reason
+without modifying scoreboard teams. This is conservative, not a completed
+overhead nametag implementation.
+
+A deterministic model test now simulates client tab entries indexed by
+UUID and exceptions thrown **after the fake client already processed**
+REMOVE or ADD. It verifies that the tab refresh recovery transaction
+reinstates the original identity where recovery sends succeed, including
+when cleanup removal itself throws. It is not a running Minecraft
+client or a substitute for real multiplayer acceptance.
+
+Both experimental renderer switches remain off by default.

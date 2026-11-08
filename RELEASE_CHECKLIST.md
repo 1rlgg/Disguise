@@ -129,3 +129,21 @@ and two vanilla Minecraft 1.8.9 clients (A and B):
       by retry limits and never sends world destroy/respawn packets
 - [ ] Record real-client screenshots and packet traces; unit-test success
       is not proof of a correct overhead nametag or original-world skin
+
+
+## Viewer-visible duplicate aliases and ambiguous send recovery (cycle 36)
+
+- [ ] Use two online disguised subjects with matching aliases and verify
+      the world renderer skips synthetic respawn for both, while no other
+      players become invisible or ghosted
+- [ ] Override one subject's alias for just one viewer; verify collision
+      checks differ for that viewer and all other viewers remain unaffected
+- [ ] Check aliases that collide case-insensitively and with a third
+      party's online real username
+- [ ] After a simulated tab send throws despite packet delivery, verify
+      the real 1.8.9 client converges to the original UUID, display name
+      and signed textures without duplicated entries
+- [ ] Inject repeated cleanup failures; verify bounded retries and
+      recovery logging, then re-test nameplates and hit registration
+- [ ] Do not mark "complete" without actual client evidence and a
+      scoreboard/vanish compatibility test on a disposable server

@@ -29,6 +29,26 @@ public class ViewerAliasCollisionPolicyTest {
                 "AliasOne", Arrays.asList(viewer, a)));
     }
 
+    @Test public void overridesCanRemoveAConflictForJustOneViewer() {
+        InMemoryDisguiseService registry = new InMemoryDisguiseService();
+        UUID viewerA = UUID.randomUUID(), viewerB = UUID.randomUUID();
+        UUID target = UUID.randomUUID(), other = UUID.randomUUID();
+        registry.setDisguise(new Disguise(other, "SharedAlias"));
+        registry.setDisguiseFor(viewerA, new Disguise(other, "SafeOther"));
+        assertFalse(ViewerAliasCollisionPolicy.conflicts(registry, viewerA, target,
+                "SharedAlias", Arrays.asList(target, other)));
+        assertTrue(ViewerAliasCollisionPolicy.conflicts(registry, viewerB, target,
+                "SharedAlias", Arrays.asList(target, other)));
+    }
+
+    @Test public void ignoresOfflineDisguisedSubjectsNotInObservedOnlineSet() {
+        InMemoryDisguiseService registry = new InMemoryDisguiseService();
+        UUID viewer = UUID.randomUUID(), target = UUID.randomUUID(), offline = UUID.randomUUID();
+        registry.setDisguise(new Disguise(offline, "SharedAlias"));
+        assertFalse(ViewerAliasCollisionPolicy.conflicts(registry, viewer, target,
+                "SharedAlias", Arrays.asList(viewer, target)));
+    }
+
     @Test public void globalAliasCollisionsAreVisibleToEveryViewer() {
         InMemoryDisguiseService registry = new InMemoryDisguiseService();
         UUID viewer = UUID.randomUUID(), a = UUID.randomUUID(), b = UUID.randomUUID();
