@@ -14,8 +14,8 @@ import org.bukkit.entity.Player;
 import org.bukkit.plugin.java.JavaPlugin;
 
 /**
- * Permission must be checked by caller. This command never performs HTTP on the
- * main thread and will not apply stale results after alias changes/disconnect.
+ * Admin-only asynchronous texture lookup. Permission is checked by caller.
+ * Bukkit operations and disguise writes are always scheduled on the main thread.
  */
 public final class SkinCommandHandler {
     private final JavaPlugin plugin;
@@ -31,36 +31,56 @@ public final class SkinCommandHandler {
     }
 
     public void apply(CommandSender sender, Player subject, Player source) {
+        applyInternal(sender, null, subject, source);
+    }
+
+    /** Looks up signed textures for a pre-existing viewer-only alias. */
+    public void applyForViewer(CommandSender sender, Player viewer, Player subject, Player source) {
+        applyInternal(sender, Objects.requireNonNull(viewer, "viewer").getUniqueId(), subject, source);
+    }
+
+    private void applyInternal(CommandSender sender, UUID viewerId, Player subject, Player source) {
         Objects.requireNonNull(sender, "sender");
         Objects.requireNonNull(subject, "subject");
         Objects.requireNonNull(source, "source");
         UUID subjectId = subject.getUniqueId();
-        Disguise expected = disguises.getDisguise(subjectId).orElse(null);
-        if (expected == null) {
-            sender.sendMessage(ChatColor.RED + "Set a global alias before fetching a skin.");
+        UUID sourceId = source.getUniqueId();
+        Disguise expected = viewerId == null
+                ? disguises.getDisguise(subjectId).orElse(null)
+                : disguises.getDisguiseFor(viewerId, subjectId).orElse(null);
+        if (expected == null || (viewerId != null &&
+                disguises.getDisguise(subjectId).orElse(null) == expected)) {
+            reply(sender, ChatColor.RED + "Set the corresponding alias before fetching a skin.");
             return;
         }
-        sender.sendMessage(ChatColor.YELLOW + "Looking up Mojang textures asynchronously...");
-        skins.lookup(source.getUniqueId()).whenComplete((skin, error) -> {
+        reply(sender, ChatColor.YELLOW + "Looking up signed Mojang textures asynchronously...");
+        skins.lookup(sourceId).whenComplete((skin, error) -> {
             if (!plugin.isEnabled()) return;
             try {
                 Bukkit.getScheduler().runTask(plugin, () -> {
                     if (!plugin.isEnabled()) return;
-                    Player current = Bukkit.getPlayer(subjectId);
-                    if (current == null || !current.isOnline()) {
-                        reply(sender, ChatColor.YELLOW + "Target disconnected; skin request discarded.");
-                    } else if (error != null) {
-                        plugin.getLogger().log(Level.WARNING, "Skin lookup failed for source UUID " + source.getUniqueId(), error);
-                        reply(sender, ChatColor.RED + "Mojang texture lookup failed.");
-                    } else if (assignments.applyIfCurrent(subjectId, expected, skin)) {
-                        reply(sender, ChatColor.GREEN + "Signed skin data applied to alias state. "
-                                + "World entity appearance still requires a separate refresh.");
-                    } else {
-                        reply(sender, ChatColor.YELLOW + "Alias changed; stale skin request discarded.");
+                    Player currentSubject = Bukkit.getPlayer(subjectId);
+                    Player currentViewer = viewerId == null ? null : Bukkit.getPlayer(viewerId);
+                    if (currentSubject == null || !currentSubject.isOnline() ||
+                            (viewerId != null && (currentViewer == null || !currentViewer.isOnline()))) {
+                        reply(sender, ChatColor.YELLOW + "Player disconnected; skin request discarded.");
+                        return;
                     }
+                    if (error != null) {
+                        plugin.getLogger().log(Level.WARNING,
+                                "Signed texture lookup failed for UUID " + sourceId, error);
+                        reply(sender, ChatColor.RED + "Mojang texture lookup failed.");
+                        return;
+                    }
+                    boolean applied = viewerId == null
+                            ? assignments.applyIfCurrent(subjectId, expected, skin)
+                            : assignments.applyForViewerIfCurrent(viewerId, subjectId, expected, skin);
+                    reply(sender, applied
+                            ? ChatColor.GREEN + "Skin data applied to disguise state; existing world entities do not refresh."
+                            : ChatColor.YELLOW + "Alias changed; stale skin request discarded.");
                 });
             } catch (IllegalStateException ex) {
-                // Plugin may have been disabled between scheduling and completion.
+                // Server is disabling, so no Bukkit scheduler action is possible.
             }
         });
     }
