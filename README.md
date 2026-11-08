@@ -382,3 +382,32 @@ counter in `/fyredisguise stats`.
 Both experimental tab and world refresh modes remain disabled by default.
 Full scoreboard-compatible overhead nametags, real-client original-profile
 restoration and PvP integration evidence remain required before release.
+
+
+## Cycle 35: experimental alias collision prevention and explicit tab repair
+
+The opt-in world-entity refresh now rejects renamed spawns if the effective
+viewer-specific alias is already owned by a scoreboard team, or if it collides
+with another online player's real username. The existing real-name team
+safeguard remains in place. These checks **do not implement overhead nametag
+disguising**: they conservatively skip the dangerous world refresh and leave
+tab-list-only handling as the fallback. `/fyredisguise inspect <viewer> <player>`
+now exposes the same alias/team collision conditions.
+
+For a previously applied alias that has been removed but has not visibly
+restored on a disposable test server, an operator can request a targeted
+original-profile tab refresh via:
+
+`/fyredisguise restore <viewer> <player>`
+
+This command requires `fyredisguise.admin`, an online and visible pair,
+a recorded previously applied alias, and **no currently desired disguise**.
+It reopens the pair's exhausted retry quarantine only for this explicit
+repair request and schedules restoration within normal packet budgets.
+Manual repair always uses tab-only packets, including retries; it never
+destroys a client world entity. A later disguise transition supersedes
+and cancels the pending manual-repair marker. Success means *queued*, not
+confirmed by a Minecraft client.
+
+All experimental rendering is still disabled by default. Real multiplayer
+acceptance is mandatory before deployment.

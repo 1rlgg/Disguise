@@ -108,3 +108,24 @@ and two vanilla Minecraft 1.8.9 clients (A and B):
 7. Record log excerpts, TPS, packet counts and actual client screenshots
    before checking any acceptance box. Disable experimental modes if any
    client becomes invisible, ghosted or visually inconsistent.
+
+
+## Cycle 35: collision and targeted repair checks
+
+- [ ] On a disposable 1.8.8 server, give the alias username to another
+      online player and verify experimental world refresh refuses collision
+      while the other player's entity remains intact
+- [ ] Assign the alias to a third-party scoreboard team and verify
+      `/fyredisguise inspect <viewer> <player>` reports the block without
+      modifying scoreboard ownership, nametag rules or invisibility
+- [ ] Apply then clear an alias; if B's tab still shows the alias,
+      run `/fyredisguise restore B A` and verify B sees A's authentic name
+      and signed skin afterward
+- [ ] Confirm restore refuses a currently disguised pair and a viewer who
+      cannot see the subject (vanish compatibility)
+- [ ] With a manual restoration queued, apply a new alias immediately;
+      the old tab-only repair must not override that newer disguise
+- [ ] Inject tab transport failures; confirm targeted repair is bounded
+      by retry limits and never sends world destroy/respawn packets
+- [ ] Record real-client screenshots and packet traces; unit-test success
+      is not proof of a correct overhead nametag or original-world skin

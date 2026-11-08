@@ -97,6 +97,8 @@ public final class TabListIdentityRenderer implements IdentityRenderer {
             enqueueRestoration(viewer, subject);
             return;
         }
+        if (state != null && state.getDisguiseFor(viewer, subject).isPresent())
+            manualRestores.remove(new RefreshQueue.Pair(viewer, subject));
         if (pending.offer(viewer, subject)) {
             // A newer primary update supersedes an older deferred copy.
             deferred.cancel(viewer, subject);
@@ -116,9 +118,14 @@ public final class TabListIdentityRenderer implements IdentityRenderer {
 
     @Override public void render(IdentityTransition transition) {
         assertPrimaryThread();
-        // Explicit new identity transitions can retry a previously quarantined
-        // pair; periodic background reconciliation cannot.
-        retries.newTransition(new RefreshQueue.Pair(transition.getViewerId(), transition.getSubjectId()));
+        // An explicit alias transition supersedes any pending manual repair.
+        // This avoids delivering a stale tab-only repair after a new skin or
+        // alias is requested for the same viewer/subject pair.
+        RefreshQueue.Pair changedPair = new RefreshQueue.Pair(
+                transition.getViewerId(), transition.getSubjectId());
+        manualRestores.remove(changedPair);
+        // Only explicit transitions reset terminal retry quarantine.
+        retries.newTransition(changedPair);
         // On saturation, never prefer a cosmetic alias update to a removal.
         if (!transition.getAfter().isPresent()) {
             enqueueRestoration(transition.getViewerId(), transition.getSubjectId());
