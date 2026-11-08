@@ -83,15 +83,15 @@ public final class RefreshQueue {
         }
         if (size() >= capacity) {
             if (normal.isEmpty()) {
-                Pair evicted = urgent.removeLast();
-                urgentSet.remove(evicted);
-                queued.remove(evicted);
+                // Never discard a restoration already waiting for delivery.
+                // The applied-entry reconciler can retry this rejected pair
+                // once capacity becomes available.
                 droppedRestoration++;
-            } else {
-                Pair evicted = normal.removeLast();
-                queued.remove(evicted);
-                droppedCosmetic++;
+                return false;
             }
+            Pair evicted = normal.removeLast();
+            queued.remove(evicted);
+            droppedCosmetic++;
         }
         urgent.addLast(pair);
         urgentSet.add(pair);

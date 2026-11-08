@@ -93,10 +93,10 @@ public class RefreshQueueTest {
         queue.offerRestoration(viewer, b);
         assertFalse(queue.offer(viewer, c));
         assertEquals(1, queue.droppedCosmetic());
-        queue.offerRestoration(viewer, d);
+        assertFalse(queue.offerRestoration(viewer, d));
         assertEquals(1, queue.droppedRestoration());
         assertEquals(2, queue.pendingRestorations());
-        queue.poll(1);
+        assertEquals(a, queue.poll(1).get(0).getSubject());
         assertEquals(1, queue.pendingRestorations());
         queue.forget(viewer);
         assertEquals(0, queue.pendingRestorations());
@@ -104,6 +104,19 @@ public class RefreshQueueTest {
         queue.clear();
         assertEquals(0, queue.droppedCosmetic());
         assertEquals(0, queue.droppedRestoration());
+    }
+
+    @Test public void fullRestorationQueueNeverDisplacesOldestPendingRestore() {
+        RefreshQueue queue = new RefreshQueue(2);
+        UUID viewer = UUID.randomUUID(), first = UUID.randomUUID(),
+                second = UUID.randomUUID(), rejected = UUID.randomUUID();
+        assertTrue(queue.offerRestoration(viewer, first));
+        assertTrue(queue.offerRestoration(viewer, second));
+        assertFalse(queue.offerRestoration(viewer, rejected));
+        assertEquals(first, queue.poll(1).get(0).getSubject());
+        assertEquals(second, queue.poll(1).get(0).getSubject());
+        assertEquals(1, queue.droppedRestoration());
+        assertTrue(queue.offerRestoration(viewer, rejected));
     }
 
     @Test(expected = IllegalArgumentException.class)
