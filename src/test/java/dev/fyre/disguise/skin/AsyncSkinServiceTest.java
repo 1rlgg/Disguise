@@ -3,6 +3,8 @@ package dev.fyre.disguise.skin;
 import dev.fyre.disguise.api.SkinProperty;
 import java.io.IOException;
 import java.util.UUID;
+import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
@@ -21,6 +23,58 @@ public class AsyncSkinServiceTest {
             assertSame(value, service.lookup(id).get(2, TimeUnit.SECONDS));
             assertEquals(1, lookups.get());
         }
+    }
+
+    @Test public void sharesSimultaneousNetworkTaskWithoutSharingCancellation() throws Exception {
+        AtomicInteger calls = new AtomicInteger();
+        CountDownLatch entered = new CountDownLatch(1), proceed = new CountDownLatch(1);
+        SkinSource source = id -> {
+            calls.incrementAndGet();
+            entered.countDown();
+            try {
+                if (!proceed.await(2, TimeUnit.SECONDS)) throw new IOException("timeout");
+            } catch (InterruptedException e) { Thread.currentThread().interrupt(); throw new IOException(e); }
+            return new SkinProperty("dGVzdA==", "c2ln");
+        };
+        try (AsyncSkinService service = new AsyncSkinService(source,
+                new SkinCache(10, TimeUnit.MINUTES.toNanos(1)), 1, 2)) {
+            UUID id = UUID.randomUUID();
+            CompletableFuture<SkinProperty> first = service.lookup(id);
+            assertTrue(entered.await(2, TimeUnit.SECONDS));
+            CompletableFuture<SkinProperty> second = service.lookup(id);
+            first.cancel(true);
+            assertEquals(1, service.pendingLookups());
+            proceed.countDown();
+            assertNotNull(second.get(2, TimeUnit.SECONDS));
+            assertEquals(1, calls.get());
+            assertEquals(0, service.pendingLookups());
+        } finally {
+            proceed.countDown();
+        }
+    }
+
+    @Test public void closeCompletesOutstandingFutureExceptionally() throws Exception {
+        CountDownLatch entered = new CountDownLatch(1), release = new CountDownLatch(1);
+        SkinSource source = id -> {
+            entered.countDown();
+            try { release.await(3, TimeUnit.SECONDS); }
+            catch (InterruptedException ex) { Thread.currentThread().interrupt(); throw new IOException(ex); }
+            return new SkinProperty("dGVzdA==", "c2ln");
+        };
+        AsyncSkinService service = new AsyncSkinService(source,
+                new SkinCache(10, TimeUnit.MINUTES.toNanos(1)), 1, 2);
+        try {
+            CompletableFuture<SkinProperty> future = service.lookup(UUID.randomUUID());
+            assertTrue(entered.await(2, TimeUnit.SECONDS));
+            service.close();
+            try {
+                future.get(2, TimeUnit.SECONDS);
+                fail("Closed service should fail pending lookup");
+            } catch (ExecutionException expected) {
+                assertTrue(expected.getCause() instanceof IllegalStateException);
+            }
+            assertEquals(0, service.pendingLookups());
+        } finally { release.countDown(); service.close(); }
     }
 
     @Test public void surfacesNetworkFailures() throws Exception {
