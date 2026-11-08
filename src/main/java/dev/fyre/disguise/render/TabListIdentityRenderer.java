@@ -13,8 +13,8 @@ import org.bukkit.Bukkit;
 import org.bukkit.entity.Player;
 
 /**
- * Experimental tab-list renderer, optionally with 1.8 client entity respawn.
- * Both paths are disabled by default on production servers.
+ * Experimental tab-list and opt-in entity renderer. Tracks only successful
+ * updates and never mutates the underlying Bukkit entity.
  */
 public final class TabListIdentityRenderer implements IdentityRenderer {
     private final PlayerInfoTabRefresh transport;
@@ -24,6 +24,7 @@ public final class TabListIdentityRenderer implements IdentityRenderer {
     private final DisguiseService state;
     private final LegacyEntityRefresh entityRefresh;
     private boolean capacityWarning;
+    private int entityAttemptsSinceFlush;
 
     public TabListIdentityRenderer(PlayerInfoTabRefresh transport, Logger logger) {
         this(transport, logger, 2048, null, null);
@@ -82,21 +83,25 @@ public final class TabListIdentityRenderer implements IdentityRenderer {
     public int pendingCount() { return pending.size(); }
     public int appliedCount() { return applied.size(); }
 
-    private void deliver(Player viewer, Player subject) throws InvocationTargetException {
-        if (entityRefresh == null || !entityRefresh.refresh(viewer, subject)) {
+    private void deliver(Player viewer, Player subject, boolean tryEntity) throws InvocationTargetException {
+        if (!tryEntity || entityRefresh == null || !entityRefresh.refresh(viewer, subject)) {
             transport.refresh(viewer, subject);
         }
     }
 
     public void flush(int maxPerTick) {
         assertPrimaryThread();
+        entityAttemptsSinceFlush = 0;
         for (RefreshQueue.Pair pair : pending.poll(maxPerTick)) {
             Player viewer = Bukkit.getPlayer(pair.getViewer());
             Player subject = Bukkit.getPlayer(pair.getSubject());
             if (viewer == null || subject == null || !viewer.isOnline() || !subject.isOnline()) continue;
             if (viewer.equals(subject) || !viewer.canSee(subject)) continue;
             try {
-                deliver(viewer, subject);
+                // Limit expensive destroy/respawn attempts to eight per tick.
+                boolean allowEntity = entityRefresh != null && entityAttemptsSinceFlush < 8;
+                if (allowEntity) entityAttemptsSinceFlush++;
+                deliver(viewer, subject, allowEntity);
                 if (state != null) {
                     if (state.getDisguiseFor(pair.getViewer(), pair.getSubject()).isPresent()) {
                         applied.applied(pair.getViewer(), pair.getSubject());
@@ -120,7 +125,7 @@ public final class TabListIdentityRenderer implements IdentityRenderer {
             if (viewer == null || subject == null || !viewer.isOnline() || !subject.isOnline()
                     || viewer.equals(subject) || !viewer.canSee(subject)) continue;
             try {
-                deliver(viewer, subject);
+                deliver(viewer, subject, true);
                 applied.restored(pair.getViewer(), pair.getSubject());
             } catch (InvocationTargetException | RuntimeException ex) {
                 logger.log(Level.WARNING, "Could not restore appearance for viewer " + viewer.getUniqueId(), ex);
