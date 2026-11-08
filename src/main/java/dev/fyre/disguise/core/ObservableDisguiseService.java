@@ -11,9 +11,8 @@ import java.util.Optional;
 import java.util.UUID;
 
 /**
- * Decorator which notifies a renderer about changed identities for online viewers.
- * All methods are main-thread-only. A renderer failure propagates, so callers
- * must not assume packet delivery succeeded if a render call throws.
+ * Publishes minimal transitions after state changes.
+ * Mutations must originate from the Bukkit primary thread.
  */
 public final class ObservableDisguiseService implements DisguiseService {
     private final DisguiseService delegate;
@@ -58,6 +57,8 @@ public final class ObservableDisguiseService implements DisguiseService {
         Objects.requireNonNull(disguise, "disguise");
         Disguise before = delegate.getDisguiseFor(viewerId, disguise.getPlayerId()).orElse(null);
         delegate.setDisguiseFor(viewerId, disguise);
+        // Only send when this viewer is actually connected; registry accepts offline overrides.
+        if (!viewers.get().contains(viewerId)) return;
         planner.plan(viewerId, disguise.getPlayerId(), before,
                 delegate.getDisguiseFor(viewerId, disguise.getPlayerId()).orElse(null)).ifPresent(renderer::render);
     }
@@ -69,7 +70,7 @@ public final class ObservableDisguiseService implements DisguiseService {
     @Override public boolean removeDisguiseFor(UUID viewerId, UUID subjectId) {
         Disguise before = delegate.getDisguiseFor(viewerId, subjectId).orElse(null);
         boolean removed = delegate.removeDisguiseFor(viewerId, subjectId);
-        if (removed) planner.plan(viewerId, subjectId, before,
+        if (removed && viewers.get().contains(viewerId)) planner.plan(viewerId, subjectId, before,
                 delegate.getDisguiseFor(viewerId, subjectId).orElse(null)).ifPresent(renderer::render);
         return removed;
     }
