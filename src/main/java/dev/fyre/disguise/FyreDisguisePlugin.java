@@ -23,29 +23,37 @@ import org.bukkit.Bukkit;
 import org.bukkit.entity.Player;
 import org.bukkit.event.EventHandler;
 import org.bukkit.event.Listener;
+import org.bukkit.event.player.PlayerChangedWorldEvent;
+import org.bukkit.event.player.PlayerJoinEvent;
 import org.bukkit.event.player.PlayerQuitEvent;
+import org.bukkit.event.player.PlayerRespawnEvent;
 import org.bukkit.plugin.java.JavaPlugin;
 
-/** Experimental tab-list aliases; entity/skin refresh remains unimplemented. */
+/** Experimental tab-list alias framework; world entity disguises not yet implemented. */
 public final class FyreDisguisePlugin extends JavaPlugin implements Listener {
     private DisguiseService disguises;
     private AsyncSkinService skins;
     private ProtocolManager packets;
+    private TabListIdentityRenderer tabRenderer;
 
     @Override public void onEnable() {
         saveDefaultConfig();
         InMemoryDisguiseService registry = new InMemoryDisguiseService();
         packets = ProtocolLibrary.getProtocolManager();
         boolean experimentalRefresh = getConfig().getBoolean("experimental-tab-refresh", false);
-        IdentityRenderer renderer = experimentalRefresh
-                ? new TabListIdentityRenderer(new PlayerInfoTabRefresh(packets, registry), getLogger())
-                : new LoggedIdentityRenderer(getLogger());
+        if (experimentalRefresh) {
+            tabRenderer = new TabListIdentityRenderer(new PlayerInfoTabRefresh(packets, registry), getLogger());
+        }
+        IdentityRenderer renderer = experimentalRefresh ? tabRenderer : new LoggedIdentityRenderer(getLogger());
         disguises = new ObservableDisguiseService(registry, renderer, this::onlineViewerIds, this::assertMainThread);
         skins = new AsyncSkinService(new MojangSkinSource(3000, 5000),
                 new SkinCache(512, TimeUnit.MINUTES.toNanos(30)), 2, 128);
         getCommand("fyredisguise").setExecutor(new DisguiseCommand(disguises));
         packets.addPacketListener(new PlayerInfoPacketListener(this, new PlayerInfoRewriter(registry)));
         Bukkit.getPluginManager().registerEvents(this, this);
+        if (tabRenderer != null) {
+            Bukkit.getScheduler().runTaskTimer(this, () -> tabRenderer.flush(32), 1L, 1L);
+        }
         getLogger().info("Player-info aliases enabled; experimental tab refresh: " + experimentalRefresh
                 + "; world entity refresh NOT implemented.");
     }
@@ -60,11 +68,39 @@ public final class FyreDisguisePlugin extends JavaPlugin implements Listener {
         if (!Bukkit.isPrimaryThread()) throw new IllegalStateException("Disguise mutations require the primary server thread");
     }
 
+    private void scheduleResync(UUID playerId) {
+        if (tabRenderer == null) return;
+        Bukkit.getScheduler().runTaskLater(this, () -> {
+            if (tabRenderer == null) return;
+            Player player = Bukkit.getPlayer(playerId);
+            if (player == null || !player.isOnline()) return;
+            Collection<UUID> online = onlineViewerIds();
+            tabRenderer.refreshViewer(playerId, online);
+            tabRenderer.refreshSubject(playerId, online);
+        }, 2L);
+    }
+
+    @EventHandler public void onJoin(PlayerJoinEvent event) {
+        scheduleResync(event.getPlayer().getUniqueId());
+    }
+
+    @EventHandler public void onRespawn(PlayerRespawnEvent event) {
+        scheduleResync(event.getPlayer().getUniqueId());
+    }
+
+    @EventHandler public void onWorldChange(PlayerChangedWorldEvent event) {
+        scheduleResync(event.getPlayer().getUniqueId());
+    }
+
     @EventHandler public void onQuit(PlayerQuitEvent event) {
-        if (disguises != null) disguises.clearPlayer(event.getPlayer().getUniqueId());
+        UUID id = event.getPlayer().getUniqueId();
+        if (tabRenderer != null) tabRenderer.forget(id);
+        if (disguises != null) disguises.clearPlayer(id);
     }
 
     @Override public void onDisable() {
+        if (tabRenderer != null) tabRenderer.clear();
+        tabRenderer = null;
         if (packets != null) packets.removePacketListeners(this);
         packets = null;
         if (skins != null) skins.close();
