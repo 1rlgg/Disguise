@@ -174,6 +174,13 @@ public final class TabListIdentityRenderer implements IdentityRenderer {
                     }
                 }
             } catch (InvocationTargetException | RuntimeException ex) {
+                // A send can fail after the client received REMOVE or ADD.
+                // Conservatively remember the pair as possibly modified so
+                // undisguise and shutdown can still attempt real-profile restore.
+                if (RefreshFailureStatePolicy.keepForRestore(currentDisguise,
+                        applied.contains(pair.getViewer(), pair.getSubject()))) {
+                    applied.applied(pair.getViewer(), pair.getSubject());
+                }
                 boolean retry = retries.shouldRetry(pair);
                 if (retry) {
                     // Never retry in this same flush; defer until the next tick.
