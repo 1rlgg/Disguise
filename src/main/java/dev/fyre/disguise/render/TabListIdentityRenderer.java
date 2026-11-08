@@ -23,6 +23,7 @@ public final class TabListIdentityRenderer implements IdentityRenderer {
     private final RefreshQueue pending;
     private final AppliedTabEntries applied = new AppliedTabEntries();
     private final RefreshRetryLedger retries;
+    private final DeferredRefreshBacklog deferred;
     private final RestorationReconciler reconciler = new RestorationReconciler();
     private final RefreshWorkMeter workMeter = new RefreshWorkMeter();
     private int ticksSinceReconcile;
@@ -50,6 +51,7 @@ public final class TabListIdentityRenderer implements IdentityRenderer {
         this.logger = Objects.requireNonNull(logger, "logger");
         this.pending = new RefreshQueue(maxQueue);
         this.retries = new RefreshRetryLedger(2, maxQueue);
+        this.deferred = new DeferredRefreshBacklog(maxQueue);
         this.state = state;
         this.entityRefresh = entityRefresh;
     }
@@ -60,9 +62,11 @@ public final class TabListIdentityRenderer implements IdentityRenderer {
 
     public void enqueue(UUID viewer, UUID subject) {
         assertPrimaryThread();
-        if (!pending.offer(viewer, subject) && !capacityWarning) {
-            capacityWarning = true;
-            logger.warning("Tab refresh queue full; dropping updates until backlog drains");
+        if (!pending.offer(viewer, subject)) {
+            if (!deferred.offer(viewer, subject) && !capacityWarning) {
+                capacityWarning = true;
+                logger.warning("Tab refresh and deferred queues full; cosmetic updates may be dropped");
+            }
         }
     }
 
@@ -92,11 +96,14 @@ public final class TabListIdentityRenderer implements IdentityRenderer {
     public void forget(UUID id) {
         assertPrimaryThread();
         pending.forget(id);
+        deferred.forget(id);
         retries.forget(id);
         applied.forget(id);
     }
 
     public int pendingCount() { return pending.size(); }
+    public int deferredCount() { return deferred.size(); }
+    public long deferredOverflowCount() { return deferred.overflowCount(); }
     public int pendingRestorationCount() { return pending.pendingRestorations(); }
     public int retryCount() { return retries.size(); }
     public long measuredFlushes() { return workMeter.flushes(); }
@@ -188,7 +195,8 @@ public final class TabListIdentityRenderer implements IdentityRenderer {
                     boolean restore = state != null
                             && !state.getDisguiseFor(pair.getViewer(), pair.getSubject()).isPresent();
                     if (restore) pending.offerRestoration(pair.getViewer(), pair.getSubject());
-                    else if (!pending.offer(pair.getViewer(), pair.getSubject())) {
+                    else if (!pending.offer(pair.getViewer(), pair.getSubject())
+                            && !deferred.offer(pair.getViewer(), pair.getSubject())) {
                         retries.succeeded(pair);
                         retry = false;
                     }
@@ -198,8 +206,11 @@ public final class TabListIdentityRenderer implements IdentityRenderer {
                         + " subject " + subject.getUniqueId(), ex);
             }
         }
+        // After current work, refill a bounded number of normal slots.
+        // Urgent restorations already in the primary queue retain priority.
+        deferred.drainTo(pending, 32);
         workMeter.record(work.size(), Math.max(0L, System.nanoTime() - started));
-        if (pending.size() == 0) capacityWarning = false;
+        if (pending.size() == 0 && deferred.size() == 0) capacityWarning = false;
     }
 
     public void restoreApplied() {
@@ -239,6 +250,7 @@ public final class TabListIdentityRenderer implements IdentityRenderer {
     public void clear() {
         assertPrimaryThread();
         pending.clear();
+        deferred.clear();
         retries.clear();
         reconciler.reset();
         workMeter.reset();

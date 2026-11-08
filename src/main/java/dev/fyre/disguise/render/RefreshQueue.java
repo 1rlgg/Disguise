@@ -131,6 +131,7 @@ public final class RefreshQueue {
     }
 
     public int size() { return queued.size(); }
+    public boolean hasFreeSlot() { return queued.size() < capacity; }
     public int pendingRestorations() { return urgent.size(); }
     public long droppedCosmetic() { return droppedCosmetic; }
     public long droppedRestoration() { return droppedRestoration; }
