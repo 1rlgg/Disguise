@@ -114,3 +114,38 @@ Both `experimental-tab-refresh` and `experimental-entity-refresh`
 remain **false by default**. Do not deploy experimental respawns on a live
 PvP server before verifying entity tracking, nametags, skins, vanish behavior
 and combat with real Spigot 1.8.8 / Minecraft 1.8.9 clients.
+
+
+## Bounded refresh retries and failure recovery
+
+Experimental tab-list and entity-refresh packet sends now have **up to two
+retries per viewer/subject pair** after the initial attempt. Retries are
+deferred to later ticks, stored in a capacity-bounded ledger, and forgotten
+when a player disconnects. A failed undisguise restoration is prioritized
+ahead of normal cosmetic refreshes. Persistent packet failures eventually
+stop retrying; they are logged and **not silently presented as success**.
+
+If an alias was set and cleared before any tab refresh was delivered, the
+renderer now skips the unnecessary remove/add of the original player-info
+entry. When a tab alias was previously applied, the same no-op guard does
+**not** prevent the necessary restore.
+
+Tab-list replacement prepares the real-profile recovery packet first. If
+either its remove or alias-add packet send fails, it attempts to re-add the
+original profile and retains any recovery error for logging. Network send
+failures are inherently ambiguous, so the recovery is **best effort**, not
+proof the client received the original skin or name.
+
+### Still blocking production
+
+1. Prove actual client identity restoration after failed packet delivery,
+   death, respawn, reconnect, and plugin shutdown.
+2. Verify in-world skins, scoreboard nametags, vanish and NPC compatibility.
+3. Run real Spigot 1.8.8 / Minecraft 1.8.9 PvP sessions to check no player
+   disappearance, combat hit-regression, or unexpected tracking behavior.
+4. Record packet load, server tick impact, and queue pressure under realistic
+   player counts; choose a release license.
+
+The experimental entity destroy/respawn path and tab refresh remain **OFF by
+default** and must not be deployed to a production competitive PvP server
+without the live acceptance checks in `RELEASE_CHECKLIST.md`.
