@@ -18,6 +18,20 @@ public class SkinRequestTrackerTest {
         assertEquals(0, tracker.size());
     }
 
+    @Test public void emergencyResetInvalidatesPendingCallbacksAcrossAllScopes() {
+        SkinRequestTracker tracker = new SkinRequestTracker(4);
+        UUID subject = UUID.randomUUID(), viewer = UUID.randomUUID();
+        long global = tracker.begin(null, subject);
+        long privateRequest = tracker.begin(viewer, subject);
+        tracker.clear();
+        assertEquals(0, tracker.size());
+        assertFalse(tracker.isCurrent(null, subject, global));
+        assertFalse(tracker.isCurrent(viewer, subject, privateRequest));
+        long fresh = tracker.begin(null, subject);
+        tracker.finish(null, subject, global);
+        assertTrue(tracker.isCurrent(null, subject, fresh));
+    }
+
     @Test public void latestRequestWinsOutOfOrderCompletion() {
         SkinRequestTracker tracker = new SkinRequestTracker(2);
         UUID subject = UUID.randomUUID();

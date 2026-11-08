@@ -7,7 +7,7 @@ depend: [ProtocolLib]
 commands:
   fyredisguise:
     description: Administration and testing of global disguise state
-    usage: /fyredisguise <set|clear|status|reset|stats>
+    usage: /fyredisguise <set|clear|status|reset|stats|inspect>
     permission: fyredisguise.admin
 permissions:
   fyredisguise.admin:

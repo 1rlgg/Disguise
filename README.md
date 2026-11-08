@@ -353,3 +353,32 @@ are covered by deterministic unit tests but remain **unverified against
 running Minecraft 1.8.9 clients**. A real-server test is still required
 to demonstrate correct skins, world entities, overhead names and PvP
 visibility. Experimental rendering remains disabled by default.
+
+
+## Administrator recovery and world-render inspection (development cycle 34)
+
+Use `/fyredisguise reset` (requires `fyredisguise.admin`) for a
+disposable test session emergency reset. This clears **both global aliases
+and all viewer-specific overrides**, invalidates outstanding asynchronous
+skin command tokens, and sends restoration transitions for online viewers
+through the existing bounded refresh queue. It does **not** directly alter
+Bukkit entity identity, hitboxes, team membership, or visibility. Successful
+command completion is not proof that every connected client displayed its
+original skin.
+
+Use `/fyredisguise inspect <viewer> <player>` to see the requested alias
+and preliminary world-render eligibility: viewer visibility, shared world,
+spectator mode and whether a scoreboard team already owns the real player
+name. The command is read-only and does not change any team or packet.
+"Potentially eligible" is NOT proof a valid tracked spawn exists or that
+the Minecraft 1.8.9 client can render the alias.
+
+Repeatedly failed packet refresh pairs now remain quarantined even if
+a delayed resync or deferred work item requeues them. Only an actual
+identity transition, explicit cleanup, or a successful delivery resets
+their quarantine. This bounds failure storms without hiding the exhaustion
+counter in `/fyredisguise stats`.
+
+Both experimental tab and world refresh modes remain disabled by default.
+Full scoreboard-compatible overhead nametags, real-client original-profile
+restoration and PvP integration evidence remain required before release.

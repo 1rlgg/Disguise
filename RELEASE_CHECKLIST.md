@@ -82,3 +82,29 @@ disable both experimental options immediately and revert the faulty commit norma
       shutdown path sends only original GameProfile data, not a rewritten alias
 - [ ] Record actual 1.8.9 client identity after each failure; successful
       transaction tests alone are not evidence that the client recovered
+
+
+## Operator reproduction steps (cycle 34)
+
+On a disposable Java 8 / Spigot 1.8.8 server with ProtocolLib 4.8.0
+and two vanilla Minecraft 1.8.9 clients (A and B):
+
+1. Set `experimental-tab-refresh: true`, leaving entity refresh false.
+   Apply `/fyredisguise set A TestAlias` and confirm B's tab entry behavior.
+2. Run `/fyredisguise inspect B A` and record alias, visibility, world,
+   spectator and scoreboard-team ownership. The command must leave
+   scoreboard membership and server visibility unchanged.
+3. Change A's alias, run `/fyredisguise clear A`, then repeat with a
+   viewer-specific override. Verify B sees the real profile again.
+4. Run `/fyredisguise reset` while both global and viewer overrides and
+   texture lookups are pending. Confirm all registry aliases clear and
+   no late texture callback reinstates them.
+5. Inject repeated packet-send failures until a pair is quarantined.
+   Confirm periodic/delayed resyncs do not cause unbounded resend attempts.
+   Create a new identity transition; verify the pair becomes retry-eligible.
+6. Repeat with controlled world refresh enabled **only on the disposable
+   server**, observing other plugins' scoreboards, vanish, spectators,
+   player skin, head rotation, held item, armor and hit registration.
+7. Record log excerpts, TPS, packet counts and actual client screenshots
+   before checking any acceptance box. Disable experimental modes if any
+   client becomes invisible, ghosted or visually inconsistent.
