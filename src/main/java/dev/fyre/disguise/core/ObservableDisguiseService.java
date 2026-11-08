@@ -90,9 +90,31 @@ public final class ObservableDisguiseService implements DisguiseService {
     @Override public void clearPlayer(UUID id) {
         mutationGuard.run();
         Objects.requireNonNull(id, "id");
-        // Restoring a still-online subject must publish the same transitions as
-        // removing their global alias and all per-viewer overrides.
-        update(id, () -> delegate.clearPlayer(id));
+        // A player can be both a disguised subject and a viewer with custom
+        // overrides for other subjects. Clearing their viewer overrides may
+        // reveal global aliases, so both directions require transitions.
+        Collection<UUID> online = new ArrayList<UUID>(viewers.get());
+        java.util.Map<UUID, Disguise> beforeSubject = new java.util.LinkedHashMap<UUID, Disguise>();
+        for (UUID viewer : online) {
+            beforeSubject.put(viewer, delegate.getDisguiseFor(viewer, id).orElse(null));
+        }
+        java.util.Map<UUID, Disguise> beforeViewer = new java.util.LinkedHashMap<UUID, Disguise>();
+        if (online.contains(id) && delegate instanceof DisguiseSubjectCatalog) {
+            for (UUID subject : ((DisguiseSubjectCatalog) delegate).subjectIds()) {
+                if (!subject.equals(id)) {
+                    beforeViewer.put(subject, delegate.getDisguiseFor(id, subject).orElse(null));
+                }
+            }
+        }
+        delegate.clearPlayer(id);
+        for (java.util.Map.Entry<UUID, Disguise> entry : beforeSubject.entrySet()) {
+            planner.plan(entry.getKey(), id, entry.getValue(),
+                    delegate.getDisguiseFor(entry.getKey(), id).orElse(null)).ifPresent(renderer::render);
+        }
+        for (java.util.Map.Entry<UUID, Disguise> entry : beforeViewer.entrySet()) {
+            planner.plan(id, entry.getKey(), entry.getValue(),
+                    delegate.getDisguiseFor(id, entry.getKey()).orElse(null)).ifPresent(renderer::render);
+        }
     }
 
     @Override public void clear() {
