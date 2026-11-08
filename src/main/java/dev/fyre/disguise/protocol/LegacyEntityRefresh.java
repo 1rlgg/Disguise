@@ -50,6 +50,15 @@ public final class LegacyEntityRefresh {
         Player conflicting = alias == null ? null : Bukkit.getPlayerExact(alias);
         boolean aliasCollision = conflicting != null && conflicting.isOnline()
                 && !conflicting.getUniqueId().equals(subject.getUniqueId());
+        if (!aliasCollision && alias != null && disguises != null) {
+            // UUID-preserving profile rewrites do not make duplicate profile
+            // usernames safe. Reject the entity packet path for this viewer
+            // if another online subject resolves to the same visible alias.
+            java.util.List<java.util.UUID> onlineIds = new java.util.ArrayList<java.util.UUID>();
+            for (Player online : Bukkit.getOnlinePlayers()) onlineIds.add(online.getUniqueId());
+            aliasCollision = ViewerAliasCollisionPolicy.conflicts(
+                    disguises, viewer.getUniqueId(), subject.getUniqueId(), alias, onlineIds);
+        }
         if (!ScoreboardNameplatePolicy.mayRefreshEntity(
                 viewer.getScoreboard().getEntryTeam(subject.getName()) != null,
                 alias != null && viewer.getScoreboard().getEntryTeam(alias) != null,
