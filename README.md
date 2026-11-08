@@ -1,52 +1,55 @@
 # FyreDisguise
 
-Experimental Java 8 / Spigot 1.8.8 disguise framework for Minecraft 1.8.9 clients.
+Experimental Minecraft 1.8.9 client player-disguise plugin for Java 8 and Spigot 1.8.8.
 
-## Working components
+## What currently works in code
 
-- Global/per-viewer disguise identities and operator test commands.
-- ProtocolLib 4.8.0 outgoing `PLAYER_INFO ADD_PLAYER` aliases.
-- Experimental tab-list-only updates and best-effort restores (disabled by default).
-- Async Mojang skin lookup, bounded queue/cache, and single-flight network requests.
-- Signed texture lookup source by online username **or exact full Mojang UUID**, including offline sources.
-- Sessionserver profile UUID validation so an unexpected profile cannot substitute signed properties.
-- Safe per-viewer skin assignments that never synthesize a new viewer override from a global alias.
-- Java 8 Maven tests and an uploaded GitHub Actions development JAR.
+- Global/per-viewer player aliases and Mojang texture-property state.
+- Outgoing ProtocolLib 4.8 `PLAYER_INFO ADD_PLAYER` rewrite with signed textures.
+- Async skin lookup, cache, permission-protected testing commands.
+- Experimental tab-list refresh and **new opt-in in-world entity refresh prototype**.
+- Entity prototype captures original server-produced `NAMED_ENTITY_SPAWN` snapshots per viewer, preserving entity ID and UUID; on a disguise transition it sends player-info refresh, entity destroy, cloned spawn with current location and metadata, head rotation and five equipment slots.
+- The experiment is bounded (4,096 tracked snapshots and 2,048 queued refreshes; 32 attempts per tick).
+- Java 8 CI and unit tests with downloadable development JAR.
 
-## Usage
+## Install and build
 
-Java 8, Spigot 1.8.8, ProtocolLib 4.8.0 installed separately. Build with `mvn clean verify`. All commands require `fyredisguise.admin` (operators by default).
+Requires Java 8, Spigot 1.8.8, ProtocolLib 4.8.0. Build using `mvn clean verify`.
 
-```text
-/fyredisguise set <online-player> <alias>
-/fyredisguise view <viewer> <online-player> <alias>
-/fyredisguise skin <online-target> <online-source|full-uuid>
-/fyredisguise viewskin <viewer> <online-target> <online-source|full-uuid>
-/fyredisguise clear <online-player>
-/fyredisguise unview <viewer> <online-player>
-/fyredisguise status <online-player>
-/fyredisguise viewstatus <viewer> <online-player>
+## Experimental options
+
+In `plugins/FyreDisguise/config.yml`:
+
+```yaml
+experimental-tab-refresh: false
+experimental-entity-refresh: false
 ```
 
-The target and optional viewer must be online; the source account can be offline when its UUID is known. The source UUID is *not* a username resolver. Mojang must return a signed textures property with matching profile UUID; cryptographic verification of the signature is not currently implemented.
+**Both are disabled by default.** To evaluate in-world name and skin refresh *only on a disposable test server*, set both to `true` and restart. Entity refresh requires the tab refresh option. Normal PvP/production servers should leave both off.
 
-The `experimental-tab-refresh: false` config option stays off by default. Only experiment on a disposable server.
+The entity backend only attempts to refresh a subject if an original spawn packet was observed for that viewer and the viewer can currently see the subject in the same world. It deliberately does not modify Bukkit visibility or server hitboxes. Client-side flicker and incompatibilities may still occur. Client appearance, scoreboard nametags, mounted/sleeping status, and packet ordering require live verification.
 
-## Outstanding release blockers
+## Admin-only test commands
 
-1. **No full in-world name or skin disguise implementation.** Existing entities are not re-spawned.
-2. Identity restore is limited to best-effort tab entries, not full entity appearance.
-3. Nametag/team/vanish/NPC/spectator compatibility and PvP hit registration are untested.
-4. Real Spigot 1.8.8 + Minecraft 1.8.9 multi-client verification and load profiling are still missing.
-5. Open-source licensing and release criteria need owner approval.
+Permission `fyredisguise.admin` (default operator); named players must be online, but skin source can be an exact UUID:
 
-A successful Maven build does **not** establish production-ready Minecraft disguise functionality.
+```text
+/fyredisguise set <player> <alias>
+/fyredisguise clear <player>
+/fyredisguise status <player>
+/fyredisguise view <viewer> <player> <alias>
+/fyredisguise unview <viewer> <player>
+/fyredisguise viewstatus <viewer> <player>
+/fyredisguise skin <target> <skin-source-or-uuid>
+/fyredisguise viewskin <viewer> <target> <skin-source-or-uuid>
+```
 
+## Release blockers
 
-## Spawn identity and skin safety milestone
+1. **Real client verification:** two Minecraft 1.8.9 clients, Spigot 1.8.8, ProtocolLib 4.8.0; compare baseline and experiment with aliases, skins and undisguise.
+2. Confirm no disappearing entities, hit registration changes, exploit-prone tracking, gear loss, skin glitches, tab ordering or vanish bypass.
+3. Handle nonstandard states: sleeping, passengers, spectating, NPCs, scoreboard nametags and third-party plugins.
+4. Correctly restore world and tab identity on all disconnect/reconnect, respawn, world and shutdown paths.
+5. Add integration and performance tests, choose open-source license, and audit for release.
 
-The `SpawnIdentityDecision` helper provides a read-only answer to *which alias, if any,* a viewer should see for a player being tracked. It checks an explicit visibility flag and excludes self-view. **It is not connected to `NAMED_ENTITY_SPAWN` packets yet**, and never creates/destroys/repositions an entity. The player-info renderer remains separate.
-
-Texture data now requires canonical Base64 encoding and bounded sizes. Matching Mojang profile IDs and signature presence are checked for fetched textures; **RSA signature verification is not implemented**. The safeguards do not prove a remote skin belongs to an authenticated player without verification.
-
-The next necessary work is a version-specific world-entity backend that passes actual Spigot 1.8.8 / Minecraft 1.8.9 integration tests. These should include player tracking range, vanished players, hit registration, self-view, entity respawns, scoreboard nametags, and removal/restoration. Do not enable entity-spawn rewriting until those behaviors have been measured.
+**CI compilation/unit tests do not prove Minecraft client correctness. This is NOT production-ready.**
