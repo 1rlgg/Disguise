@@ -6,13 +6,16 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
+import java.util.Set;
+import java.util.HashSet;
+import java.util.Collections;
 import java.util.UUID;
 
 /**
  * Thread-safe desired identity registry, including viewer-specific overrides.
  * Writes should originate on the Bukkit primary thread. Reads are safe for packet listeners.
  */
-public final class InMemoryDisguiseService implements DisguiseService {
+public final class InMemoryDisguiseService implements DisguiseService, DisguiseSubjectCatalog {
     private final Map<UUID, Disguise> global = new HashMap<UUID, Disguise>();
     private final Map<UUID, Map<UUID, Disguise>> perViewer = new HashMap<UUID, Map<UUID, Disguise>>();
 
@@ -27,6 +30,14 @@ public final class InMemoryDisguiseService implements DisguiseService {
 
     @Override public synchronized boolean removeDisguise(UUID playerId) {
         return global.remove(Objects.requireNonNull(playerId, "playerId")) != null;
+    }
+
+    @Override public synchronized Set<UUID> subjectIds() {
+        Set<UUID> ids = new HashSet<UUID>(global.keySet());
+        for (Map<UUID, Disguise> overrides : perViewer.values()) {
+            ids.addAll(overrides.keySet());
+        }
+        return Collections.unmodifiableSet(ids);
     }
 
     @Override public synchronized void clear() {
