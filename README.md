@@ -1,45 +1,44 @@
 # FyreDisguise
 
-An open-source **work-in-progress** disguise framework for Spigot 1.8.8 with Minecraft 1.8.9 clients.
+Work-in-progress player-disguise framework for **Spigot 1.8.8** servers and **Minecraft 1.8.9 clients**.
 
-## Implemented foundation
+## Implemented
 
-- Java 8 Maven plugin and a main-thread disguise-state API.
-- Global and per-viewer identity selection, efficient change planning, and no-op deduplication.
-- Rendering interface for a future protocol-specific backend (current default is **diagnostic only**).
-- Quit/shutdown state cleanup.
-- Mojang signed texture-property lookup with connection/read timeouts and response size limits.
-- Bounded asynchronous texture lookups with expiring, bounded LRU cache.
-- JUnit tests and GitHub Actions Maven verification.
+- Java 8, Maven, Bukkit integration, typed disguise API and per-viewer overrides.
+- Thread-safe identity registry reads for packet callbacks and main-thread-only state mutations.
+- **ProtocolLib 4.8.0 PLAYER_INFO ADD_PLAYER rewriting:** outgoing profile entries can show an alias and optionally custom signed textures. Original subject UUID, gamemode, latency and display name are retained.
+- Mojang texture retrieval, async bounded executor, timeouts and expiring LRU cache.
+- Non-mutating render transitions and automated unit tests.
 
-**Important:** Visible disguises are **not implemented**. The diagnostic renderer does not send packets or alter skins, tab lists, or entity names. No claim of production readiness is made.
+## Important limitations
 
-## Build
+**This is not yet a complete working in-game disguise plugin.**
 
-```bash
-mvn clean verify
-```
+The protocol hook rewrites only outgoing `PLAYER_INFO ADD_PLAYER` packets. Already visible entities/old tab entries are **not** refreshed when you call `setDisguise`; identity restoration in clients is not implemented. Existing players may need a normal server-driven respawn/refresh for a change to be visible, but no disruptive hide/show workaround is performed automatically. Skin signature bytes are not cryptographically checked by the library.
 
-Use a Java 8 JDK; Spigot 1.8.8 API is a provided dependency.
+### Runtime requirements
 
-## API example (requests only)
+- Spigot 1.8.8 and Java 8.
+- Install **ProtocolLib 4.8.0**, compatible with legacy 1.8 servers (not current Java-17-only ProtocolLib versions).
+- Compile with `mvn clean verify`. The dependency is provided, not bundled.
+
+### API sample
 
 ```java
 FyreDisguisePlugin plugin = JavaPlugin.getPlugin(FyreDisguisePlugin.class);
 DisguiseService service = plugin.getDisguiseService();
-service.setDisguise(new Disguise(subject.getUniqueId(), "NewAlias"));
-service.setDisguiseFor(viewer.getUniqueId(), new Disguise(subject.getUniqueId(), "ViewerAlias"));
-service.removeDisguiseFor(viewer.getUniqueId(), subject.getUniqueId());
+service.setDisguise(new Disguise(subject.getUniqueId(), "PlayerAlias"));
+service.setDisguiseFor(viewer.getUniqueId(), new Disguise(subject.getUniqueId(), "PrivateAlias"));
 ```
 
-Disguise state calls must run on the primary Bukkit thread. Async skin lookup futures complete on background workers; schedule any Bukkit activity back to the main thread.
+These state mutations must happen on the server primary thread.
 
-## Remaining release-critical milestones
+## Release blockers
 
-1. Implement and validate a Spigot 1.8.8 packet transport (player-info add/remove and entity refresh).
-2. Render global/per-viewer changes and restore the original identity safely.
-3. Add reconnect, teleport, respawn, scoreboard/nametag, vanish, tab-list and skin synchronization behavior.
-4. Add protocol integration tests, stress tests, and real-server compatibility checks.
-5. Evaluate skin retrieval backpressure and concurrency under load, document limits, choose an open-source license.
+1. On-server tests of outgoing packet rewriting, list synchronization and client compatibility.
+2. Implement safe live refresh and restoration for existing viewers, without bypassing vanish/visibility plugins.
+3. Handle rejoin, respawn, world transitions, NPCs, scoreboard teams/nametags and skin switching.
+4. Add packet integration tests and network performance profiling.
+5. Add an open-source license before treating the repository as publicly reusable.
 
-This repository does not yet contain a production-ready disguise plugin.
+**No production release is recommended yet.**
