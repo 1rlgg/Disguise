@@ -1,6 +1,7 @@
 package dev.fyre.disguise.render;
 
 import java.util.ArrayList;
+import java.util.Iterator;
 import java.util.Collection;
 import java.util.List;
 import java.util.Objects;
@@ -19,19 +20,24 @@ public final class RestorationReconciler {
         Objects.requireNonNull(applied, "applied");
         Objects.requireNonNull(needsRestore, "needsRestore");
         if (maxInspect < 1) throw new IllegalArgumentException("maxInspect must be positive");
-        List<RefreshQueue.Pair> entries = new ArrayList<RefreshQueue.Pair>(applied);
         List<RefreshQueue.Pair> restore = new ArrayList<RefreshQueue.Pair>();
-        if (entries.isEmpty()) {
+        if (applied.isEmpty()) {
             offset = 0;
             return restore;
         }
-        int inspected = Math.min(maxInspect, entries.size());
-        int from = offset % entries.size();
+        // AppliedTabEntries returns an immutable insertion-ordered snapshot.
+        // Do not allocate an O(N) copy on each reconciliation scan; iterators
+        // let us inspect the bounded slice with only output allocations.
+        int inspected = Math.min(maxInspect, applied.size());
+        int from = offset % applied.size();
+        Iterator<RefreshQueue.Pair> iter = applied.iterator();
+        for (int skip = 0; skip < from; skip++) iter.next();
         for (int i = 0; i < inspected; i++) {
-            RefreshQueue.Pair pair = entries.get((from + i) % entries.size());
+            if (!iter.hasNext()) iter = applied.iterator();
+            RefreshQueue.Pair pair = iter.next();
             if (needsRestore.test(pair)) restore.add(pair);
         }
-        offset = (from + inspected) % entries.size();
+        offset = (from + inspected) % applied.size();
         return restore;
     }
 

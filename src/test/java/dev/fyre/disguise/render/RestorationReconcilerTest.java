@@ -28,6 +28,18 @@ public class RestorationReconcilerTest {
                 scanner.scan(Arrays.asList(active, undisguised), undisguised::equals, 10));
     }
 
+    @Test public void wrapsWithoutMakingAnotherFullCollectionCopy() {
+        RestorationReconciler scanner = new RestorationReconciler();
+        List<RefreshQueue.Pair> entries = Arrays.asList(pair(), pair(), pair());
+        assertEquals(entries.subList(0, 2), scanner.scan(entries, p -> true, 2));
+        assertEquals(Arrays.asList(entries.get(2), entries.get(0)),
+                scanner.scan(entries, p -> true, 2));
+        assertEquals(Arrays.asList(entries.get(1), entries.get(2)),
+                scanner.scan(entries, p -> true, 2));
+        scanner.reset();
+        assertEquals(entries.subList(0, 2), scanner.scan(entries, p -> true, 2));
+    }
+
     @Test public void emptyRegistryAndResetAreSafe() {
         RestorationReconciler scanner = new RestorationReconciler();
         assertTrue(scanner.scan(Collections.emptyList(), pair -> true, 5).isEmpty());
