@@ -87,6 +87,9 @@ public final class FyreDisguisePlugin extends JavaPlugin implements Listener {
 
     private void assertMainThread() {
         if (!Bukkit.isPrimaryThread()) throw new IllegalStateException("Disguise mutations require the primary server thread");
+        if (!isEnabled() || disguises == null) {
+            throw new IllegalStateException("Disguise mutations require an enabled plugin");
+        }
     }
 
     private void scheduleResync(UUID playerId) {
@@ -123,7 +126,9 @@ public final class FyreDisguisePlugin extends JavaPlugin implements Listener {
         UUID id = event.getPlayer().getUniqueId();
         if (tabRenderer != null) tabRenderer.forget(id);
         if (spawnPackets != null) spawnPackets.forget(id);
-        if (disguises != null) disguises.clearPlayer(id);
+        // A quitting subject is already being removed by the server; do not
+        // schedule synthetic client respawns for their outgoing entity.
+        if (registry != null) registry.clearPlayer(id);
     }
 
     @Override public void onDisable() {
