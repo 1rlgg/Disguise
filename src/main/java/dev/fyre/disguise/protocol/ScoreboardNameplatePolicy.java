@@ -13,6 +13,15 @@ public final class ScoreboardNameplatePolicy {
      * an existing scoreboard team. The tab-list path remains independent.
      */
     public static boolean mayRefreshEntity(boolean scoreboardTeamOwnsRealName) {
-        return !scoreboardTeamOwnsRealName;
+        return mayRefreshEntity(scoreboardTeamOwnsRealName, false, false);
+    }
+
+    /**
+     * Legacy clients may resolve a renamed spawn against scoreboard entries
+     * and existing online profiles. Do not forcibly replace any of those.
+     */
+    public static boolean mayRefreshEntity(boolean realNameTeam, boolean aliasNameTeam,
+                                           boolean aliasConflictsWithOnlinePlayer) {
+        return !realNameTeam && !aliasNameTeam && !aliasConflictsWithOnlinePlayer;
     }
 }
