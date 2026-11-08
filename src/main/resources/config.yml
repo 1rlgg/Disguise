@@ -1,0 +1,4 @@
+# Experimental: refresh existing viewers' PLAYER_INFO tab-list entries on
+# identity changes. Does not rename or respawn world entities.
+# Keep disabled on production/competitive servers pending live protocol testing.
+experimental-tab-refresh: false
