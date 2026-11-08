@@ -18,6 +18,7 @@ public class TabClientStateSimulationTest {
         private final UUID subject = UUID.randomUUID();
         private int calls;
         private int failOnCall;
+        private int failAlsoOnCall;
 
         void send(String operation) throws InvocationTargetException {
             calls++;
@@ -26,7 +27,7 @@ public class TabClientStateSimulationTest {
             if ("original".equals(operation)) entries.put(subject, "RealName");
             // Throw AFTER the fake client received the packet. This is the
             // ambiguous failure that most mocks miss.
-            if (calls == failOnCall)
+            if (calls == failOnCall || calls == failAlsoOnCall)
                 throw new InvocationTargetException(new Exception("ambiguous send " + calls));
         }
     }
@@ -51,8 +52,25 @@ public class TabClientStateSimulationTest {
                 assertEquals(1, client.entries.size());
                 assertEquals("RealName", client.entries.get(client.subject));
                 assertEquals(0, expected.getSuppressed().length);
-                assertEquals(4 - failingCall, client.calls - failingCall);
+                assertEquals(failingCall == 1 ? 3 : 4, client.calls);
             }
+        }
+    }
+
+    @Test public void cleanupFailureStillAllowsOriginalProfileToReachClient() {
+        FakeClient client = new FakeClient();
+        client.failOnCall = 2;
+        client.failAlsoOnCall = 3;
+        try {
+            TabRefreshTransaction.execute("remove", "alias", "original", client::send);
+            fail("Original failure should propagate");
+        } catch (InvocationTargetException expected) {
+            assertEquals(4, client.calls);
+            assertEquals(1, client.entries.size());
+            assertEquals("RealName", client.entries.get(client.subject));
+            assertEquals(1, expected.getSuppressed().length);
+            assertEquals("ambiguous send 3",
+                    expected.getSuppressed()[0].getCause().getMessage());
         }
     }
 
