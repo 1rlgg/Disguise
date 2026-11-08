@@ -8,6 +8,7 @@ import java.util.Objects;
 import java.util.UUID;
 import java.util.List;
 import java.util.function.Supplier;
+import java.util.function.BiPredicate;
 import org.bukkit.Bukkit;
 import org.bukkit.ChatColor;
 import org.bukkit.command.Command;
@@ -20,6 +21,7 @@ public final class DisguiseCommand implements CommandExecutor {
     private final DisguiseService disguises;
     private final SkinCommandHandler skins;
     private final Supplier<List<String>> diagnostics;
+    private final BiPredicate<UUID, UUID> manualRestore;
 
     public DisguiseCommand(DisguiseService disguises) {
         this(disguises, null, null);
@@ -31,9 +33,16 @@ public final class DisguiseCommand implements CommandExecutor {
 
     public DisguiseCommand(DisguiseService disguises, SkinCommandHandler skins,
                           Supplier<List<String>> diagnostics) {
+        this(disguises, skins, diagnostics, (viewer, subject) -> false);
+    }
+
+    public DisguiseCommand(DisguiseService disguises, SkinCommandHandler skins,
+                          Supplier<List<String>> diagnostics,
+                          BiPredicate<UUID, UUID> manualRestore) {
         this.disguises = Objects.requireNonNull(disguises, "disguises");
         this.skins = skins;
         this.diagnostics = diagnostics;
+        this.manualRestore = Objects.requireNonNull(manualRestore, "manualRestore");
     }
 
     private Player find(CommandSender sender, String name) {
@@ -70,6 +79,20 @@ public final class DisguiseCommand implements CommandExecutor {
                 sender.sendMessage(ChatColor.RED + "Diagnostics unavailable.");
             } else {
                 for (String line : diagnostics.get()) sender.sendMessage(ChatColor.YELLOW + line);
+            }
+            return true;
+        }
+        if (args.length == 3 && args[0].equalsIgnoreCase("restore")) {
+            Player viewer = find(sender, args[1]);
+            Player subject = find(sender, args[2]);
+            if (viewer == null || subject == null) return true;
+            if (!viewer.canSee(subject)) {
+                sender.sendMessage(ChatColor.RED + "Viewer cannot see player; restoration suppressed.");
+            } else {
+                boolean queued = manualRestore.test(viewer.getUniqueId(), subject.getUniqueId());
+                sender.sendMessage(queued
+                        ? ChatColor.GREEN + "Original tab profile restoration queued (not yet client-verified)."
+                        : ChatColor.YELLOW + "No eligible applied alias, or restoration queue is full.");
             }
             return true;
         }
@@ -168,7 +191,7 @@ public final class DisguiseCommand implements CommandExecutor {
 
     private static void usage(CommandSender sender, String label) {
         sender.sendMessage(ChatColor.YELLOW + "/" + label + " stats|reset");
-        sender.sendMessage(ChatColor.YELLOW + "/" + label + " inspect <viewer> <player>");
+        sender.sendMessage(ChatColor.YELLOW + "/" + label + " inspect|restore <viewer> <player>");
         sender.sendMessage(ChatColor.YELLOW + "/" + label + " set|clear|status <player> [alias]");
         sender.sendMessage(ChatColor.YELLOW + "/" + label + " view <viewer> <player> <alias>");
         sender.sendMessage(ChatColor.YELLOW + "/" + label + " unview|viewstatus <viewer> <player>");

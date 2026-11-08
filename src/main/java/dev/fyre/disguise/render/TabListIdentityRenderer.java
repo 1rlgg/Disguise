@@ -23,6 +23,8 @@ public final class TabListIdentityRenderer implements IdentityRenderer {
     private final Logger logger;
     private final RefreshQueue pending;
     private final AppliedTabEntries applied = new AppliedTabEntries();
+    private final java.util.Set<RefreshQueue.Pair> manualRestores =
+            new java.util.HashSet<RefreshQueue.Pair>();
     private final RefreshRetryLedger retries;
     private final DeferredRefreshBacklog deferred;
     private final RestorationReconciler reconciler = new RestorationReconciler();
@@ -76,7 +78,8 @@ public final class TabListIdentityRenderer implements IdentityRenderer {
         if (!ManualRestorationPolicy.allowed(applied.contains(viewer, subject),
                 current, viewer.equals(subject))) return false;
         retries.newTransition(new RefreshQueue.Pair(viewer, subject));
-        enqueueRestoration(viewer, subject);
+        if (!enqueueRestoration(viewer, subject)) return false;
+        manualRestores.add(new RefreshQueue.Pair(viewer, subject));
         return true;
     }
 
@@ -105,9 +108,9 @@ public final class TabListIdentityRenderer implements IdentityRenderer {
         }
     }
 
-    private void enqueueRestoration(UUID viewer, UUID subject) {
+    private boolean enqueueRestoration(UUID viewer, UUID subject) {
         deferred.cancel(viewer, subject);
-        pending.offerRestoration(viewer, subject, evicted ->
+        return pending.offerRestoration(viewer, subject, evicted ->
                 deferred.offer(evicted.getViewer(), evicted.getSubject()));
     }
 
@@ -137,6 +140,7 @@ public final class TabListIdentityRenderer implements IdentityRenderer {
     public void forget(UUID id) {
         assertPrimaryThread();
         pending.forget(id);
+        manualRestores.removeIf(pair -> id.equals(pair.getViewer()) || id.equals(pair.getSubject()));
         deferred.forget(id);
         retries.forget(id);
         applied.forget(id);
@@ -202,6 +206,7 @@ public final class TabListIdentityRenderer implements IdentityRenderer {
         long started = System.nanoTime();
         java.util.List<RefreshQueue.Pair> work = pending.poll(batchSize);
         for (RefreshQueue.Pair pair : work) {
+            boolean manualRestore = manualRestores.remove(pair);
             // A stale deferred/resync queue entry is not a new identity
             // transition. Quarantine exhausted transports until an explicit
             // transition resets the retry gate.
@@ -224,7 +229,7 @@ public final class TabListIdentityRenderer implements IdentityRenderer {
                 continue;
             }
             try {
-                deliver(viewer, subject, true);
+                deliver(viewer, subject, !manualRestore);
                 retries.succeeded(pair);
                 if (state != null) {
                     if (state.getDisguiseFor(pair.getViewer(), pair.getSubject()).isPresent()) {
@@ -247,7 +252,10 @@ public final class TabListIdentityRenderer implements IdentityRenderer {
                     // Urgent undisguise restoration gets precedence over cosmetics.
                     boolean restore = state != null
                             && !state.getDisguiseFor(pair.getViewer(), pair.getSubject()).isPresent();
-                    if (restore) enqueueRestoration(pair.getViewer(), pair.getSubject());
+                    if (restore) {
+                        if (enqueueRestoration(pair.getViewer(), pair.getSubject()) && manualRestore)
+                            manualRestores.add(pair);
+                    }
                     else if (!pending.offer(pair.getViewer(), pair.getSubject())
                             && !deferred.offer(pair.getViewer(), pair.getSubject())) {
                         retries.succeeded(pair);
@@ -307,6 +315,7 @@ public final class TabListIdentityRenderer implements IdentityRenderer {
     public void clear() {
         assertPrimaryThread();
         pending.clear();
+        manualRestores.clear();
         deferred.clear();
         retries.clear();
         reconciler.reset();
