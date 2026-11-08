@@ -40,7 +40,23 @@ public class EntityRefreshAttemptTest {
             attempt.deliver(() -> { world.incrementAndGet(); return true; }, tab::incrementAndGet);
         } catch (InvocationTargetException unexpected) { fail("No error expected"); }
         assertEquals(2, world.get());
-        assertEquals(1, tab.get());
+        assertEquals(2, tab.get());
+    }
+
+    @Test public void failedImmediateFallbackDoesNotHideOriginalWorldFailure() {
+        EntityRefreshFailureGate gate = new EntityRefreshFailureGate(1);
+        EntityRefreshAttempt attempt = new EntityRefreshAttempt(gate);
+        try {
+            attempt.deliver(() -> { throw new InvocationTargetException(new Exception("world")); },
+                    () -> { throw new IllegalStateException("tab failed"); });
+            fail("Expected world failure");
+        } catch (InvocationTargetException expected) {
+            assertEquals(2, expected.getSuppressed().length);
+            assertTrue(expected.getSuppressed()[0]
+                    instanceof EntityRefreshAttempt.EntityCircuitOpenedException);
+            assertEquals("tab failed", expected.getSuppressed()[1].getMessage());
+            assertFalse(gate.enabled());
+        }
     }
 
     @Test public void successfulEntityUpdateResetsActualWorldFailureCount() throws Exception {

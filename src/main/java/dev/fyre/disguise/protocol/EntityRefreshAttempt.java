@@ -22,8 +22,9 @@ public final class EntityRefreshAttempt {
     }
 
     /**
-     * Returns true exactly when this attempt disables the entity backend.
-     * If the world refresh is unsafe/skipped, use the tab fallback instead.
+     * Use the tab fallback when world refresh is unavailable or skipped.
+     * Failure is propagated for renderer retries; only entity failures affect
+     * the entity circuit breaker.
      */
     public boolean deliver(WorldSender world, TabSender tab) throws InvocationTargetException {
         Objects.requireNonNull(world, "world");
@@ -41,6 +42,14 @@ public final class EntityRefreshAttempt {
                 // The caller needs to log the circuit transition; preserve the
                 // original failure to make retry and recovery behavior explicit.
                 failure.addSuppressed(new EntityCircuitOpenedException());
+                // Recover this same viewer's tab profile immediately; waiting
+                // for a later retry can leave it stale after the breaker opens.
+                // Preserve the original world failure for accurate diagnosis.
+                try {
+                    tab.refresh();
+                } catch (InvocationTargetException | RuntimeException fallbackFailure) {
+                    if (fallbackFailure != failure) failure.addSuppressed(fallbackFailure);
+                }
             }
             throw failure;
         }
