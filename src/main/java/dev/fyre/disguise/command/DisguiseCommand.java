@@ -3,6 +3,7 @@ package dev.fyre.disguise.command;
 import dev.fyre.disguise.api.Disguise;
 import dev.fyre.disguise.api.DisguiseService;
 import dev.fyre.disguise.skin.SkinSourceId;
+import dev.fyre.disguise.protocol.NameplateCompatibility;
 import java.util.Objects;
 import java.util.UUID;
 import java.util.List;
@@ -70,6 +71,24 @@ public final class DisguiseCommand implements CommandExecutor {
             } else {
                 for (String line : diagnostics.get()) sender.sendMessage(ChatColor.YELLOW + line);
             }
+            return true;
+        }
+        if (args.length == 3 && args[0].equalsIgnoreCase("inspect")) {
+            Player viewer = find(sender, args[1]);
+            Player subject = find(sender, args[2]);
+            if (viewer == null || subject == null) return true;
+            boolean sameWorld = viewer.getWorld().equals(subject.getWorld());
+            boolean visible = viewer.canSee(subject);
+            boolean teamOwned = viewer.getScoreboard().getEntryTeam(subject.getName()) != null;
+            boolean spectator = "SPECTATOR".equals(viewer.getGameMode().name())
+                    || "SPECTATOR".equals(subject.getGameMode().name());
+            sender.sendMessage(ChatColor.YELLOW + "Effective alias: "
+                    + disguises.getDisguiseFor(viewer.getUniqueId(), subject.getUniqueId())
+                    .map(Disguise::getName).orElse("(none)"));
+            sender.sendMessage(ChatColor.YELLOW + "Experimental world eligibility: "
+                    + NameplateCompatibility.reason(sameWorld, visible, teamOwned, spectator,
+                            viewer.equals(subject)));
+            sender.sendMessage(ChatColor.GRAY + "Inspection only; no packets or scoreboard teams changed.");
             return true;
         }
         if (args.length == 3 && args[0].equalsIgnoreCase("skin")) {
@@ -142,6 +161,7 @@ public final class DisguiseCommand implements CommandExecutor {
 
     private static void usage(CommandSender sender, String label) {
         sender.sendMessage(ChatColor.YELLOW + "/" + label + " stats|reset");
+        sender.sendMessage(ChatColor.YELLOW + "/" + label + " inspect <viewer> <player>");
         sender.sendMessage(ChatColor.YELLOW + "/" + label + " set|clear|status <player> [alias]");
         sender.sendMessage(ChatColor.YELLOW + "/" + label + " view <viewer> <player> <alias>");
         sender.sendMessage(ChatColor.YELLOW + "/" + label + " unview|viewstatus <viewer> <player>");
