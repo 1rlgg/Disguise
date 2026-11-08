@@ -6,7 +6,6 @@ import com.comphenix.protocol.events.PacketAdapter;
 import com.comphenix.protocol.events.PacketEvent;
 import java.util.Objects;
 import java.util.UUID;
-import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.logging.Level;
 import org.bukkit.plugin.Plugin;
 
@@ -16,7 +15,7 @@ import org.bukkit.plugin.Plugin;
  */
 public final class SpawnPacketObserver extends PacketAdapter {
     private final TrackedSpawnPackets snapshots;
-    private final AtomicBoolean warned = new AtomicBoolean();
+    private final SpawnObservationCircuit observation = new SpawnObservationCircuit();
 
     public SpawnPacketObserver(Plugin plugin, TrackedSpawnPackets snapshots) {
         super(plugin, ListenerPriority.MONITOR,
@@ -26,7 +25,7 @@ public final class SpawnPacketObserver extends PacketAdapter {
 
     @Override public void onPacketSending(PacketEvent event) {
         // A cancelled outgoing packet did not establish client entity tracking.
-        if (event.isCancelled()) return;
+        if (event.isCancelled() || !observation.enabled()) return;
         try {
             UUID viewer = event.getPlayer().getUniqueId();
             if (event.getPacketType() == PacketType.Play.Server.NAMED_ENTITY_SPAWN) {
@@ -39,9 +38,12 @@ public final class SpawnPacketObserver extends PacketAdapter {
                 snapshots.destroy(viewer, event.getPacket().getIntegerArrays().read(0));
             }
         } catch (RuntimeException ex) {
-            if (warned.compareAndSet(false, true)) {
+            if (observation.trip()) {
+                // ProtocolLib reflection may no longer match the server.
+                // Never reuse snapshots from a damaged observer state.
+                snapshots.clear();
                 getPlugin().getLogger().log(Level.WARNING,
-                        "Spawn packet observation failed; experimental entity refresh may be unavailable", ex);
+                        "Spawn packet observation disabled after failure; using tab-list fallback", ex);
             }
         }
     }
