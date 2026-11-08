@@ -48,6 +48,22 @@ public class ObservableDisguiseCollisionTest {
         assertTrue(events.stream().allMatch(e -> e.getViewerId().equals(viewerA)));
     }
 
+    @Test public void clearingOneCollidingSubjectResyncsOtherOwner() {
+        UUID viewer = UUID.randomUUID(), a = UUID.randomUUID(), b = UUID.randomUUID();
+        List<IdentityTransition> events = new ArrayList<IdentityTransition>();
+        ObservableDisguiseService service = new ObservableDisguiseService(
+                new InMemoryDisguiseService(), events::add, () -> Arrays.asList(viewer));
+        service.setDisguise(new Disguise(a, "Duplicated"));
+        service.setDisguise(new Disguise(b, "Duplicated"));
+        events.clear();
+        service.clearPlayer(a);
+        assertEquals(2, events.size());
+        assertTrue(events.stream().anyMatch(e -> e.getSubjectId().equals(a)
+                && !e.getAfter().isPresent()));
+        assertTrue(events.stream().anyMatch(e -> e.getSubjectId().equals(b)
+                && e.getAfter().isPresent()));
+    }
+
     @Test public void skinChangeWithoutAliasNameChangeDoesNotRefreshNeighbours() {
         UUID viewer = UUID.randomUUID(), a = UUID.randomUUID(), b = UUID.randomUUID();
         List<IdentityTransition> events = new ArrayList<IdentityTransition>();

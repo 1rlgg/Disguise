@@ -152,12 +152,22 @@ public final class ObservableDisguiseService implements DisguiseService {
         }
         delegate.clearPlayer(id);
         for (java.util.Map.Entry<UUID, Disguise> entry : beforeSubject.entrySet()) {
-            planner.plan(entry.getKey(), id, entry.getValue(),
-                    delegate.getDisguiseFor(entry.getKey(), id).orElse(null)).ifPresent(renderer::render);
+            Disguise after = delegate.getDisguiseFor(entry.getKey(), id).orElse(null);
+            Optional<IdentityTransition> transition =
+                    planner.plan(entry.getKey(), id, entry.getValue(), after);
+            if (transition.isPresent()) {
+                renderer.render(transition.get());
+                refreshAliasNeighbours(entry.getKey(), id, entry.getValue(), after);
+            }
         }
         for (java.util.Map.Entry<UUID, Disguise> entry : beforeViewer.entrySet()) {
-            planner.plan(id, entry.getKey(), entry.getValue(),
-                    delegate.getDisguiseFor(id, entry.getKey()).orElse(null)).ifPresent(renderer::render);
+            Disguise after = delegate.getDisguiseFor(id, entry.getKey()).orElse(null);
+            Optional<IdentityTransition> transition =
+                    planner.plan(id, entry.getKey(), entry.getValue(), after);
+            if (transition.isPresent()) {
+                renderer.render(transition.get());
+                refreshAliasNeighbours(id, entry.getKey(), entry.getValue(), after);
+            }
         }
     }
 
