@@ -165,8 +165,16 @@ public final class TabListIdentityRenderer implements IdentityRenderer {
         if (++ticksSinceReconcile >= 20 && state != null) {
             ticksSinceReconcile = 0;
             for (RefreshQueue.Pair pair : reconciler.scan(applied.snapshot(),
-                    candidate -> !retries.suppressed(candidate)
-                            && !state.getDisguiseFor(candidate.getViewer(), candidate.getSubject()).isPresent(),
+                    candidate -> {
+                        if (retries.suppressed(candidate)) return false;
+                        Player viewer = Bukkit.getPlayer(candidate.getViewer());
+                        Player subject = Bukkit.getPlayer(candidate.getSubject());
+                        if (viewer == null || subject == null) return false;
+                        return RestorationEligibility.canRestore(true,
+                                state.getDisguiseFor(candidate.getViewer(), candidate.getSubject()).isPresent(),
+                                viewer.isOnline(), subject.isOnline(), viewer.canSee(subject),
+                                viewer.equals(subject));
+                    },
                     128)) {
                 enqueueRestoration(pair.getViewer(), pair.getSubject());
             }
