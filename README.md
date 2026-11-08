@@ -257,3 +257,22 @@ These improvements reduce risks but do not replace real-client tests for
 skin restoration, player invisibility, scoreboard names, packet bandwidth,
 PvP hit registration and combat consistency. Both experimental renderer
 flags remain disabled by default.
+
+
+## Deferred cosmetic refresh reliability (development cycle 29)
+
+The primary bounded refresh scheduler now uses insertion-ordered membership
+sets, avoiding linear scans when promoting an already queued cosmetic alias to
+an urgent restoration. If the primary queue is saturated, normal cosmetic
+updates go into a **separate bounded deferred backlog** instead of being
+discarded immediately. At most 32 deferred pairs are moved back to the main
+queue after each flush, while urgent restorations remain ahead of cosmetics.
+An explicit undisguise transition removes any obsolete deferred cosmetic pair.
+Both queues have bounded capacities, and overflow is observable through
+`/fyredisguise stats` (deferred pairs and deferred overflow counters).
+
+This reduces lost alias changes during bursts but cannot guarantee eventual
+visual correctness on an untested client. If **both** backlogs saturate, the
+new cosmetic update can still be dropped, and the counter records that loss.
+Real multiplayer PvP client testing and scoreboard-compatible nametags remain
+release blockers. The experimental renderer is still disabled by default.

@@ -45,6 +45,14 @@ public class DisguiseDiagnosticsTest {
         assertTrue(report.lines().get(11).contains("24 / 100"));
     }
 
+    @Test public void reportsDeferredCosmeticWorkAndOverflow() {
+        DisguiseDiagnostics report = new DisguiseDiagnostics(true, false,
+                2, 1, 0, 0, 0, 1, 0, false, 0, 0, 0, 0,
+                10, 20, 30, 40, 7, 3);
+        assertTrue(report.lines().get(12).contains("Deferred cosmetic pairs: 7"));
+        assertTrue(report.lines().get(12).contains("overflow: 3"));
+    }
+
     @Test(expected = IllegalArgumentException.class)
     public void refusesEntityWithoutTab() {
         new DisguiseDiagnostics(false, true, 0, 0, 0, 0);

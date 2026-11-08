@@ -24,6 +24,8 @@ public final class DisguiseDiagnostics {
     private final long processedPairs;
     private final long averageMicros;
     private final long peakMicros;
+    private final int deferredCount;
+    private final long deferredOverflows;
 
     public DisguiseDiagnostics(boolean tabEnabled, boolean entityEnabled,
                               int pendingRefreshes, int appliedEntries,
@@ -73,6 +75,23 @@ public final class DisguiseDiagnostics {
                               int queuedRetries, long exhaustedRetries, long rejectedRetries,
                               int coolingDownSkins, long flushes, long processedPairs,
                               long averageMicros, long peakMicros) {
+        this(tabEnabled, entityEnabled, pendingRefreshes, appliedEntries, trackedSpawns, pendingSkins,
+                urgentRestorations, lostCosmetic, lostRestorations, entityCircuitOpen,
+                queuedRetries, exhaustedRetries, rejectedRetries, coolingDownSkins,
+                flushes, processedPairs, averageMicros, peakMicros, 0, 0);
+    }
+
+    public DisguiseDiagnostics(boolean tabEnabled, boolean entityEnabled,
+                              int pendingRefreshes, int appliedEntries,
+                              int trackedSpawns, int pendingSkins,
+                              int urgentRestorations, long lostCosmetic,
+                              long lostRestorations, boolean entityCircuitOpen,
+                              int queuedRetries, long exhaustedRetries, long rejectedRetries,
+                              int coolingDownSkins, long flushes, long processedPairs,
+                              long averageMicros, long peakMicros,
+                              int deferredCount, long deferredOverflows) {
+        if (deferredCount < 0 || deferredOverflows < 0)
+            throw new IllegalArgumentException("Deferred refresh counters cannot be negative");
         if (flushes < 0 || processedPairs < 0 || averageMicros < 0 || peakMicros < 0)
             throw new IllegalArgumentException("Refresh timing metrics cannot be negative");
         if (coolingDownSkins < 0) throw new IllegalArgumentException("Cooldown count cannot be negative");
@@ -104,6 +123,8 @@ public final class DisguiseDiagnostics {
         this.processedPairs = processedPairs;
         this.averageMicros = averageMicros;
         this.peakMicros = peakMicros;
+        this.deferredCount = deferredCount;
+        this.deferredOverflows = deferredOverflows;
     }
 
     public List<String> lines() {
@@ -121,7 +142,8 @@ public final class DisguiseDiagnostics {
                         + "; denied by capacity: " + rejectedRetries,
                 "Skin sources in short failure cooldown: " + coolingDownSkins,
                 "Refresh flushes: " + flushes + "; processed pairs: " + processedPairs,
-                "Refresh flush wall us (average / peak): " + averageMicros + " / " + peakMicros
+                "Refresh flush wall us (average / peak): " + averageMicros + " / " + peakMicros,
+                "Deferred cosmetic pairs: " + deferredCount + "; overflow: " + deferredOverflows
         ));
     }
 }
