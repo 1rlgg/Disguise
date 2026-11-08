@@ -69,7 +69,9 @@ public final class LegacyEntityRefresh {
         for (int slot = 0; slot < equipment.length; slot++) {
             PacketContainer item = packets.createPacket(PacketType.Play.Server.ENTITY_EQUIPMENT);
             item.getIntegers().write(0, tracked.getEntityId());
-            item.getIntegers().write(1, slot);
+            // Spigot 1.8.8/NMS PacketPlayOutEntityEquipment: int entityId,
+            // short slot, ItemStack item. There is NO second int field.
+            item.getShorts().write(0, equipmentSlot(slot));
             item.getItemModifier().write(0, equipment[slot]);
             gear[slot] = item;
         }
@@ -85,6 +87,12 @@ public final class LegacyEntityRefresh {
                 java.util.Arrays.asList(gear),
                 packet -> packets.sendServerPacket(viewer, packet, false));
         return true;
+    }
+
+    /** In Minecraft 1.8 equipment indices are shorts 0=hand, 1-4=armor. */
+    public static short equipmentSlot(int slot) {
+        if (slot < 0 || slot > 4) throw new IllegalArgumentException("Invalid 1.8 equipment slot");
+        return (short) slot;
     }
 
     public static int fixed(double position) { return (int) Math.floor(position * 32.0D); }

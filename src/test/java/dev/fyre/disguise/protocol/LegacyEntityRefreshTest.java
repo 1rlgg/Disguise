@@ -4,6 +4,17 @@ import org.junit.Test;
 import static org.junit.Assert.*;
 
 public class LegacyEntityRefreshTest {
+    @Test public void legacyEquipmentSlotsAreShortAndBounded() {
+        for (int slot = 0; slot <= 4; slot++) {
+            assertEquals((short) slot, LegacyEntityRefresh.equipmentSlot(slot));
+        }
+    }
+
+    @Test(expected = IllegalArgumentException.class)
+    public void rejectsLegacyEquipmentSlotOutsideArmorRange() {
+        LegacyEntityRefresh.equipmentSlot(5);
+    }
+
     @Test public void fixedPointCoordinatesUseFloorForNegativeValues() {
         assertEquals(32, LegacyEntityRefresh.fixed(1.0));
         assertEquals(-1, LegacyEntityRefresh.fixed(-0.01));
