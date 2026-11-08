@@ -22,6 +22,22 @@ public class SkinFailureBackoffTest {
         assertFalse(backoff.blocked(id));
     }
 
+    @Test public void expiredEntriesDoNotInflateOperatorCooldownCounts() {
+        AtomicLong clock = new AtomicLong(0);
+        SkinFailureBackoff backoff = new SkinFailureBackoff(2, 10, clock::get);
+        UUID first = UUID.randomUUID(), second = UUID.randomUUID();
+        backoff.failed(first);
+        clock.set(5);
+        backoff.failed(second);
+        assertEquals(2, backoff.size());
+        clock.set(10);
+        assertEquals(1, backoff.size());
+        assertFalse(backoff.blocked(first));
+        assertTrue(backoff.blocked(second));
+        backoff.failed(UUID.randomUUID());
+        assertEquals(2, backoff.size());
+    }
+
     @Test public void capacityIsBoundedAndEvictsOldest() {
         AtomicLong clock = new AtomicLong(0);
         SkinFailureBackoff backoff = new SkinFailureBackoff(1, 100, clock::get);

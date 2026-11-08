@@ -41,6 +41,7 @@ public final class SkinFailureBackoff {
     }
 
     public synchronized void failed(UUID id) {
+        purgeExpired();
         failures.put(Objects.requireNonNull(id, "id"), clock.getAsLong());
         while (failures.size() > capacity) {
             Iterator<Map.Entry<UUID, Long>> it = failures.entrySet().iterator();
@@ -53,6 +54,16 @@ public final class SkinFailureBackoff {
         failures.remove(Objects.requireNonNull(id, "id"));
     }
 
-    public synchronized int size() { return failures.size(); }
+    /** Counts only active cooldowns, not expired entries retained by the LRU. */
+    public synchronized int size() {
+        purgeExpired();
+        return failures.size();
+    }
+
+    private void purgeExpired() {
+        long now = clock.getAsLong();
+        failures.entrySet().removeIf(entry ->
+                now - entry.getValue().longValue() >= durationNanos);
+    }
     public synchronized void clear() { failures.clear(); }
 }
