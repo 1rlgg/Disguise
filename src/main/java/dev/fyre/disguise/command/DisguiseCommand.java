@@ -55,6 +55,15 @@ public final class DisguiseCommand implements CommandExecutor {
             sender.sendMessage(ChatColor.RED + "You do not have permission.");
             return true;
         }
+        if (args.length == 1 && args[0].equalsIgnoreCase("reset")) {
+            // Administrative emergency recovery: mutate through the observable
+            // service so every active viewer receives a restoration transition.
+            // In-flight texture lookups must not reinstate prior disguises.
+            if (skins != null) skins.clearPending();
+            disguises.clear();
+            sender.sendMessage(ChatColor.YELLOW + "All aliases cleared; restoration queued for online viewers.");
+            return true;
+        }
         if (args.length == 1 && args[0].equalsIgnoreCase("stats")) {
             if (diagnostics == null) {
                 sender.sendMessage(ChatColor.RED + "Diagnostics unavailable.");
@@ -132,7 +141,7 @@ public final class DisguiseCommand implements CommandExecutor {
     }
 
     private static void usage(CommandSender sender, String label) {
-        sender.sendMessage(ChatColor.YELLOW + "/" + label + " stats");
+        sender.sendMessage(ChatColor.YELLOW + "/" + label + " stats|reset");
         sender.sendMessage(ChatColor.YELLOW + "/" + label + " set|clear|status <player> [alias]");
         sender.sendMessage(ChatColor.YELLOW + "/" + label + " view <viewer> <player> <alias>");
         sender.sendMessage(ChatColor.YELLOW + "/" + label + " unview|viewstatus <viewer> <player>");

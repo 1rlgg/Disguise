@@ -51,6 +51,23 @@ public class ClearRestorationTest {
                 && e.getViewerId().equals(viewer)));
     }
 
+    @Test public void emergencyClearRestoresEachOnlineViewerExactlyOnce() {
+        UUID target = UUID.randomUUID(), viewer1 = UUID.randomUUID(), viewer2 = UUID.randomUUID();
+        InMemoryDisguiseService registry = new InMemoryDisguiseService();
+        List<IdentityTransition> updates = new ArrayList<IdentityTransition>();
+        ObservableDisguiseService service = new ObservableDisguiseService(registry, updates::add,
+                () -> Arrays.asList(viewer1, viewer2));
+        service.setDisguise(new Disguise(target, "TestGlobal"));
+        service.setDisguiseFor(viewer1, new Disguise(target, "TestPrivate"));
+        updates.clear();
+        service.clear();
+        assertEquals(2, updates.size());
+        assertTrue(updates.stream().allMatch(e -> !e.getAfter().isPresent()));
+        assertEquals(2, updates.stream().map(IdentityTransition::getViewerId).distinct().count());
+        service.clear();
+        assertEquals("Reset should be idempotent", 2, updates.size());
+    }
+
     @Test public void emptyRegistryDoesNotEmitChanges() {
         List<IdentityTransition> events = new ArrayList<IdentityTransition>();
         ObservableDisguiseService service = new ObservableDisguiseService(
