@@ -2,6 +2,7 @@ package dev.fyre.disguise.skin;
 
 import dev.fyre.disguise.api.SkinProperty;
 import java.util.UUID;
+import java.io.IOException;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.ExecutionException;
@@ -17,7 +18,12 @@ public class SkinOverloadTest {
         SkinProperty skin = new SkinProperty("dGVzdA==", "c2ln");
         try (AsyncSkinService service = new AsyncSkinService(id -> {
             started.countDown();
-            if (!release.await(4, TimeUnit.SECONDS)) throw new IllegalStateException("Timed out");
+            try {
+                if (!release.await(4, TimeUnit.SECONDS)) throw new IOException("Timed out");
+            } catch (InterruptedException interrupted) {
+                Thread.currentThread().interrupt();
+                throw new IOException("Interrupted", interrupted);
+            }
             return skin;
         }, new SkinCache(8, TimeUnit.MINUTES.toNanos(1)), 1, 1)) {
             CompletableFuture<SkinProperty> first = service.lookup(UUID.randomUUID());
@@ -42,7 +48,12 @@ public class SkinOverloadTest {
         UUID id = UUID.randomUUID();
         SkinProperty skin = new SkinProperty("dGVzdA==", "c2ln");
         try (AsyncSkinService service = new AsyncSkinService(source -> {
-            if (!release.await(4, TimeUnit.SECONDS)) throw new IllegalStateException("Timed out");
+            try {
+                if (!release.await(4, TimeUnit.SECONDS)) throw new IOException("Timed out");
+            } catch (InterruptedException interrupted) {
+                Thread.currentThread().interrupt();
+                throw new IOException("Interrupted", interrupted);
+            }
             return skin;
         }, new SkinCache(8, TimeUnit.MINUTES.toNanos(1)), 1, 2)) {
             CompletableFuture<SkinProperty> one = service.lookup(id);
