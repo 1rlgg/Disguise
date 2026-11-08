@@ -64,6 +64,21 @@ public class RefreshQueueTest {
         assertEquals(1, queue.poll(10).size());
     }
 
+    @Test public void repeatedPromotionPreservesUrgentOrderingAndDeduplication() {
+        RefreshQueue queue = new RefreshQueue(16);
+        UUID viewer = UUID.randomUUID(), a = UUID.randomUUID(),
+                b = UUID.randomUUID(), c = UUID.randomUUID();
+        queue.offer(viewer, a);
+        queue.offer(viewer, b);
+        queue.offerRestoration(viewer, b);
+        queue.offerRestoration(viewer, c);
+        queue.offerRestoration(viewer, b);
+        assertEquals(2, queue.pendingRestorations());
+        assertEquals(b, queue.poll(1).get(0).getSubject());
+        assertEquals(c, queue.poll(1).get(0).getSubject());
+        assertEquals(a, queue.poll(1).get(0).getSubject());
+    }
+
     @Test public void restorationPromotesAlreadyQueuedPairAheadOfCosmeticWork() {
         RefreshQueue queue = new RefreshQueue(3);
         UUID viewer = UUID.randomUUID(), a = UUID.randomUUID(), b = UUID.randomUUID();
