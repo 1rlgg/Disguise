@@ -107,8 +107,11 @@ public final class TabListIdentityRenderer implements IdentityRenderer {
         }
         try {
             boolean changed = entityRefresh.refresh(viewer, subject);
-            entityGate.success();
-            if (!changed) transport.refresh(viewer, subject);
+            // A no-op (untracked, unsafe or out of range) must NOT reset
+            // consecutive actual packet-delivery failures. Otherwise one
+            // harmless refresh could mask a broken experimental backend.
+            if (changed) entityGate.success();
+            else transport.refresh(viewer, subject);
         } catch (InvocationTargetException | RuntimeException failure) {
             if (entityGate.failure()) {
                 logger.warning("Entity refresh disabled after repeated errors; tab-only rendering remains enabled");
