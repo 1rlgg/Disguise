@@ -1,0 +1,50 @@
+package dev.fyre.disguise.render;
+
+import java.util.UUID;
+import org.junit.Test;
+import static org.junit.Assert.*;
+
+public class RefreshRetryLedgerTest {
+    private RefreshQueue.Pair pair() {
+        return new RefreshQueue.Pair(UUID.randomUUID(), UUID.randomUUID());
+    }
+
+    @Test public void retriesExactlyTwiceAndDropsTrackedFailureState() {
+        RefreshRetryLedger ledger = new RefreshRetryLedger(2, 10);
+        RefreshQueue.Pair pair = pair();
+        assertTrue(ledger.shouldRetry(pair));
+        assertTrue(ledger.shouldRetry(pair));
+        assertFalse(ledger.shouldRetry(pair));
+        assertEquals(0, ledger.size());
+    }
+
+    @Test public void successResetsFailureAttempts() {
+        RefreshRetryLedger ledger = new RefreshRetryLedger(1, 10);
+        RefreshQueue.Pair pair = pair();
+        assertTrue(ledger.shouldRetry(pair));
+        ledger.succeeded(pair);
+        assertTrue(ledger.shouldRetry(pair));
+    }
+
+    @Test public void forgetClearsBothViewerAndSubject() {
+        RefreshRetryLedger ledger = new RefreshRetryLedger(2, 10);
+        RefreshQueue.Pair pair = pair(), other = pair();
+        ledger.shouldRetry(pair);
+        ledger.shouldRetry(other);
+        ledger.forget(pair.getViewer());
+        assertEquals(1, ledger.size());
+        ledger.forget(other.getSubject());
+        assertEquals(0, ledger.size());
+    }
+
+    @Test public void boundedCapacityRejectsUntrackedFailures() {
+        RefreshRetryLedger ledger = new RefreshRetryLedger(2, 1);
+        RefreshQueue.Pair one = pair(), two = pair();
+        assertTrue(ledger.shouldRetry(one));
+        assertFalse(ledger.shouldRetry(two));
+        assertEquals(1, ledger.size());
+    }
+
+    @Test(expected = IllegalArgumentException.class)
+    public void invalidCapacityRejected() { new RefreshRetryLedger(1, 0); }
+}
