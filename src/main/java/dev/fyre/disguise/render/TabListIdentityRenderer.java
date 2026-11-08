@@ -24,7 +24,6 @@ public final class TabListIdentityRenderer implements IdentityRenderer {
     private final DisguiseService state;
     private final LegacyEntityRefresh entityRefresh;
     private boolean capacityWarning;
-    private int entityAttemptsSinceFlush;
 
     public TabListIdentityRenderer(PlayerInfoTabRefresh transport, Logger logger) {
         this(transport, logger, 2048, null, null);
@@ -91,17 +90,15 @@ public final class TabListIdentityRenderer implements IdentityRenderer {
 
     public void flush(int maxPerTick) {
         assertPrimaryThread();
-        entityAttemptsSinceFlush = 0;
-        for (RefreshQueue.Pair pair : pending.poll(maxPerTick)) {
+        // Defer excess entity work instead of silently downgrading it to tab-only updates.
+        int batchSize = entityRefresh == null ? maxPerTick : Math.min(maxPerTick, 8);
+        for (RefreshQueue.Pair pair : pending.poll(batchSize)) {
             Player viewer = Bukkit.getPlayer(pair.getViewer());
             Player subject = Bukkit.getPlayer(pair.getSubject());
             if (viewer == null || subject == null || !viewer.isOnline() || !subject.isOnline()) continue;
             if (viewer.equals(subject) || !viewer.canSee(subject)) continue;
             try {
-                // Limit expensive destroy/respawn attempts to eight per tick.
-                boolean allowEntity = entityRefresh != null && entityAttemptsSinceFlush < 8;
-                if (allowEntity) entityAttemptsSinceFlush++;
-                deliver(viewer, subject, allowEntity);
+                deliver(viewer, subject, true);
                 if (state != null) {
                     if (state.getDisguiseFor(pair.getViewer(), pair.getSubject()).isPresent()) {
                         applied.applied(pair.getViewer(), pair.getSubject());
