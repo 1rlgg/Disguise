@@ -40,7 +40,7 @@ public final class FyreDisguisePlugin extends JavaPlugin implements Listener {
         IdentityRenderer renderer = experimentalRefresh
                 ? new TabListIdentityRenderer(new PlayerInfoTabRefresh(packets, registry), getLogger())
                 : new LoggedIdentityRenderer(getLogger());
-        disguises = new ObservableDisguiseService(registry, renderer, this::onlineViewerIds);
+        disguises = new ObservableDisguiseService(registry, renderer, this::onlineViewerIds, this::assertMainThread);
         skins = new AsyncSkinService(new MojangSkinSource(3000, 5000),
                 new SkinCache(512, TimeUnit.MINUTES.toNanos(30)), 2, 128);
         getCommand("fyredisguise").setExecutor(new DisguiseCommand(disguises));
@@ -54,6 +54,10 @@ public final class FyreDisguisePlugin extends JavaPlugin implements Listener {
         Collection<UUID> ids = new ArrayList<UUID>();
         for (Player player : Bukkit.getOnlinePlayers()) ids.add(player.getUniqueId());
         return ids;
+    }
+
+    private void assertMainThread() {
+        if (!Bukkit.isPrimaryThread()) throw new IllegalStateException("Disguise mutations require the primary server thread");
     }
 
     @EventHandler public void onQuit(PlayerQuitEvent event) {
@@ -71,7 +75,7 @@ public final class FyreDisguisePlugin extends JavaPlugin implements Listener {
 
     public DisguiseService getDisguiseService() {
         if (disguises == null) throw new IllegalStateException("Plugin is not enabled");
-        if (!Bukkit.isPrimaryThread()) throw new IllegalStateException("Disguise API requires the primary server thread");
+        assertMainThread();
         return disguises;
     }
 
