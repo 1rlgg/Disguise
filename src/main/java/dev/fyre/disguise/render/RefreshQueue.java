@@ -4,6 +4,7 @@ import java.util.Iterator;
 import java.util.LinkedHashSet;
 import java.util.ArrayList;
 import java.util.HashSet;
+import java.util.Collections;
 import java.util.List;
 import java.util.Objects;
 import java.util.Set;
@@ -130,6 +131,11 @@ public final class RefreshQueue {
         return queued.contains(new Pair(viewer, subject));
     }
     public int pendingRestorations() { return urgent.size(); }
+
+    /** Immutable snapshot of pending undisguises in their delivery order. */
+    public List<Pair> pendingRestorationSnapshot() {
+        return Collections.unmodifiableList(new ArrayList<Pair>(urgent));
+    }
     public long droppedCosmetic() { return droppedCosmetic; }
     public long droppedRestoration() { return droppedRestoration; }
     public void clear() {

@@ -226,7 +226,8 @@ public final class TabListIdentityRenderer implements IdentityRenderer {
         int unavailable = 0;
         java.util.Set<RefreshQueue.Pair> remaining = applied.snapshot();
         int omitted = shutdownBudget.omitted(remaining.size());
-        for (RefreshQueue.Pair pair : shutdownBudget.select(remaining)) {
+        for (RefreshQueue.Pair pair : shutdownBudget.selectPrioritized(
+                remaining, pending.pendingRestorationSnapshot())) {
             Player viewer = Bukkit.getPlayer(pair.getViewer());
             Player subject = Bukkit.getPlayer(pair.getSubject());
             if (viewer == null || subject == null || !viewer.isOnline() || !subject.isOnline()
