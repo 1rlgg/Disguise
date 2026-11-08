@@ -22,6 +22,20 @@ public class SkinAssignmentIsolationTest {
         assertSame(skin, service.getDisguiseFor(another, subject).get().getSkin().get());
     }
 
+    @Test public void globalSkinUpdateDoesNotOverwriteOtherViewersOwnSkin() {
+        InMemoryDisguiseService registry = new InMemoryDisguiseService();
+        UUID subject = UUID.randomUUID(), viewer = UUID.randomUUID(), other = UUID.randomUUID();
+        SkinProperty privateSkin = new SkinProperty("cHJpdmF0ZQ==", "c2ln");
+        SkinProperty globalSkin = new SkinProperty("Z2xvYmFs", "c2ln");
+        Disguise global = new Disguise(subject, "GlobalAlias");
+        Disguise privateAlias = new Disguise(subject, "PrivateAlias", privateSkin);
+        registry.setDisguise(global);
+        registry.setDisguiseFor(viewer, privateAlias);
+        assertTrue(new SkinAssignment(registry).applyIfCurrent(subject, global, globalSkin));
+        assertSame(privateSkin, registry.getDisguiseFor(viewer, subject).get().getSkin().get());
+        assertSame(globalSkin, registry.getDisguiseFor(other, subject).get().getSkin().get());
+    }
+
     @Test(expected = IllegalArgumentException.class)
     public void skinAssignmentCannotWriteToWrongPlayerId() {
         UUID one = UUID.randomUUID(), two = UUID.randomUUID();
