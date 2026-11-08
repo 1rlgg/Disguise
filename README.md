@@ -41,3 +41,12 @@ The `experimental-tab-refresh: false` config option stays off by default. Only e
 5. Open-source licensing and release criteria need owner approval.
 
 A successful Maven build does **not** establish production-ready Minecraft disguise functionality.
+
+
+## Spawn identity and skin safety milestone
+
+The `SpawnIdentityDecision` helper provides a read-only answer to *which alias, if any,* a viewer should see for a player being tracked. It checks an explicit visibility flag and excludes self-view. **It is not connected to `NAMED_ENTITY_SPAWN` packets yet**, and never creates/destroys/repositions an entity. The player-info renderer remains separate.
+
+Texture data now requires canonical Base64 encoding and bounded sizes. Matching Mojang profile IDs and signature presence are checked for fetched textures; **RSA signature verification is not implemented**. The safeguards do not prove a remote skin belongs to an authenticated player without verification.
+
+The next necessary work is a version-specific world-entity backend that passes actual Spigot 1.8.8 / Minecraft 1.8.9 integration tests. These should include player tracking range, vanished players, hit registration, self-view, entity respawns, scoreboard nametags, and removal/restoration. Do not enable entity-spawn rewriting until those behaviors have been measured.
