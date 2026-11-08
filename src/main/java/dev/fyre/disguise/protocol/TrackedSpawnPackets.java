@@ -7,6 +7,8 @@ import java.util.LinkedHashMap;
 import java.util.Map;
 import java.util.Objects;
 import java.util.UUID;
+import java.util.concurrent.TimeUnit;
+import java.util.function.LongSupplier;
 
 /**
  * Thread-safe bounded collection of actual server-produced player spawn packets.
@@ -16,21 +18,29 @@ public final class TrackedSpawnPackets {
     public static final class Snapshot {
         private final int entityId;
         private final PacketContainer packet;
-        private Snapshot(int entityId, PacketContainer packet) {
+        private final long capturedAt;
+        private Snapshot(int entityId, PacketContainer packet, long capturedAt) {
             this.entityId = entityId;
             this.packet = packet;
+            this.capturedAt = capturedAt;
         }
         public int getEntityId() { return entityId; }
         public PacketContainer getPacket() { return packet.deepClone(); }
     }
 
     private final int capacity;
+    private final SpawnSnapshotExpiry expiry;
     private final LinkedHashMap<RefreshQueue.Pair, Snapshot> cache =
             new LinkedHashMap<RefreshQueue.Pair, Snapshot>(16, 0.75f, true);
 
     public TrackedSpawnPackets(int capacity) {
+        this(capacity, TimeUnit.MINUTES.toNanos(2), System::nanoTime);
+    }
+
+    public TrackedSpawnPackets(int capacity, long ttlNanos, LongSupplier clock) {
         if (capacity < 1) throw new IllegalArgumentException("capacity must be positive");
         this.capacity = capacity;
+        this.expiry = new SpawnSnapshotExpiry(ttlNanos, clock);
     }
 
     public synchronized void capture(UUID viewer, UUID subject, int entityId, PacketContainer packet) {
@@ -38,7 +48,7 @@ public final class TrackedSpawnPackets {
         Objects.requireNonNull(subject, "subject");
         Objects.requireNonNull(packet, "packet");
         if (viewer.equals(subject)) return;
-        cache.put(new RefreshQueue.Pair(viewer, subject), new Snapshot(entityId, packet.deepClone()));
+        cache.put(new RefreshQueue.Pair(viewer, subject), new Snapshot(entityId, packet.deepClone(), expiry.now()));
         while (cache.size() > capacity) {
             Iterator<Map.Entry<RefreshQueue.Pair, Snapshot>> iterator = cache.entrySet().iterator();
             iterator.next();
@@ -48,7 +58,12 @@ public final class TrackedSpawnPackets {
 
     public synchronized Snapshot lookup(UUID viewer, UUID subject) {
         Snapshot entry = cache.get(new RefreshQueue.Pair(viewer, subject));
-        return entry == null ? null : new Snapshot(entry.entityId, entry.packet.deepClone());
+        if (entry == null) return null;
+        if (expiry.expired(entry.capturedAt)) {
+            cache.remove(new RefreshQueue.Pair(viewer, subject));
+            return null;
+        }
+        return new Snapshot(entry.entityId, entry.packet.deepClone(), entry.capturedAt);
     }
 
     public synchronized void destroy(UUID viewer, int[] entityIds) {
