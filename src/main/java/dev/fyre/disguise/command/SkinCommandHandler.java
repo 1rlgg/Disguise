@@ -4,6 +4,7 @@ import dev.fyre.disguise.api.Disguise;
 import dev.fyre.disguise.api.DisguiseService;
 import dev.fyre.disguise.skin.AsyncSkinService;
 import dev.fyre.disguise.skin.SkinAssignment;
+import dev.fyre.disguise.skin.SkinRequestTracker;
 import java.util.Objects;
 import java.util.UUID;
 import java.util.logging.Level;
@@ -19,6 +20,7 @@ public final class SkinCommandHandler {
     private final DisguiseService disguises;
     private final AsyncSkinService skins;
     private final SkinAssignment assignments;
+    private final SkinRequestTracker requests = new SkinRequestTracker(512);
 
     public SkinCommandHandler(JavaPlugin plugin, DisguiseService disguises, AsyncSkinService skins) {
         this.plugin = Objects.requireNonNull(plugin, "plugin");
@@ -55,12 +57,27 @@ public final class SkinCommandHandler {
             reply(sender, ChatColor.RED + "Set the corresponding alias before fetching a skin.");
             return;
         }
+        final long token;
+        try {
+            token = requests.begin(viewerId, subjectId);
+        } catch (IllegalStateException overloaded) {
+            reply(sender, ChatColor.RED + "Too many active skin requests; try again later.");
+            return;
+        }
         reply(sender, ChatColor.YELLOW + "Looking up signed Mojang textures asynchronously...");
         skins.lookup(sourceId).whenComplete((skin, error) -> {
-            if (!plugin.isEnabled()) return;
+            if (!plugin.isEnabled()) {
+                requests.finish(viewerId, subjectId, token);
+                return;
+            }
             try {
                 Bukkit.getScheduler().runTask(plugin, () -> {
-                    if (!plugin.isEnabled()) return;
+                    if (!plugin.isEnabled()) {
+                        requests.finish(viewerId, subjectId, token);
+                        return;
+                    }
+                    if (!requests.isCurrent(viewerId, subjectId, token)) return;
+                    try {
                     Player currentSubject = Bukkit.getPlayer(subjectId);
                     Player currentViewer = viewerId == null ? null : Bukkit.getPlayer(viewerId);
                     if (currentSubject == null || !currentSubject.isOnline()
@@ -74,15 +91,23 @@ public final class SkinCommandHandler {
                                 ? assignments.applyIfCurrent(subjectId, expected, skin)
                                 : assignments.applyForViewerIfCurrent(viewerId, subjectId, expected, skin);
                         reply(sender, applied
-                                ? ChatColor.GREEN + "Skin stored; existing world entities do not refresh."
+                                ? ChatColor.GREEN + "Skin stored; experimental client refresh may update appearance."
                                 : ChatColor.YELLOW + "Alias changed; stale skin request discarded.");
+                    }
+                    } finally {
+                        requests.finish(viewerId, subjectId, token);
                     }
                 });
             } catch (IllegalStateException ex) {
+                requests.finish(viewerId, subjectId, token);
                 // Plugin may be shutting down.
             }
         });
     }
+
+    /** Called on Bukkit lifecycle cleanup to reject callbacks after disconnect. */
+    public void forgetPlayer(UUID playerId) { requests.forgetPlayer(playerId); }
+    public void clearPending() { requests.clear(); }
 
     private void reply(CommandSender sender, String message) {
         if (sender instanceof Player && !((Player) sender).isOnline()) return;

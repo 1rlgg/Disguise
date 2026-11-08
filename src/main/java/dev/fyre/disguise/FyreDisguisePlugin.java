@@ -43,6 +43,7 @@ public final class FyreDisguisePlugin extends JavaPlugin implements Listener {
     private DisguiseService disguises;
     private InMemoryDisguiseService registry;
     private AsyncSkinService skins;
+    private SkinCommandHandler skinCommands;
     private ProtocolManager packets;
     private TabListIdentityRenderer tabRenderer;
     private RefreshTargetPlanner refreshPlanner;
@@ -73,8 +74,9 @@ public final class FyreDisguisePlugin extends JavaPlugin implements Listener {
         disguises = new ObservableDisguiseService(registry, renderer, this::onlineViewerIds, this::assertMainThread);
         skins = new AsyncSkinService(new MojangSkinSource(3000, 5000),
                 new SkinCache(512, TimeUnit.MINUTES.toNanos(30)), 2, 128);
+        skinCommands = new SkinCommandHandler(this, disguises, skins);
         getCommand("fyredisguise").setExecutor(new DisguiseCommand(disguises,
-                new SkinCommandHandler(this, disguises, skins), () -> new dev.fyre.disguise.command.DisguiseDiagnostics(
+                skinCommands, () -> new dev.fyre.disguise.command.DisguiseDiagnostics(
                         tabRenderer != null, spawnPackets != null,
                         tabRenderer == null ? 0 : tabRenderer.pendingCount(),
                         tabRenderer == null ? 0 : tabRenderer.appliedCount(),
@@ -139,6 +141,7 @@ public final class FyreDisguisePlugin extends JavaPlugin implements Listener {
 
     @EventHandler public void onQuit(PlayerQuitEvent event) {
         UUID id = event.getPlayer().getUniqueId();
+        if (skinCommands != null) skinCommands.forgetPlayer(id);
         if (tabRenderer != null) tabRenderer.forget(id);
         if (spawnPackets != null) spawnPackets.forget(id);
         // A quitting subject is already being removed by the server; do not
@@ -158,6 +161,8 @@ public final class FyreDisguisePlugin extends JavaPlugin implements Listener {
         packets = null;
         if (spawnPackets != null) spawnPackets.clear();
         spawnPackets = null;
+        if (skinCommands != null) skinCommands.clearPending();
+        skinCommands = null;
         if (skins != null) skins.close();
         skins = null;
         disguises = null;
