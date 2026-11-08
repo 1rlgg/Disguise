@@ -20,6 +20,13 @@ public class NameplateCompatibilityTest {
                 .contains("spectator"));
     }
 
+    @Test public void aliasTeamAndOnlineProfileConflictsAreVisibleToAdmin() {
+        assertTrue(NameplateCompatibility.reason(true, true, false, true, false, false, false)
+                .contains("alias name"));
+        assertTrue(NameplateCompatibility.reason(true, true, false, false, true, false, false)
+                .contains("online player"));
+    }
+
     @Test public void greenLightIsOnlyPreliminary() {
         assertTrue(NameplateCompatibility.reason(true, true, false, false, false)
                 .contains("POTENTIALLY ELIGIBLE"));

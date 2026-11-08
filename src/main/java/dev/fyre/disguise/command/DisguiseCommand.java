@@ -80,14 +80,21 @@ public final class DisguiseCommand implements CommandExecutor {
             boolean sameWorld = viewer.getWorld().equals(subject.getWorld());
             boolean visible = viewer.canSee(subject);
             boolean teamOwned = viewer.getScoreboard().getEntryTeam(subject.getName()) != null;
+            String alias = disguises.getDisguiseFor(viewer.getUniqueId(), subject.getUniqueId())
+                    .map(Disguise::getName).orElse(null);
+            boolean aliasTeamOwned = alias != null
+                    && viewer.getScoreboard().getEntryTeam(alias) != null;
+            Player aliasPlayer = alias == null ? null : Bukkit.getPlayerExact(alias);
+            boolean aliasCollision = aliasPlayer != null && aliasPlayer.isOnline()
+                    && !aliasPlayer.getUniqueId().equals(subject.getUniqueId());
             boolean spectator = "SPECTATOR".equals(viewer.getGameMode().name())
                     || "SPECTATOR".equals(subject.getGameMode().name());
             sender.sendMessage(ChatColor.YELLOW + "Effective alias: "
                     + disguises.getDisguiseFor(viewer.getUniqueId(), subject.getUniqueId())
                     .map(Disguise::getName).orElse("(none)"));
             sender.sendMessage(ChatColor.YELLOW + "Experimental world eligibility: "
-                    + NameplateCompatibility.reason(sameWorld, visible, teamOwned, spectator,
-                            viewer.equals(subject)));
+                    + NameplateCompatibility.reason(sameWorld, visible, teamOwned, aliasTeamOwned,
+                            aliasCollision, spectator, viewer.equals(subject)));
             sender.sendMessage(ChatColor.GRAY + "Inspection only; no packets or scoreboard teams changed.");
             return true;
         }
