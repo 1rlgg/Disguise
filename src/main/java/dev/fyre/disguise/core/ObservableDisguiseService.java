@@ -4,6 +4,7 @@ import dev.fyre.disguise.api.Disguise;
 import dev.fyre.disguise.api.DisguiseService;
 import dev.fyre.disguise.render.IdentityPlanner;
 import dev.fyre.disguise.render.IdentityRenderer;
+import dev.fyre.disguise.render.IdentityTransition;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Objects;
@@ -36,6 +37,30 @@ public final class ObservableDisguiseService implements DisguiseService {
         this.mutationGuard = Objects.requireNonNull(mutationGuard, "mutationGuard");
     }
 
+    /**
+     * Re-render another unchanged identity when an explicit alias transition
+     * changes its collision status for this viewer. The underlying disguise
+     * has not changed, but the outgoing player-info packet must be revisited.
+     */
+    private void refreshAliasNeighbours(UUID viewer, UUID changedSubject,
+                                        Disguise before, Disguise after) {
+        if (!(delegate instanceof DisguiseSubjectCatalog)) return;
+        String oldName = before == null ? null : before.getName();
+        String newName = after == null ? null : after.getName();
+        if (oldName == null && newName == null) return;
+        if (oldName != null && newName != null && oldName.equalsIgnoreCase(newName)) return;
+        for (UUID other : ((DisguiseSubjectCatalog) delegate).subjectIds()) {
+            if (other.equals(changedSubject) || other.equals(viewer)) continue;
+            Disguise active = delegate.getDisguiseFor(viewer, other).orElse(null);
+            if (active == null) continue;
+            String name = active.getName();
+            if ((oldName != null && name.equalsIgnoreCase(oldName))
+                    || (newName != null && name.equalsIgnoreCase(newName))) {
+                renderer.render(new IdentityTransition(viewer, other, active, active));
+            }
+        }
+    }
+
     private void update(UUID subject, Runnable mutation) {
         Collection<UUID> recipients = new ArrayList<UUID>(viewers.get());
         java.util.Map<UUID, Disguise> previous = new java.util.HashMap<UUID, Disguise>();
@@ -44,7 +69,12 @@ public final class ObservableDisguiseService implements DisguiseService {
         for (UUID viewer : recipients) {
             Disguise before = previous.get(viewer);
             Disguise after = delegate.getDisguiseFor(viewer, subject).orElse(null);
-            planner.plan(viewer, subject, before, after).ifPresent(renderer::render);
+            Optional<dev.fyre.disguise.render.IdentityTransition> transition =
+                    planner.plan(viewer, subject, before, after);
+            if (transition.isPresent()) {
+                renderer.render(transition.get());
+                refreshAliasNeighbours(viewer, subject, before, after);
+            }
         }
     }
 
@@ -70,8 +100,12 @@ public final class ObservableDisguiseService implements DisguiseService {
         Disguise before = delegate.getDisguiseFor(viewerId, disguise.getPlayerId()).orElse(null);
         delegate.setDisguiseFor(viewerId, disguise);
         if (!viewers.get().contains(viewerId)) return;
-        planner.plan(viewerId, disguise.getPlayerId(), before,
-                delegate.getDisguiseFor(viewerId, disguise.getPlayerId()).orElse(null)).ifPresent(renderer::render);
+        Disguise after = delegate.getDisguiseFor(viewerId, disguise.getPlayerId()).orElse(null);
+        Optional<IdentityTransition> transition = planner.plan(viewerId, disguise.getPlayerId(), before, after);
+        if (transition.isPresent()) {
+            renderer.render(transition.get());
+            refreshAliasNeighbours(viewerId, disguise.getPlayerId(), before, after);
+        }
     }
 
     @Override public Optional<Disguise> getDisguiseFor(UUID viewerId, UUID subjectId) {
@@ -86,8 +120,14 @@ public final class ObservableDisguiseService implements DisguiseService {
         mutationGuard.run();
         Disguise before = delegate.getDisguiseFor(viewerId, subjectId).orElse(null);
         boolean removed = delegate.removeDisguiseFor(viewerId, subjectId);
-        if (removed && viewers.get().contains(viewerId)) planner.plan(viewerId, subjectId, before,
-                delegate.getDisguiseFor(viewerId, subjectId).orElse(null)).ifPresent(renderer::render);
+        if (removed && viewers.get().contains(viewerId)) {
+            Disguise after = delegate.getDisguiseFor(viewerId, subjectId).orElse(null);
+            Optional<IdentityTransition> transition = planner.plan(viewerId, subjectId, before, after);
+            if (transition.isPresent()) {
+                renderer.render(transition.get());
+                refreshAliasNeighbours(viewerId, subjectId, before, after);
+            }
+        }
         return removed;
     }
 
