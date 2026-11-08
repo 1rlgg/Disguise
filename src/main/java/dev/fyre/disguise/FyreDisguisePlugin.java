@@ -33,6 +33,7 @@ import org.bukkit.event.player.PlayerChangedWorldEvent;
 import org.bukkit.event.player.PlayerJoinEvent;
 import org.bukkit.event.player.PlayerQuitEvent;
 import org.bukkit.event.player.PlayerRespawnEvent;
+import org.bukkit.event.player.PlayerTeleportEvent;
 import org.bukkit.plugin.java.JavaPlugin;
 
 /** Experimental 1.8 identity renderer. World respawn is disabled by default. */
@@ -101,8 +102,22 @@ public final class FyreDisguisePlugin extends JavaPlugin implements Listener {
     }
 
     @EventHandler public void onJoin(PlayerJoinEvent event) { scheduleResync(event.getPlayer().getUniqueId()); }
-    @EventHandler public void onRespawn(PlayerRespawnEvent event) { scheduleResync(event.getPlayer().getUniqueId()); }
-    @EventHandler public void onWorldChange(PlayerChangedWorldEvent event) { scheduleResync(event.getPlayer().getUniqueId()); }
+    @EventHandler public void onRespawn(PlayerRespawnEvent event) {
+        invalidateSpawns(event.getPlayer().getUniqueId());
+        scheduleResync(event.getPlayer().getUniqueId());
+    }
+    @EventHandler public void onWorldChange(PlayerChangedWorldEvent event) {
+        invalidateSpawns(event.getPlayer().getUniqueId());
+        scheduleResync(event.getPlayer().getUniqueId());
+    }
+    @EventHandler public void onTeleport(PlayerTeleportEvent event) {
+        if (event.getTo() != null && !event.getFrom().equals(event.getTo())) {
+            invalidateSpawns(event.getPlayer().getUniqueId());
+        }
+    }
+    private void invalidateSpawns(UUID playerId) {
+        if (spawnPackets != null) spawnPackets.forget(playerId);
+    }
 
     @EventHandler public void onQuit(PlayerQuitEvent event) {
         UUID id = event.getPlayer().getUniqueId();
