@@ -57,6 +57,26 @@ public final class RefreshQueue {
         return true;
     }
 
+    /**
+     * Restoration must not be dropped behind stale cosmetics during a burst.
+     * A full queue evicts its oldest pending pair to make room for this one.
+     * Normal updates still use offer() and never evict.
+     */
+    public boolean offerRestoration(UUID viewer, UUID subject) {
+        Objects.requireNonNull(viewer, "viewer");
+        Objects.requireNonNull(subject, "subject");
+        if (viewer.equals(subject)) return true;
+        Pair pair = new Pair(viewer, subject);
+        if (queued.contains(pair)) return true;
+        if (queue.size() >= capacity) {
+            Pair removed = queue.removeFirst();
+            queued.remove(removed);
+        }
+        queue.addLast(pair);
+        queued.add(pair);
+        return true;
+    }
+
     public List<Pair> poll(int limit) {
         if (limit < 1) throw new IllegalArgumentException("limit must be positive");
         List<Pair> out = new ArrayList<Pair>();

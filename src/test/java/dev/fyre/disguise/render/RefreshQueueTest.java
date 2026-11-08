@@ -43,6 +43,27 @@ public class RefreshQueueTest {
         assertEquals(0, queue.size());
     }
 
+    @Test public void restorationReplacesOldestPendingCosmeticWhenFull() {
+        RefreshQueue queue = new RefreshQueue(2);
+        UUID viewer = UUID.randomUUID(), a = UUID.randomUUID(),
+                b = UUID.randomUUID(), restored = UUID.randomUUID();
+        assertTrue(queue.offer(viewer, a));
+        assertTrue(queue.offer(viewer, b));
+        assertTrue(queue.offerRestoration(viewer, restored));
+        assertEquals(2, queue.size());
+        assertEquals(b, queue.poll(1).get(0).getSubject());
+        assertEquals(restored, queue.poll(1).get(0).getSubject());
+        assertEquals(0, queue.size());
+    }
+
+    @Test public void restoringAlreadyQueuedPairDoesNotDuplicate() {
+        RefreshQueue queue = new RefreshQueue(1);
+        UUID viewer = UUID.randomUUID(), subject = UUID.randomUUID();
+        assertTrue(queue.offer(viewer, subject));
+        assertTrue(queue.offerRestoration(viewer, subject));
+        assertEquals(1, queue.poll(10).size());
+    }
+
     @Test(expected = IllegalArgumentException.class)
     public void rejectsInvalidCapacity() { new RefreshQueue(0); }
 }

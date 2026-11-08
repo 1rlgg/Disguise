@@ -62,7 +62,13 @@ public final class TabListIdentityRenderer implements IdentityRenderer {
     }
 
     @Override public void render(IdentityTransition transition) {
-        enqueue(transition.getViewerId(), transition.getSubjectId());
+        assertPrimaryThread();
+        // On saturation, never prefer a cosmetic alias update to a removal.
+        if (!transition.getAfter().isPresent()) {
+            pending.offerRestoration(transition.getViewerId(), transition.getSubjectId());
+        } else {
+            enqueue(transition.getViewerId(), transition.getSubjectId());
+        }
     }
 
     public void refreshViewer(UUID viewerId, Collection<UUID> subjects) {
