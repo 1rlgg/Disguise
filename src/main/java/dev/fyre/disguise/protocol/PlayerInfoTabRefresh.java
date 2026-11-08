@@ -43,21 +43,12 @@ public final class PlayerInfoTabRefresh {
         PacketContainer remove = makePacket(EnumWrappers.PlayerInfoAction.REMOVE_PLAYER, input);
         PacketContainer add = makePacket(EnumWrappers.PlayerInfoAction.ADD_PLAYER, output);
 
-        // Never hide/show Bukkit players: doing so alters entity tracking and vanish state.
-        protocol.sendServerPacket(viewer, remove, false);
-        try {
-            protocol.sendServerPacket(viewer, add, false);
-        } catch (InvocationTargetException | RuntimeException failure) {
-            // Best-effort recovery: avoid leaving a viewer without a tab entry if
-            // the custom profile could not be serialized or delivered.
-            try {
-                protocol.sendServerPacket(viewer,
-                        makePacket(EnumWrappers.PlayerInfoAction.ADD_PLAYER, input), false);
-            } catch (InvocationTargetException | RuntimeException restoreFailure) {
-                failure.addSuppressed(restoreFailure);
-            }
-            throw failure;
-        }
+        // Prepare the recovery packet before touching the client's list.
+        // A failed send is ambiguous; restore the real profile whether REMOVE
+        // or ADD failed instead of assuming the client received neither.
+        PacketContainer restore = makePacket(EnumWrappers.PlayerInfoAction.ADD_PLAYER, input);
+        TabRefreshTransaction.execute(remove, add, restore,
+                packet -> protocol.sendServerPacket(viewer, packet, false));
     }
 
     private PacketContainer makePacket(EnumWrappers.PlayerInfoAction action, List<PlayerInfoData> data) {
