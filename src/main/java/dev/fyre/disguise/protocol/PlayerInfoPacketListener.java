@@ -32,8 +32,12 @@ public final class PlayerInfoPacketListener extends PacketAdapter {
             if (!PlayerInfoPacketPolicy.mayRewrite(event.isCancelled(), true,
                     existing != null && !existing.isEmpty())) return;
             List<PlayerInfoData> updated = rewriter.rewrite(event.getPlayer().getUniqueId(), existing);
-            if (updated != existing) packet.getPlayerInfoDataLists().write(0, updated);
-            breaker.recordSuccess();
+            // An unchanged packet is not evidence that rewriting works.
+            // Only a successful actual alias write resets prior failures.
+            if (updated != existing) {
+                packet.getPlayerInfoDataLists().write(0, updated);
+                breaker.recordSuccess();
+            }
         } catch (RuntimeException ex) {
             boolean nowDisabled = breaker.recordFailure();
             if (firstErrorLogged.compareAndSet(false, true)) {
