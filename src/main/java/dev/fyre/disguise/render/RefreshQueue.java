@@ -39,6 +39,9 @@ public final class RefreshQueue {
     private final ArrayDeque<Pair> normal = new ArrayDeque<Pair>();
     private final ArrayDeque<Pair> urgent = new ArrayDeque<Pair>();
     private final Set<Pair> queued = new HashSet<Pair>();
+    private final Set<Pair> urgentSet = new HashSet<Pair>();
+    private long droppedCosmetic;
+    private long droppedRestoration;
 
     public RefreshQueue(int capacity) {
         if (capacity < 1) throw new IllegalArgumentException("capacity must be positive");
@@ -52,7 +55,10 @@ public final class RefreshQueue {
         if (viewer.equals(subject)) return true;
         Pair pair = new Pair(viewer, subject);
         if (queued.contains(pair)) return true;
-        if (size() == capacity) return false;
+        if (size() == capacity) {
+            droppedCosmetic++;
+            return false;
+        }
         queued.add(pair);
         normal.addLast(pair);
         return true;
@@ -68,17 +74,27 @@ public final class RefreshQueue {
         Objects.requireNonNull(subject, "subject");
         if (viewer.equals(subject)) return true;
         Pair pair = new Pair(viewer, subject);
-        if (urgent.contains(pair)) return true;
+        if (urgentSet.contains(pair)) return true;
         if (queued.contains(pair)) {
             normal.remove(pair);
             urgent.addLast(pair);
+            urgentSet.add(pair);
             return true;
         }
         if (size() >= capacity) {
-            Pair evicted = normal.isEmpty() ? urgent.removeLast() : normal.removeLast();
-            queued.remove(evicted);
+            if (normal.isEmpty()) {
+                Pair evicted = urgent.removeLast();
+                urgentSet.remove(evicted);
+                queued.remove(evicted);
+                droppedRestoration++;
+            } else {
+                Pair evicted = normal.removeLast();
+                queued.remove(evicted);
+                droppedCosmetic++;
+            }
         }
         urgent.addLast(pair);
+        urgentSet.add(pair);
         queued.add(pair);
         return true;
     }
@@ -88,6 +104,7 @@ public final class RefreshQueue {
         List<Pair> out = new ArrayList<Pair>();
         while (out.size() < limit && !queued.isEmpty()) {
             Pair pair = urgent.isEmpty() ? normal.removeFirst() : urgent.removeFirst();
+            urgentSet.remove(pair);
             queued.remove(pair);
             out.add(pair);
         }
@@ -98,9 +115,16 @@ public final class RefreshQueue {
         Objects.requireNonNull(playerId, "playerId");
         normal.removeIf(pair -> pair.viewer.equals(playerId) || pair.subject.equals(playerId));
         urgent.removeIf(pair -> pair.viewer.equals(playerId) || pair.subject.equals(playerId));
+        urgentSet.removeIf(pair -> pair.viewer.equals(playerId) || pair.subject.equals(playerId));
         queued.removeIf(pair -> pair.viewer.equals(playerId) || pair.subject.equals(playerId));
     }
 
     public int size() { return queued.size(); }
-    public void clear() { normal.clear(); urgent.clear(); queued.clear(); }
+    public int pendingRestorations() { return urgentSet.size(); }
+    public long droppedCosmetic() { return droppedCosmetic; }
+    public long droppedRestoration() { return droppedRestoration; }
+    public void clear() {
+        normal.clear(); urgent.clear(); urgentSet.clear(); queued.clear();
+        droppedCosmetic = 0; droppedRestoration = 0;
+    }
 }

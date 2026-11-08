@@ -85,6 +85,27 @@ public class RefreshQueueTest {
         assertEquals(c, queue.poll(1).get(0).getSubject());
     }
 
+    @Test public void reportsDropsAndKeepsPendingRestorationSetConsistent() {
+        RefreshQueue queue = new RefreshQueue(2);
+        UUID viewer = UUID.randomUUID(), a = UUID.randomUUID(),
+                b = UUID.randomUUID(), c = UUID.randomUUID(), d = UUID.randomUUID();
+        queue.offerRestoration(viewer, a);
+        queue.offerRestoration(viewer, b);
+        assertFalse(queue.offer(viewer, c));
+        assertEquals(1, queue.droppedCosmetic());
+        queue.offerRestoration(viewer, d);
+        assertEquals(1, queue.droppedRestoration());
+        assertEquals(2, queue.pendingRestorations());
+        queue.poll(1);
+        assertEquals(1, queue.pendingRestorations());
+        queue.forget(viewer);
+        assertEquals(0, queue.pendingRestorations());
+        assertEquals(0, queue.size());
+        queue.clear();
+        assertEquals(0, queue.droppedCosmetic());
+        assertEquals(0, queue.droppedRestoration());
+    }
+
     @Test(expected = IllegalArgumentException.class)
     public void rejectsInvalidCapacity() { new RefreshQueue(0); }
 }
