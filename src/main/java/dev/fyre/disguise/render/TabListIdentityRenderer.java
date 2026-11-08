@@ -204,17 +204,35 @@ public final class TabListIdentityRenderer implements IdentityRenderer {
 
     public void restoreApplied() {
         assertPrimaryThread();
+        int restored = 0;
+        int failed = 0;
+        int unavailable = 0;
         for (RefreshQueue.Pair pair : applied.snapshot()) {
             Player viewer = Bukkit.getPlayer(pair.getViewer());
             Player subject = Bukkit.getPlayer(pair.getSubject());
             if (viewer == null || subject == null || !viewer.isOnline() || !subject.isOnline()
-                    || viewer.equals(subject) || !viewer.canSee(subject)) continue;
-            try {
-                deliver(viewer, subject, true);
-                applied.restored(pair.getViewer(), pair.getSubject());
-            } catch (InvocationTargetException | RuntimeException ex) {
-                logger.log(Level.WARNING, "Could not restore appearance for viewer " + viewer.getUniqueId(), ex);
+                    || viewer.equals(subject) || !viewer.canSee(subject)) {
+                unavailable++;
+                continue;
             }
+            try {
+                // During shutdown never destroy and manually respawn world
+                // entities. The server is about to tear down our listeners,
+                // and tab-only restoration avoids ghost entities and armor
+                // packet bursts in the final server tick.
+                deliver(viewer, subject, false);
+                applied.restored(pair.getViewer(), pair.getSubject());
+                restored++;
+            } catch (InvocationTargetException | RuntimeException ex) {
+                failed++;
+                if (failed == 1) logger.log(Level.WARNING,
+                        "Tab identity restoration failed during plugin disable (further errors summarized)", ex);
+            }
+        }
+        if (failed > 0 || unavailable > 0) {
+            logger.warning("Shutdown restoration: " + restored + " tab entries restored; "
+                    + failed + " packet failures; " + unavailable
+                    + " unavailable/hidden pairs. Live client restoration still requires validation.");
         }
     }
 
