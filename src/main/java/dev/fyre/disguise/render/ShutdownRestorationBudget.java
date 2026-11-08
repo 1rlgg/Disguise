@@ -4,6 +4,8 @@ import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.List;
+import java.util.LinkedHashSet;
+import java.util.Set;
 import java.util.Objects;
 
 /**
@@ -26,6 +28,27 @@ public final class ShutdownRestorationBudget {
             result.add(pair);
         }
         return Collections.unmodifiableList(result);
+    }
+
+    /**
+     * First restore pairs with an explicit undisguise waiting; then use the
+     * stable applied-entry order. Never include pairs not actually applied.
+     */
+    public List<RefreshQueue.Pair> selectPrioritized(Collection<RefreshQueue.Pair> applied,
+                                                      Collection<RefreshQueue.Pair> urgent) {
+        Objects.requireNonNull(applied, "applied");
+        Objects.requireNonNull(urgent, "urgent");
+        Set<RefreshQueue.Pair> eligible = new LinkedHashSet<RefreshQueue.Pair>(applied);
+        LinkedHashSet<RefreshQueue.Pair> result = new LinkedHashSet<RefreshQueue.Pair>();
+        for (RefreshQueue.Pair pair : urgent) {
+            if (result.size() >= limit) break;
+            if (eligible.contains(pair)) result.add(pair);
+        }
+        for (RefreshQueue.Pair pair : applied) {
+            if (result.size() >= limit) break;
+            result.add(pair);
+        }
+        return Collections.unmodifiableList(new ArrayList<RefreshQueue.Pair>(result));
     }
 
     public int omitted(int total) {
