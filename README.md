@@ -65,3 +65,24 @@ is necessary before deploying experimental rendering.
   spectator, NPC and combat plugins.
 - Measured combat hit registration, visibility stability and packet/tick costs.
 - Owner-approved open-source license and supported release policy.
+
+
+## Viewer cleanup and self-profile safety
+
+`clearPlayer(id)` now publishes transitions in both roles: the ID as a
+disguised **subject**, and (when still among online viewers) as a **viewer**
+whose per-viewer overrides are removed. Removing a viewer override may reveal
+a global disguise; that transition is no longer silently skipped. Actual
+disconnects still use quiet cleanup because the player is leaving the server.
+
+Outgoing `PLAYER_INFO ADD_PLAYER` rewriting now preserves the player's own
+profile entry, even if their UUID has a global disguise. Aliases are applied
+only to other recipients. This deliberately avoids renaming the local player's
+profile and does **not** implement self-view disguises.
+
+These safeguards are unit-tested. They do not establish in-world appearance,
+nametag, scoreboard, spectator or combat correctness. The experimental entity
+respawn switch remains **off by default**. Release still requires two-client
+Spigot 1.8.8 / Minecraft 1.8.9 integration tests, real restoration checks,
+scoreboard/vanish interoperability, performance measurements and a selected
+open-source license.
