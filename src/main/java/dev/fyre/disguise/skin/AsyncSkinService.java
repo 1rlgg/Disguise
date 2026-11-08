@@ -1,6 +1,7 @@
 package dev.fyre.disguise.skin;
 
 import dev.fyre.disguise.api.SkinProperty;
+import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Objects;
@@ -12,9 +13,9 @@ import java.util.concurrent.TimeUnit;
 import java.util.concurrent.RejectedExecutionException;
 
 /**
- * Bounded single-flight skin resolver. Concurrent requests for one UUID share a
- * network task, while callers receive independent completion stages.
- * All future callbacks execute on the resolving thread unless explicitly scheduled.
+ * Bounded single-flight resolver. Concurrent requests for the same UUID share
+ * one I/O task, but each caller receives an independent cancellation handle.
+ * Callbacks never execute while the service monitor is held.
  */
 public final class AsyncSkinService implements AutoCloseable {
     private final SkinSource source;
@@ -38,62 +39,68 @@ public final class AsyncSkinService implements AutoCloseable {
                 }, new ThreadPoolExecutor.AbortPolicy());
     }
 
-    public synchronized CompletableFuture<SkinProperty> lookup(UUID id) {
+    public CompletableFuture<SkinProperty> lookup(UUID id) {
         Objects.requireNonNull(id, "id");
-        if (closed) return failed(new IllegalStateException("Skin service is closed"));
-        java.util.Optional<SkinProperty> cached = cache.get(id);
-        if (cached.isPresent()) return CompletableFuture.completedFuture(cached.get());
-        CompletableFuture<SkinProperty> pending = inFlight.get(id);
-        if (pending != null) return pending.thenApply(value -> value);
-        CompletableFuture<SkinProperty> shared = new CompletableFuture<SkinProperty>();
-        inFlight.put(id, shared);
-        try {
-            executor.execute(() -> resolve(id, shared));
-        } catch (RejectedExecutionException ex) {
-            inFlight.remove(id);
-            shared.completeExceptionally(ex);
+        synchronized (this) {
+            if (closed) return failed(new IllegalStateException("Skin service is closed"));
+            java.util.Optional<SkinProperty> cached = cache.get(id);
+            if (cached.isPresent()) return CompletableFuture.completedFuture(cached.get());
+            CompletableFuture<SkinProperty> existing = inFlight.get(id);
+            if (existing != null) return existing.thenApply(value -> value);
+            CompletableFuture<SkinProperty> shared = new CompletableFuture<SkinProperty>();
+            inFlight.put(id, shared);
+            try {
+                executor.execute(() -> resolve(id, shared));
+            } catch (RejectedExecutionException ex) {
+                inFlight.remove(id);
+                // Use a failed shared future without exposing it directly to callers.
+                shared.completeExceptionally(ex);
+            }
+            return shared.thenApply(value -> value);
         }
-        return shared.thenApply(value -> value);
     }
 
     private void resolve(UUID id, CompletableFuture<SkinProperty> shared) {
         SkinProperty skin = null;
-        Throwable error = null;
+        Throwable failure = null;
         try {
             skin = source.load(id);
             if (skin == null || !skin.isSigned()) throw new IllegalStateException("Missing signed textures");
         } catch (Exception ex) {
-            error = ex;
+            failure = ex;
         }
+        boolean stopped;
         synchronized (this) {
             inFlight.remove(id, shared);
-            if (closed) {
-                shared.completeExceptionally(new IllegalStateException("Skin service is closed"));
-            } else if (error != null) {
-                shared.completeExceptionally(error);
-            } else {
-                cache.put(id, skin);
-                shared.complete(skin);
-            }
+            stopped = closed;
+            if (!stopped && failure == null) cache.put(id, skin);
         }
+        // Complete downstream stages after releasing the lock: user callbacks may be slow.
+        if (stopped) shared.completeExceptionally(new IllegalStateException("Skin service closed"));
+        else if (failure != null) shared.completeExceptionally(failure);
+        else shared.complete(skin);
     }
 
     private static <T> CompletableFuture<T> failed(Throwable failure) {
-        CompletableFuture<T> result = new CompletableFuture<T>();
-        result.completeExceptionally(failure);
-        return result;
+        CompletableFuture<T> future = new CompletableFuture<T>();
+        future.completeExceptionally(failure);
+        return future;
     }
 
     public synchronized int pendingLookups() { return inFlight.size(); }
 
-    @Override public synchronized void close() {
-        if (closed) return;
-        closed = true;
-        executor.shutdownNow();
-        for (CompletableFuture<SkinProperty> shared : inFlight.values()) {
-            shared.completeExceptionally(new IllegalStateException("Skin service closed"));
+    @Override public void close() {
+        java.util.List<CompletableFuture<SkinProperty>> pending;
+        synchronized (this) {
+            if (closed) return;
+            closed = true;
+            executor.shutdownNow();
+            pending = new ArrayList<CompletableFuture<SkinProperty>>(inFlight.values());
+            inFlight.clear();
+            cache.clear();
         }
-        inFlight.clear();
-        cache.clear();
+        for (CompletableFuture<SkinProperty> future : pending) {
+            future.completeExceptionally(new IllegalStateException("Skin service closed"));
+        }
     }
 }
