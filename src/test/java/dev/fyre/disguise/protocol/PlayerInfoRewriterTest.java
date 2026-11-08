@@ -19,6 +19,18 @@ public class PlayerInfoRewriterTest {
         assertSame(Collections.emptyList(), rewriter.rewrite(UUID.randomUUID(), Collections.emptyList()));
     }
 
+    @Test public void desiredAliasCollisionIsDetectableOffThreadWithoutBukkit() {
+        InMemoryDisguiseService registry = new InMemoryDisguiseService();
+        UUID viewer = UUID.randomUUID(), a = UUID.randomUUID(), b = UUID.randomUUID();
+        registry.setDisguise(new Disguise(a, "Duplicate"));
+        registry.setDisguise(new Disguise(b, "duplicate"));
+        assertTrue(ViewerAliasCollisionPolicy.conflicts(registry, viewer, a,
+                "Duplicate", registry.subjectIds()));
+        registry.setDisguiseFor(viewer, new Disguise(b, "Different"));
+        assertFalse(ViewerAliasCollisionPolicy.conflicts(registry, viewer, a,
+                "Duplicate", registry.subjectIds()));
+    }
+
     @Test public void viewerOverrideAndRemovalResolveWithoutServerRuntime() {
         InMemoryDisguiseService registry = new InMemoryDisguiseService();
         UUID subject = UUID.randomUUID(), viewer = UUID.randomUUID();
