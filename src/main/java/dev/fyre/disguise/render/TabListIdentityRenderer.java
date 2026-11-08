@@ -93,6 +93,8 @@ public final class TabListIdentityRenderer implements IdentityRenderer {
     public int pendingCount() { return pending.size(); }
     public int pendingRestorationCount() { return pending.pendingRestorations(); }
     public int retryCount() { return retries.size(); }
+    public long exhaustedRetryCount() { return retries.exhaustedCount(); }
+    public long rejectedRetryCount() { return retries.overflowCount(); }
     public long droppedCosmeticCount() { return pending.droppedCosmetic(); }
     public long displacedRestorationCount() { return pending.droppedRestoration(); }
     public boolean entityRefreshCircuitOpen() { return entityRefresh != null && !entityGate.enabled(); }

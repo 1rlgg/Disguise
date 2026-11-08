@@ -16,6 +16,7 @@ public class RefreshRetryLedgerTest {
         assertTrue(ledger.shouldRetry(pair));
         assertFalse(ledger.shouldRetry(pair));
         assertEquals(0, ledger.size());
+        assertEquals(1, ledger.exhaustedCount());
     }
 
     @Test public void successResetsFailureAttempts() {
@@ -43,6 +44,10 @@ public class RefreshRetryLedgerTest {
         assertTrue(ledger.shouldRetry(one));
         assertFalse(ledger.shouldRetry(two));
         assertEquals(1, ledger.size());
+        assertEquals(1, ledger.overflowCount());
+        ledger.clear();
+        assertEquals(0, ledger.overflowCount());
+        assertEquals(0, ledger.exhaustedCount());
     }
 
     @Test(expected = IllegalArgumentException.class)

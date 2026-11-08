@@ -22,6 +22,14 @@ public class DisguiseDiagnosticsTest {
         assertTrue(report.lines().get(7).contains("OPEN"));
     }
 
+    @Test public void displaysRetryExhaustionAndCapacityFailures() {
+        DisguiseDiagnostics report = new DisguiseDiagnostics(true, true,
+                2, 1, 2, 0, 1, 0, 0, false, 2, 7, 3);
+        assertTrue(report.lines().get(8).contains("Pending refresh retries: 2"));
+        assertTrue(report.lines().get(8).contains("exhausted: 7"));
+        assertTrue(report.lines().get(8).contains("capacity: 3"));
+    }
+
     @Test(expected = IllegalArgumentException.class)
     public void refusesEntityWithoutTab() {
         new DisguiseDiagnostics(false, true, 0, 0, 0, 0);

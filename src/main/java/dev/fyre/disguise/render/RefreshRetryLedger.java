@@ -13,6 +13,8 @@ import java.util.UUID;
 public final class RefreshRetryLedger {
     private final int maxRetries;
     private final int capacity;
+    private long exhausted;
+    private long overflow;
     private final Map<RefreshQueue.Pair, Integer> failures =
             new HashMap<RefreshQueue.Pair, Integer>();
 
@@ -32,9 +34,13 @@ public final class RefreshRetryLedger {
         int count = prior == null ? 1 : prior + 1;
         if (count > maxRetries) {
             failures.remove(pair);
+            exhausted++;
             return false;
         }
-        if (prior == null && failures.size() >= capacity) return false;
+        if (prior == null && failures.size() >= capacity) {
+            overflow++;
+            return false;
+        }
         failures.put(pair, count);
         return true;
     }
@@ -50,5 +56,7 @@ public final class RefreshRetryLedger {
     }
 
     public int size() { return failures.size(); }
-    public void clear() { failures.clear(); }
+    public long exhaustedCount() { return exhausted; }
+    public long overflowCount() { return overflow; }
+    public void clear() { failures.clear(); exhausted = 0; overflow = 0; }
 }

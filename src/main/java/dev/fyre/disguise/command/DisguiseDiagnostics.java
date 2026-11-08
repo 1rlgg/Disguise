@@ -16,12 +16,15 @@ public final class DisguiseDiagnostics {
     private final long lostCosmetic;
     private final long lostRestorations;
     private final boolean entityCircuitOpen;
+    private final int queuedRetries;
+    private final long exhaustedRetries;
+    private final long rejectedRetries;
 
     public DisguiseDiagnostics(boolean tabEnabled, boolean entityEnabled,
                               int pendingRefreshes, int appliedEntries,
                               int trackedSpawns, int pendingSkins) {
         this(tabEnabled, entityEnabled, pendingRefreshes, appliedEntries, trackedSpawns, pendingSkins,
-                0, 0, 0, false);
+                0, 0, 0, false, 0, 0, 0);
     }
 
     public DisguiseDiagnostics(boolean tabEnabled, boolean entityEnabled,
@@ -29,6 +32,19 @@ public final class DisguiseDiagnostics {
                               int trackedSpawns, int pendingSkins,
                               int urgentRestorations, long lostCosmetic,
                               long lostRestorations, boolean entityCircuitOpen) {
+        this(tabEnabled, entityEnabled, pendingRefreshes, appliedEntries, trackedSpawns, pendingSkins,
+                urgentRestorations, lostCosmetic, lostRestorations, entityCircuitOpen, 0, 0, 0);
+    }
+
+    public DisguiseDiagnostics(boolean tabEnabled, boolean entityEnabled,
+                              int pendingRefreshes, int appliedEntries,
+                              int trackedSpawns, int pendingSkins,
+                              int urgentRestorations, long lostCosmetic,
+                              long lostRestorations, boolean entityCircuitOpen,
+                              int queuedRetries, long exhaustedRetries, long rejectedRetries) {
+        if (queuedRetries < 0 || exhaustedRetries < 0 || rejectedRetries < 0) {
+            throw new IllegalArgumentException("Retry counters cannot be negative");
+        }
         if (urgentRestorations < 0 || lostCosmetic < 0 || lostRestorations < 0) {
             throw new IllegalArgumentException("Counters cannot be negative");
         }
@@ -46,6 +62,9 @@ public final class DisguiseDiagnostics {
         this.lostCosmetic = lostCosmetic;
         this.lostRestorations = lostRestorations;
         this.entityCircuitOpen = entityCircuitOpen;
+        this.queuedRetries = queuedRetries;
+        this.exhaustedRetries = exhaustedRetries;
+        this.rejectedRetries = rejectedRetries;
     }
 
     public List<String> lines() {
@@ -58,7 +77,9 @@ public final class DisguiseDiagnostics {
                 "Urgent restorations waiting: " + urgentRestorations,
                 "Dropped cosmetic refreshes: " + lostCosmetic
                         + "; displaced restorations: " + lostRestorations,
-                "Entity refresh circuit: " + (entityEnabled && entityCircuitOpen ? "OPEN (tab only)" : "not tripped")
+                "Entity refresh circuit: " + (entityEnabled && entityCircuitOpen ? "OPEN (tab only)" : "not tripped"),
+                "Pending refresh retries: " + queuedRetries + "; exhausted: " + exhaustedRetries
+                        + "; denied by capacity: " + rejectedRetries
         ));
     }
 }
