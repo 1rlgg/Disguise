@@ -1,12 +1,12 @@
 package dev.fyre.disguise.protocol;
 
-import com.comphenic.protocol.PacketType;
-import com.comphenic.protocol.events.ListenerPriority;
-import com.comphenic.protocol.events.PacketAdapter;
-import com.comphenic.protocol.events.PacketEvent;
-import com.comphenic.protocol.events.PacketContainer;
-import com.comphenic.protocol.wrappers.EnumWrappers;
-import com.comphenic.protocol.wrappers.PlayerInfoData;
+import com.comphenix.protocol.PacketType;
+import com.comphenix.protocol.events.ListenerPriority;
+import com.comphenix.protocol.events.PacketAdapter;
+import com.comphenix.protocol.events.PacketEvent;
+import com.comphenix.protocol.events.PacketContainer;
+import com.comphenix.protocol.wrappers.EnumWrappers;
+import com.comphenix.protocol.wrappers.PlayerInfoData;
 import java.util.List;
 import org.bukkit.plugin.Plugin;
 
