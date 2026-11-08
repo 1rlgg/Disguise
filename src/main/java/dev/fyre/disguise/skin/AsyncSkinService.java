@@ -41,23 +41,35 @@ public final class AsyncSkinService implements AutoCloseable {
 
     public CompletableFuture<SkinProperty> lookup(UUID id) {
         Objects.requireNonNull(id, "id");
+        CompletableFuture<SkinProperty> shared;
+        boolean submit = false;
         synchronized (this) {
             if (closed) return failed(new IllegalStateException("Skin service is closed"));
             java.util.Optional<SkinProperty> cached = cache.get(id);
             if (cached.isPresent()) return CompletableFuture.completedFuture(cached.get());
-            CompletableFuture<SkinProperty> existing = inFlight.get(id);
-            if (existing != null) return existing.thenApply(value -> value);
-            CompletableFuture<SkinProperty> shared = new CompletableFuture<SkinProperty>();
-            inFlight.put(id, shared);
-            try {
-                executor.execute(() -> resolve(id, shared));
-            } catch (RejectedExecutionException ex) {
-                inFlight.remove(id);
-                // Use a failed shared future without exposing it directly to callers.
-                shared.completeExceptionally(ex);
+            shared = inFlight.get(id);
+            if (shared == null) {
+                shared = new CompletableFuture<SkinProperty>();
+                inFlight.put(id, shared);
+                submit = true;
             }
-            return shared.thenApply(value -> value);
         }
+
+        if (submit) {
+            // Executor rejection must never complete user callbacks while the
+            // service monitor is held. close() may concurrently reject the task.
+            final CompletableFuture<SkinProperty> taskFuture = shared;
+            try {
+                executor.execute(() -> resolve(id, taskFuture));
+            } catch (RejectedExecutionException ex) {
+                synchronized (this) {
+                    inFlight.remove(id, taskFuture);
+                }
+                taskFuture.completeExceptionally(ex);
+            }
+        }
+        // An independent dependent stage keeps caller cancellation isolated.
+        return shared.thenApply(value -> value);
     }
 
     private void resolve(UUID id, CompletableFuture<SkinProperty> shared) {
