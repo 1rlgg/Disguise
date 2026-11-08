@@ -232,3 +232,28 @@ expired Mojang failures do not inflate the displayed active-cooldown count.
 No new gameplay-changing options were enabled. In-world refresh remains
 disabled by default; real 1.8.9 multi-client PvP validation and overhead
 nametag integration remain release blockers.
+
+
+## Restoration safety: queue saturation and shutdown
+
+Restoration requests already queued are no longer displaced by later
+restoration requests when the urgent queue is full. New requests are
+rejected and counted, allowing periodic applied-entry reconciliation to
+attempt them later. A deterministic burst test exercises 96 simultaneous
+undisguises through an eight-pair queue and verifies eventual convergence.
+
+Applied-entry reconciliation now reuses immutable cached insertion-ordered
+snapshots and iterates the requested slice without cloning the entire
+collection every second. After a packet send failure, an identity that
+**may** have reached a client remains tracked for best-effort restoration,
+even if the send failed mid-sequence.
+
+During plugin shutdown, restoration sends **tab-list packets only** and
+does not attempt experimental client-side entity destruction or respawning.
+Shutdown logs an aggregated outcome; its success counters describe packet
+send attempts, not what connected Minecraft clients finally displayed.
+
+These improvements reduce risks but do not replace real-client tests for
+skin restoration, player invisibility, scoreboard names, packet bandwidth,
+PvP hit registration and combat consistency. Both experimental renderer
+flags remain disabled by default.
