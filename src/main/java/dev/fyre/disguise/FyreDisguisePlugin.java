@@ -127,7 +127,8 @@ public final class FyreDisguisePlugin extends JavaPlugin implements Listener {
             if (tabRenderer == null || refreshPlanner == null || !isEnabled()) return;
             Player player = Bukkit.getPlayer(playerId);
             if (player == null || !player.isOnline()) return;
-            for (RefreshQueue.Pair pair : refreshPlanner.around(playerId, onlineViewerIds())) {
+            for (RefreshQueue.Pair pair : refreshPlanner.around(playerId, onlineViewerIds(),
+                    candidate -> tabRenderer.wasApplied(candidate.getViewer(), candidate.getSubject()))) {
                 tabRenderer.enqueue(pair.getViewer(), pair.getSubject());
             }
         }, 2L);

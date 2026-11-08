@@ -63,8 +63,20 @@ public final class TabListIdentityRenderer implements IdentityRenderer {
         if (!Bukkit.isPrimaryThread()) throw new IllegalStateException("Refresh requires primary thread");
     }
 
+    public boolean wasApplied(UUID viewer, UUID subject) {
+        assertPrimaryThread();
+        return applied.contains(viewer, subject);
+    }
+
     public void enqueue(UUID viewer, UUID subject) {
         assertPrimaryThread();
+        // A delayed resync may run after undisguise. Its old applied alias
+        // must be restored urgently, not treated as expendable cosmetics.
+        if (state != null && applied.contains(viewer, subject)
+                && !state.getDisguiseFor(viewer, subject).isPresent()) {
+            enqueueRestoration(viewer, subject);
+            return;
+        }
         if (pending.offer(viewer, subject)) {
             // A newer primary update supersedes an older deferred copy.
             deferred.cancel(viewer, subject);
