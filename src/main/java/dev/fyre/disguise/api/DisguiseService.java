@@ -18,6 +18,13 @@ public interface DisguiseService {
         return Optional.empty();
     }
 
+    default Optional<Disguise> desiredIdentity(UUID viewerId, UUID subjectId, boolean visible) {
+        java.util.Objects.requireNonNull(viewerId, "viewerId");
+        java.util.Objects.requireNonNull(subjectId, "subjectId");
+        return !visible || viewerId.equals(subjectId)
+                ? Optional.empty() : getDisguiseFor(viewerId, subjectId);
+    }
+
     boolean removeDisguiseFor(UUID viewerId, UUID playerId);
 
     void clearPlayer(UUID playerId);

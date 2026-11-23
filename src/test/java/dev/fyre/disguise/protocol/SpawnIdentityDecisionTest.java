@@ -1,6 +1,5 @@
 package dev.fyre.disguise.protocol;
 
-import dev.fyre.disguise.protocol.spawn.SpawnIdentityDecision;
 
 import dev.fyre.disguise.api.Disguise;
 import dev.fyre.disguise.core.InMemoryDisguiseService;
@@ -14,15 +13,15 @@ public class SpawnIdentityDecisionTest {
         UUID subject = UUID.randomUUID(), viewer = UUID.randomUUID(), other = UUID.randomUUID();
         service.setDisguise(new Disguise(subject, "GlobalAlias"));
         service.setDisguiseFor(viewer, new Disguise(subject, "ViewerAlias"));
-        SpawnIdentityDecision decision = new SpawnIdentityDecision(service);
-        assertEquals("ViewerAlias", decision.desiredIdentity(viewer, subject, true).get().getName());
-        assertEquals("GlobalAlias", decision.desiredIdentity(other, subject, true).get().getName());
-        assertFalse(decision.desiredIdentity(viewer, subject, false).isPresent());
-        assertFalse(decision.desiredIdentity(subject, subject, true).isPresent());
+        
+        assertEquals("ViewerAlias", service.desiredIdentity(viewer, subject, true).get().getName());
+        assertEquals("GlobalAlias", service.desiredIdentity(other, subject, true).get().getName());
+        assertFalse(service.desiredIdentity(viewer, subject, false).isPresent());
+        assertFalse(service.desiredIdentity(subject, subject, true).isPresent());
     }
 
     @Test public void leavesUndisguisedSpawnAlone() {
-        assertFalse(new SpawnIdentityDecision(new InMemoryDisguiseService())
+        assertFalse(new InMemoryDisguiseService()
                 .desiredIdentity(UUID.randomUUID(), UUID.randomUUID(), true).isPresent());
     }
 }
