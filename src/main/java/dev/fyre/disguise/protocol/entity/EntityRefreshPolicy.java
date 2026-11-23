@@ -47,9 +47,9 @@ public final class EntityRefreshPolicy {
         Objects.requireNonNull(onlineSubjects, "onlineSubjects");
         for (UUID other : onlineSubjects) {
             if (other == null || other.equals(subject) || other.equals(viewer)) continue;
-            if (disguises.getDisguiseFor(viewer, other)
-                    .map(disguise -> disguise.getName().equalsIgnoreCase(alias))
-                    .orElse(false)) return true;
+            dev.fyre.disguise.api.Disguise disguise =
+                    disguises.getDisguiseFor(viewer, other).orElse(null);
+            if (disguise != null && disguise.getName().equalsIgnoreCase(alias)) return true;
         }
         return false;
     }
