@@ -51,7 +51,7 @@ public final class EntityRefreshTransaction {
 
     private final PacketRewriteBreaker gate;
 
-    public EntityRefreshAttempt(PacketRewriteBreaker gate) {
+    public EntityRefreshTransaction(PacketRewriteBreaker gate) {
         this.gate = Objects.requireNonNull(gate, "gate");
     }
 
