@@ -1,5 +1,9 @@
 package dev.fyre.disguise.render;
 
+import dev.fyre.disguise.render.refresh.RefreshWorkMeter;
+import dev.fyre.disguise.render.refresh.DeferredRefreshBacklog;
+import dev.fyre.disguise.render.refresh.RefreshRetryLedger;
+
 import dev.fyre.disguise.render.restoration.RestorationReconciler;
 import dev.fyre.disguise.render.restoration.ShutdownRestorationBudget;
 import dev.fyre.disguise.render.restoration.AppliedTabEntries;

@@ -1,4 +1,6 @@
-package dev.fyre.disguise.render;
+package dev.fyre.disguise.render.refresh;
+
+import dev.fyre.disguise.render.RefreshQueue;
 
 import java.util.Iterator;
 import java.util.LinkedHashSet;
