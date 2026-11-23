@@ -1,6 +1,6 @@
 package dev.fyre.disguise.protocol;
 
-import dev.fyre.disguise.protocol.packet.TabRefreshTransaction;
+import dev.fyre.disguise.protocol.packet.PlayerInfoTabRefresh;
 
 import java.lang.reflect.InvocationTargetException;
 import java.util.LinkedHashMap;
@@ -31,7 +31,7 @@ public class TabClientStateSimulationTest {
     @Test public void successfulChangeKeepsOriginalUUIDAndExpectedAlias() throws Exception {
         FakeClient client = new FakeClient();
         client.entries.put(client.subject, "RealName");
-        TabRefreshTransaction.execute("remove", "alias", "original", client::send);
+        PlayerInfoTabRefresh.execute("remove", "alias", "original", client::send);
         assertEquals(1, client.entries.size());
         assertEquals("OtherName", client.entries.get(client.subject));
     }
@@ -42,7 +42,7 @@ public class TabClientStateSimulationTest {
             client.entries.put(client.subject, "RealName");
             client.failOnCall = failingCall;
             try {
-                TabRefreshTransaction.execute("remove", "alias", "original", client::send);
+                PlayerInfoTabRefresh.execute("remove", "alias", "original", client::send);
                 fail("Expected an ambiguous failure");
             } catch (InvocationTargetException expected) {
                 assertEquals(1, client.entries.size());
@@ -58,7 +58,7 @@ public class TabClientStateSimulationTest {
         client.failOnCall = 2;
         client.failAlsoOnCall = 3;
         try {
-            TabRefreshTransaction.execute("remove", "alias", "original", client::send);
+            PlayerInfoTabRefresh.execute("remove", "alias", "original", client::send);
             fail("Original failure should propagate");
         } catch (InvocationTargetException expected) {
             assertEquals(4, client.calls);
@@ -74,7 +74,7 @@ public class TabClientStateSimulationTest {
         FakeClient client = new FakeClient();
         client.failOnCall = 2;
         try {
-            TabRefreshTransaction.execute("remove", "alias", "original", client::send);
+            PlayerInfoTabRefresh.execute("remove", "alias", "original", client::send);
             fail("Original send failure must remain observable");
         } catch (InvocationTargetException expected) {
             assertEquals("ambiguous send 2", expected.getCause().getMessage());

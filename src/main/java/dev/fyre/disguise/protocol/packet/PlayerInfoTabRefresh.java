@@ -50,7 +50,7 @@ public final class PlayerInfoTabRefresh {
         PacketContainer add = makePacket(EnumWrappers.PlayerInfoAction.ADD_PLAYER, output);
 
         PacketContainer restore = makePacket(EnumWrappers.PlayerInfoAction.ADD_PLAYER, input);
-        TabRefreshTransaction.execute(remove, add, restore,
+        execute(remove, add, restore,
                 packet -> protocol.sendServerPacket(viewer, packet, false));
     }
 
@@ -59,5 +59,33 @@ public final class PlayerInfoTabRefresh {
         packet.getPlayerInfoAction().write(0, action);
         packet.getPlayerInfoDataLists().write(0, data);
         return packet;
+    }
+    public interface Sender<T> {
+        void send(T packet) throws InvocationTargetException;
+    }
+
+    public static <T> void execute(T remove, T aliasAdd, T originalAdd,
+                                   Sender<T> sender) throws InvocationTargetException {
+        Objects.requireNonNull(remove, "remove");
+        Objects.requireNonNull(aliasAdd, "aliasAdd");
+        Objects.requireNonNull(originalAdd, "originalAdd");
+        Objects.requireNonNull(sender, "sender");
+        try {
+            sender.send(remove);
+            sender.send(aliasAdd);
+        } catch (InvocationTargetException | RuntimeException failure) {
+
+            attempt(sender, remove, failure);
+            attempt(sender, originalAdd, failure);
+            throw failure;
+        }
+    }
+
+    private static <T> void attempt(Sender<T> sender, T packet, Throwable primary) {
+        try {
+            sender.send(packet);
+        } catch (InvocationTargetException | RuntimeException recovery) {
+            if (recovery != primary) primary.addSuppressed(recovery);
+        }
     }
 }
