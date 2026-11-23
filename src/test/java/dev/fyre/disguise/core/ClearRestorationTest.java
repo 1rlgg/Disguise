@@ -1,7 +1,7 @@
 package dev.fyre.disguise.core;
 
 import dev.fyre.disguise.api.Disguise;
-import dev.fyre.disguise.render.IdentityTransition;
+import dev.fyre.disguise.render.identity.IdentityTransition;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
