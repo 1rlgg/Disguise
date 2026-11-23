@@ -1,5 +1,7 @@
 package dev.fyre.disguise.render;
 
+import dev.fyre.disguise.render.restoration.RestorationReconciler;
+
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;

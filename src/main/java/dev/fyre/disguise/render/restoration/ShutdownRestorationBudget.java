@@ -1,4 +1,6 @@
-package dev.fyre.disguise.render;
+package dev.fyre.disguise.render.restoration;
+
+import dev.fyre.disguise.render.RefreshQueue;
 
 import java.util.ArrayList;
 import java.util.Collection;

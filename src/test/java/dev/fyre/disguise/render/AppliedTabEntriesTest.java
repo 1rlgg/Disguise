@@ -1,5 +1,7 @@
 package dev.fyre.disguise.render;
 
+import dev.fyre.disguise.render.restoration.AppliedTabEntries;
+
 import java.util.Set;
 import java.util.UUID;
 import org.junit.Test;

@@ -1,5 +1,7 @@
 package dev.fyre.disguise.render;
 
+import dev.fyre.disguise.render.restoration.ShutdownRestorationBudget;
+
 import java.util.ArrayList;
 import java.util.List;
 import java.util.UUID;
