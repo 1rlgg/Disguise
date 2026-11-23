@@ -33,7 +33,7 @@ public final class MojangSkinSource implements SkinSource {
     @Override public SkinProperty load(UUID playerId) throws IOException {
         Objects.requireNonNull(playerId, "playerId");
         URL url = new URL("https://sessionserver.mojang.com/session/minecraft/profile/"
-                + playerId.toString().replace("-", "") + "?unsigned=false");
+                + compact(playerId) + "?unsigned=false");
         HttpURLConnection connection = (HttpURLConnection) url.openConnection();
         connection.setConnectTimeout(connectTimeoutMillis);
         connection.setReadTimeout(readTimeoutMillis);
@@ -62,7 +62,7 @@ public final class MojangSkinSource implements SkinSource {
         Objects.requireNonNull(json, "json");
         try {
             JsonObject root = new JsonParser().parse(json).getAsJsonObject();
-            if (!root.has("id") || !requested.toString().replace("-", "")
+            if (!root.has("id") || !compact(requested)
                     .equalsIgnoreCase(root.get("id").getAsString())) {
                 throw new IOException("Mojang profile ID did not match the requested UUID");
             }
@@ -84,11 +84,24 @@ public final class MojangSkinSource implements SkinSource {
 
     public static Optional<UUID> parse(String input) {
         Objects.requireNonNull(input, "input");
-        String raw = input.replace("-", "");
-        if (!raw.matches("[0-9A-Fa-f]{32}")) return Optional.empty();
-        String formatted = raw.substring(0, 8) + "-" + raw.substring(8, 12) + "-"
-                + raw.substring(12, 16) + "-" + raw.substring(16, 20) + "-" + raw.substring(20);
-        return Optional.of(UUID.fromString(formatted.toLowerCase(Locale.ROOT)));
+        StringBuilder raw = new StringBuilder(32);
+        for (int i = 0; i < input.length(); i++) {
+            char value = input.charAt(i);
+            if (value == '-') continue;
+            boolean hex = (value >= '0' && value <= '9')
+                    || (value >= 'a' && value <= 'f')
+                    || (value >= 'A' && value <= 'F');
+            if (!hex || raw.length() == 32) return Optional.empty();
+            raw.append(value);
+        }
+        if (raw.length() != 32) return Optional.empty();
+        String value = raw.toString().toLowerCase(Locale.ROOT);
+        String formatted = value.substring(0, 8) + "-" + value.substring(8, 12) + "-"
+                + value.substring(12, 16) + "-" + value.substring(16, 20) + "-" + value.substring(20);
+        return Optional.of(UUID.fromString(formatted));
     }
 
+    private static String compact(UUID id) {
+        return id.toString().replace("-", "");
+    }
 }
