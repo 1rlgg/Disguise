@@ -1,4 +1,4 @@
-package dev.fyre.disguise.protocol;
+package dev.fyre.disguise.protocol.packet;
 
 import java.lang.reflect.InvocationTargetException;
 import java.util.Objects;

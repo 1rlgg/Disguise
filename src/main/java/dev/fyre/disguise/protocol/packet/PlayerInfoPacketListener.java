@@ -1,4 +1,6 @@
-package dev.fyre.disguise.protocol;
+package dev.fyre.disguise.protocol.packet;
+
+import dev.fyre.disguise.protocol.PacketRewriteBreaker;
 
 
 import com.comphenix.protocol.PacketType;

@@ -18,7 +18,7 @@ import dev.fyre.disguise.api.DisguiseService;
 import dev.fyre.disguise.protocol.LegacyEntityRefresh;
 import dev.fyre.disguise.protocol.PacketRewriteBreaker;
 import dev.fyre.disguise.protocol.EntityRefreshAttempt;
-import dev.fyre.disguise.protocol.PlayerInfoTabRefresh;
+import dev.fyre.disguise.protocol.packet.PlayerInfoTabRefresh;
 import java.lang.reflect.InvocationTargetException;
 import java.util.Collection;
 import java.util.Objects;

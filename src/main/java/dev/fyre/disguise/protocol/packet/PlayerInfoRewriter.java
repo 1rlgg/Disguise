@@ -1,4 +1,4 @@
-package dev.fyre.disguise.protocol;
+package dev.fyre.disguise.protocol.packet;
 
 import dev.fyre.disguise.protocol.entity.EntityRefreshPolicy;
 

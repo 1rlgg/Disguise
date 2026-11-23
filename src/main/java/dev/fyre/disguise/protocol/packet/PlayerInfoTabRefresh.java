@@ -1,4 +1,4 @@
-package dev.fyre.disguise.protocol;
+package dev.fyre.disguise.protocol.packet;
 
 import com.comphenix.protocol.PacketType;
 import com.comphenix.protocol.ProtocolManager;
