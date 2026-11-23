@@ -27,7 +27,8 @@ public final class TrackedSpawnPackets {
     }
 
     private final int capacity;
-    private final SpawnSnapshotExpiry expiry;
+    private final long ttlNanos;
+    private final LongSupplier clock;
     private final LinkedHashMap<RefreshQueue.Pair, Snapshot> cache =
             new LinkedHashMap<RefreshQueue.Pair, Snapshot>(16, 0.75f, true);
 
@@ -38,7 +39,14 @@ public final class TrackedSpawnPackets {
     public TrackedSpawnPackets(int capacity, long ttlNanos, LongSupplier clock) {
         if (capacity < 1) throw new IllegalArgumentException("capacity must be positive");
         this.capacity = capacity;
-        this.expiry = new SpawnSnapshotExpiry(ttlNanos, clock);
+        if (ttlNanos < 1) throw new IllegalArgumentException("ttl must be positive");
+        this.ttlNanos = ttlNanos;
+        this.clock = Objects.requireNonNull(clock, "clock");
+    }
+
+    static boolean expiredSince(long captured, long ttl, LongSupplier clock) {
+        if (ttl < 1) throw new IllegalArgumentException("ttl must be positive");
+        return Objects.requireNonNull(clock, "clock").getAsLong() - captured >= ttl;
     }
 
     public synchronized void capture(UUID viewer, UUID subject, int entityId, PacketContainer packet) {
@@ -46,7 +54,7 @@ public final class TrackedSpawnPackets {
         Objects.requireNonNull(subject, "subject");
         Objects.requireNonNull(packet, "packet");
         if (viewer.equals(subject)) return;
-        cache.put(new RefreshQueue.Pair(viewer, subject), new Snapshot(entityId, packet.deepClone(), expiry.now()));
+        cache.put(new RefreshQueue.Pair(viewer, subject), new Snapshot(entityId, packet.deepClone(), clock.getAsLong()));
         while (cache.size() > capacity) {
             Iterator<Map.Entry<RefreshQueue.Pair, Snapshot>> iterator = cache.entrySet().iterator();
             iterator.next();
@@ -57,7 +65,7 @@ public final class TrackedSpawnPackets {
     public synchronized Snapshot lookup(UUID viewer, UUID subject) {
         Snapshot entry = cache.get(new RefreshQueue.Pair(viewer, subject));
         if (entry == null) return null;
-        if (expiry.expired(entry.capturedAt)) {
+        if (expiredSince(entry.capturedAt, ttlNanos, clock)) {
             cache.remove(new RefreshQueue.Pair(viewer, subject));
             return null;
         }
