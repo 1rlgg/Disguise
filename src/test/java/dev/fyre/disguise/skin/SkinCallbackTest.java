@@ -1,5 +1,7 @@
 package dev.fyre.disguise.skin;
 
+import dev.fyre.disguise.skin.cache.SkinCache;
+
 import dev.fyre.disguise.api.SkinProperty;
 import java.util.UUID;
 import java.util.concurrent.CountDownLatch;
