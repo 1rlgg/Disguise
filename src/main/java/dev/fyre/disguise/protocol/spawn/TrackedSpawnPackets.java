@@ -93,6 +93,7 @@ public final class TrackedSpawnPackets {
         cache.keySet().removeIf(key -> key.getViewer().equals(playerId) || key.getSubject().equals(playerId));
     }
 
+    public synchronized boolean isEmpty() { return cache.isEmpty(); }
     public synchronized int size() { return cache.size(); }
     public synchronized void clear() { cache.clear(); }
 }

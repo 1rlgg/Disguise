@@ -22,6 +22,11 @@ public class SpawnSnapshotExpiryTest {
         time.set(Long.MIN_VALUE + 2);
         assertTrue(TrackedSpawnPackets.expiredSince(captured, 5, time::get));
     }
+    @Test public void newTrackerStartsEmpty() {
+        TrackedSpawnPackets packets = new TrackedSpawnPackets(4);
+        assertTrue(packets.isEmpty());
+        assertEquals(0, packets.size());
+    }
     @Test(expected = IllegalArgumentException.class)
     public void rejectsInvalidTtl() { TrackedSpawnPackets.expiredSince(0, 0, System::nanoTime); }
 }

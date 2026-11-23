@@ -6,12 +6,13 @@ import com.comphenix.protocol.events.PacketAdapter;
 import com.comphenix.protocol.events.PacketEvent;
 import java.util.Objects;
 import java.util.UUID;
+import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.logging.Level;
 import org.bukkit.plugin.Plugin;
 
 public final class SpawnPacketObserver extends PacketAdapter {
     private final TrackedSpawnPackets snapshots;
-    private final ObservationCircuit observation = new ObservationCircuit();
+    private final AtomicBoolean observationTripped = new AtomicBoolean();
 
     public SpawnPacketObserver(Plugin plugin, TrackedSpawnPackets snapshots) {
         super(plugin, ListenerPriority.MONITOR,
@@ -21,7 +22,7 @@ public final class SpawnPacketObserver extends PacketAdapter {
 
     @Override public void onPacketSending(PacketEvent event) {
 
-        if (event.isCancelled() || !observation.enabled()) return;
+        if (event.isCancelled() || observationTripped.get()) return;
         try {
             UUID viewer = event.getPlayer().getUniqueId();
             if (event.getPacketType() == PacketType.Play.Server.NAMED_ENTITY_SPAWN) {
@@ -30,23 +31,17 @@ public final class SpawnPacketObserver extends PacketAdapter {
                 if (subject != null && entityId != null) {
                     snapshots.capture(viewer, subject, entityId, event.getPacket());
                 }
-            } else if (event.getPacketType() == PacketType.Play.Server.ENTITY_DESTROY) {
+            } else if (event.getPacketType() == PacketType.Play.Server.ENTITY_DESTROY
+                    && !snapshots.isEmpty()) {
                 snapshots.destroy(viewer, event.getPacket().getIntegerArrays().read(0));
             }
         } catch (RuntimeException ex) {
-            if (observation.trip()) {
+            if (observationTripped.compareAndSet(false, true)) {
 
                 snapshots.clear();
                 getPlugin().getLogger().log(Level.WARNING,
                         "Spawn packet observation disabled after failure; using tab-list fallback", ex);
             }
         }
-    }
-    public static final class ObservationCircuit {
-        private final java.util.concurrent.atomic.AtomicBoolean tripped =
-                new java.util.concurrent.atomic.AtomicBoolean();
-
-        public boolean enabled() { return !tripped.get(); }
-        public boolean trip() { return tripped.compareAndSet(false, true); }
     }
 }
