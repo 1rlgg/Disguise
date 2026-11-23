@@ -5,7 +5,7 @@ import java.util.List;
 import java.util.Objects;
 
 public final class EntityRefreshTransaction {
-    private EntityRefreshTransaction() { }
+
 
     public interface Sender<T> {
         void send(T packet) throws InvocationTargetException;
@@ -41,5 +41,50 @@ public final class EntityRefreshTransaction {
         } catch (InvocationTargetException | RuntimeException error) {
             if (error != original) original.addSuppressed(error);
         }
+    }
+    @FunctionalInterface public interface WorldSender {
+        boolean refresh() throws InvocationTargetException;
+    }
+    @FunctionalInterface public interface TabSender {
+        void refresh() throws InvocationTargetException;
+    }
+
+    private final PacketRewriteBreaker gate;
+
+    public EntityRefreshAttempt(PacketRewriteBreaker gate) {
+        this.gate = Objects.requireNonNull(gate, "gate");
+    }
+
+    public boolean deliver(WorldSender world, TabSender tab) throws InvocationTargetException {
+        Objects.requireNonNull(world, "world");
+        Objects.requireNonNull(tab, "tab");
+        if (gate.isOpen()) {
+            tab.refresh();
+            return false;
+        }
+        boolean changed;
+        try {
+            changed = world.refresh();
+        } catch (InvocationTargetException | RuntimeException failure) {
+            boolean disabled = gate.recordFailure();
+            if (disabled) {
+
+                failure.addSuppressed(new EntityCircuitOpenedException());
+            }
+
+            try {
+                tab.refresh();
+            } catch (InvocationTargetException | RuntimeException fallbackFailure) {
+                if (fallbackFailure != failure) failure.addSuppressed(fallbackFailure);
+            }
+            throw failure;
+        }
+        if (changed) gate.recordSuccess();
+        else tab.refresh();
+        return false;
+    }
+
+    public static final class EntityCircuitOpenedException extends RuntimeException {
+        public EntityCircuitOpenedException() { super("Experimental entity refresh circuit opened"); }
     }
 }

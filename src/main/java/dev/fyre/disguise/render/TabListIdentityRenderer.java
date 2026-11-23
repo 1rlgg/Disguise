@@ -17,7 +17,7 @@ import dev.fyre.disguise.render.refresh.RefreshPolicy;
 import dev.fyre.disguise.api.DisguiseService;
 import dev.fyre.disguise.protocol.LegacyEntityRefresh;
 import dev.fyre.disguise.protocol.PacketRewriteBreaker;
-import dev.fyre.disguise.protocol.EntityRefreshAttempt;
+import dev.fyre.disguise.protocol.EntityRefreshTransaction;
 import dev.fyre.disguise.protocol.packet.PlayerInfoTabRefresh;
 import java.lang.reflect.InvocationTargetException;
 import java.util.Collection;
@@ -44,7 +44,7 @@ public final class TabListIdentityRenderer implements IdentityRenderer {
     private final DisguiseService state;
     private final LegacyEntityRefresh entityRefresh;
     private final PacketRewriteBreaker entityGate = new PacketRewriteBreaker(3);
-    private final EntityRefreshAttempt entityAttempt = new EntityRefreshAttempt(entityGate);
+    private final EntityRefreshTransaction entityAttempt = new EntityRefreshTransaction(entityGate);
     private boolean capacityWarning;
 
     public TabListIdentityRenderer(PlayerInfoTabRefresh transport, Logger logger) {
@@ -181,7 +181,7 @@ public final class TabListIdentityRenderer implements IdentityRenderer {
                     () -> transport.refresh(viewer, subject));
         } catch (InvocationTargetException | RuntimeException failure) {
             for (Throwable suppressed : failure.getSuppressed()) {
-                if (suppressed instanceof EntityRefreshAttempt.EntityCircuitOpenedException) {
+                if (suppressed instanceof EntityRefreshTransaction.EntityCircuitOpenedException) {
                     logger.warning("Entity refresh disabled after repeated errors; tab-only rendering remains enabled");
                     break;
                 }
