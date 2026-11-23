@@ -36,6 +36,20 @@ public class DisguiseSubjectCatalogTest {
         assertFalse(registry.hasAnySubjects());
     }
 
+    @Test public void reusesSubjectSnapshotUntilMembershipChanges() {
+        InMemoryDisguiseService registry = new InMemoryDisguiseService();
+        UUID subject = UUID.randomUUID();
+        registry.setDisguise(new Disguise(subject, "AliasOne"));
+        Set<UUID> first = registry.subjectIds();
+        assertSame(first, registry.subjectIds());
+
+        registry.setDisguise(new Disguise(subject, "AliasTwo"));
+        assertSame(first, registry.subjectIds());
+
+        registry.setDisguise(new Disguise(UUID.randomUUID(), "AliasThree"));
+        assertNotSame(first, registry.subjectIds());
+    }
+
     @Test(expected = UnsupportedOperationException.class)
     public void snapshotIsImmutable() {
         new InMemoryDisguiseService().subjectIds().add(UUID.randomUUID());

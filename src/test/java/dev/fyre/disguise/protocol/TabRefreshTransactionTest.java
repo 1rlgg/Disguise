@@ -16,6 +16,39 @@ public class TabRefreshTransactionTest {
         assertEquals(Arrays.asList("remove", "alias"), sent);
     }
 
+    @Test public void successfulRefreshDoesNotBuildRecoveryPacket() throws Exception {
+        List<String> sent = new ArrayList<String>();
+        final int[] recoveryBuilds = {0};
+        PlayerInfoTabRefresh.execute("remove", "alias",
+                (java.util.function.Supplier<String>) () -> {
+                    recoveryBuilds[0]++;
+                    return "original";
+                }, sent::add);
+        assertEquals(Arrays.asList("remove", "alias"), sent);
+        assertEquals(0, recoveryBuilds[0]);
+    }
+
+    @Test public void failedRemoveBuildsRecoveryPacketOnce() {
+        List<String> sent = new ArrayList<String>();
+        final int[] recoveryBuilds = {0};
+        try {
+            PlayerInfoTabRefresh.execute("remove", "alias",
+                    (java.util.function.Supplier<String>) () -> {
+                        recoveryBuilds[0]++;
+                        return "original";
+                    }, entry -> {
+                        sent.add(entry);
+                        if ("remove".equals(entry)) throw new IllegalStateException("network failure");
+                    });
+            fail("Must propagate failure");
+        } catch (IllegalStateException expected) {
+            assertEquals(Arrays.asList("remove", "remove", "original"), sent);
+            assertEquals(1, recoveryBuilds[0]);
+        } catch (InvocationTargetException unexpected) {
+            fail("Wrong exception");
+        }
+    }
+
     @Test public void failedRemoveStillAttemptsOriginal() {
         List<String> sent = new ArrayList<String>();
         try {
