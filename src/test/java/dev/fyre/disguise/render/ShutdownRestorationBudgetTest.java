@@ -1,6 +1,6 @@
 package dev.fyre.disguise.render;
 
-import dev.fyre.disguise.render.restoration.ShutdownRestorationBudget;
+import dev.fyre.disguise.render.restoration.RestorationReconciler;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -14,7 +14,7 @@ public class ShutdownRestorationBudgetTest {
         UUID viewer = UUID.randomUUID();
         for (int i = 0; i < 1000; i++) applied.add(
                 new RefreshQueue.Pair(viewer, new UUID(i + 1, 42L)));
-        ShutdownRestorationBudget budget = new ShutdownRestorationBudget(256);
+        RestorationReconciler budget = new RestorationReconciler(256);
         List<RefreshQueue.Pair> subset = budget.select(applied);
         assertEquals(256, subset.size());
         assertEquals(applied.subList(0, 256), subset);
@@ -28,7 +28,7 @@ public class ShutdownRestorationBudgetTest {
         for (int i = 0; i < 8; i++)
             applied.add(new RefreshQueue.Pair(viewer, new UUID(i + 1, 1)));
         RefreshQueue.Pair unknown = new RefreshQueue.Pair(viewer, UUID.randomUUID());
-        ShutdownRestorationBudget budget = new ShutdownRestorationBudget(3);
+        RestorationReconciler budget = new RestorationReconciler(3);
         List<RefreshQueue.Pair> selected = budget.selectPrioritized(applied,
                 java.util.Arrays.asList(unknown, applied.get(7), applied.get(6), applied.get(7)));
         assertEquals(java.util.Arrays.asList(applied.get(7), applied.get(6), applied.get(0)), selected);
@@ -36,10 +36,10 @@ public class ShutdownRestorationBudgetTest {
     }
 
     @Test(expected = IllegalArgumentException.class)
-    public void refusesZeroBudget() { new ShutdownRestorationBudget(0); }
+    public void refusesZeroBudget() { new RestorationReconciler(0); }
 
     @Test public void emptyAppliedEntriesProduceNoSends() {
-        ShutdownRestorationBudget budget = new ShutdownRestorationBudget(256);
+        RestorationReconciler budget = new RestorationReconciler(256);
         assertTrue(budget.select(new ArrayList<RefreshQueue.Pair>()).isEmpty());
         assertEquals(0, budget.omitted(0));
     }

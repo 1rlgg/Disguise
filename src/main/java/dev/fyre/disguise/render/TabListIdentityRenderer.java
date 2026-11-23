@@ -9,7 +9,6 @@ import dev.fyre.disguise.render.refresh.DeferredRefreshBacklog;
 import dev.fyre.disguise.render.refresh.RefreshRetryLedger;
 
 import dev.fyre.disguise.render.restoration.RestorationReconciler;
-import dev.fyre.disguise.render.restoration.ShutdownRestorationBudget;
 import dev.fyre.disguise.render.restoration.AppliedTabEntries;
 
 import dev.fyre.disguise.render.refresh.RefreshPolicy;
@@ -39,7 +38,7 @@ public final class TabListIdentityRenderer implements IdentityRenderer {
     private final DeferredRefreshBacklog deferred;
     private final RestorationReconciler reconciler = new RestorationReconciler();
     private final RefreshWorkMeter workMeter = new RefreshWorkMeter();
-    private final ShutdownRestorationBudget shutdownBudget = new ShutdownRestorationBudget(256);
+    private final RestorationReconciler shutdownBudget = new RestorationReconciler(256);
     private int ticksSinceReconcile;
     private final DisguiseService state;
     private final LegacyEntityRefresh entityRefresh;

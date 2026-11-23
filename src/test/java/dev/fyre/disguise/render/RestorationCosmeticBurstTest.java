@@ -2,7 +2,7 @@ package dev.fyre.disguise.render;
 
 import dev.fyre.disguise.render.refresh.DeferredRefreshBacklog;
 import dev.fyre.disguise.render.restoration.AppliedTabEntries;
-import dev.fyre.disguise.render.restoration.ShutdownRestorationBudget;
+import dev.fyre.disguise.render.restoration.RestorationReconciler;
 
 import java.util.HashSet;
 import java.util.Set;
@@ -53,7 +53,7 @@ public class RestorationCosmeticBurstTest {
             applied.applied(viewer, subject);
             if (i >= 20) queue.offerRestoration(viewer, subject);
         }
-        ShutdownRestorationBudget budget = new ShutdownRestorationBudget(8);
+        RestorationReconciler budget = new RestorationReconciler(8);
         java.util.List<RefreshQueue.Pair> chosen = budget.selectPrioritized(
                 applied.snapshot(), queue.pendingRestorationSnapshot());
         assertEquals(8, chosen.size());
