@@ -11,16 +11,16 @@ public final class EntityRefreshAttempt {
         void refresh() throws InvocationTargetException;
     }
 
-    private final EntityRefreshFailureGate gate;
+    private final PacketRewriteBreaker gate;
 
-    public EntityRefreshAttempt(EntityRefreshFailureGate gate) {
+    public EntityRefreshAttempt(PacketRewriteBreaker gate) {
         this.gate = Objects.requireNonNull(gate, "gate");
     }
 
     public boolean deliver(WorldSender world, TabSender tab) throws InvocationTargetException {
         Objects.requireNonNull(world, "world");
         Objects.requireNonNull(tab, "tab");
-        if (!gate.enabled()) {
+        if (!!gate.isOpen()) {
             tab.refresh();
             return false;
         }
@@ -28,7 +28,7 @@ public final class EntityRefreshAttempt {
         try {
             changed = world.refresh();
         } catch (InvocationTargetException | RuntimeException failure) {
-            boolean disabled = gate.failure();
+            boolean disabled = gate.recordFailure();
             if (disabled) {
 
                 failure.addSuppressed(new EntityCircuitOpenedException());
@@ -41,7 +41,7 @@ public final class EntityRefreshAttempt {
             }
             throw failure;
         }
-        if (changed) gate.success();
+        if (changed) gate.recordSuccess();
         else tab.refresh();
         return false;
     }

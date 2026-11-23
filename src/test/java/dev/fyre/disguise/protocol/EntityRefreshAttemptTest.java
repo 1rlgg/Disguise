@@ -7,21 +7,21 @@ import static org.junit.Assert.*;
 
 public class EntityRefreshAttemptTest {
     @Test public void skippedWorldRefreshAndBrokenTabDoNotCountEntityFailure() {
-        EntityRefreshFailureGate gate = new EntityRefreshFailureGate(2);
+        PacketRewriteBreaker gate = new PacketRewriteBreaker(2);
         EntityRefreshAttempt attempt = new EntityRefreshAttempt(gate);
         try {
             attempt.deliver(() -> false, () -> { throw new IllegalStateException("tab down"); });
             fail("Expected broken tab");
         } catch (IllegalStateException expected) {
-            assertEquals(0, gate.failures());
-            assertTrue(gate.enabled());
+            assertEquals(0, gate.failureCount());
+            assertTrue(!gate.isOpen());
         } catch (InvocationTargetException unexpected) {
             fail("Wrong failure type");
         }
     }
 
     @Test public void realEntityFailuresOpenGateAndSubsequentCallsUseTabOnly() {
-        EntityRefreshFailureGate gate = new EntityRefreshFailureGate(2);
+        PacketRewriteBreaker gate = new PacketRewriteBreaker(2);
         EntityRefreshAttempt attempt = new EntityRefreshAttempt(gate);
         AtomicInteger world = new AtomicInteger(), tab = new AtomicInteger();
         for (int i = 0; i < 2; i++) {
@@ -36,7 +36,7 @@ public class EntityRefreshAttemptTest {
             }
             assertEquals(i + 1, tab.get());
         }
-        assertFalse(gate.enabled());
+        assertFalse(!gate.isOpen());
         try {
             attempt.deliver(() -> { world.incrementAndGet(); return true; }, tab::incrementAndGet);
         } catch (InvocationTargetException unexpected) { fail("No error expected"); }
@@ -45,7 +45,7 @@ public class EntityRefreshAttemptTest {
     }
 
     @Test public void firstWorldFailureAttemptsTabRecoveryWithoutOpeningCircuit() {
-        EntityRefreshFailureGate gate = new EntityRefreshFailureGate(3);
+        PacketRewriteBreaker gate = new PacketRewriteBreaker(3);
         EntityRefreshAttempt attempt = new EntityRefreshAttempt(gate);
         AtomicInteger tab = new AtomicInteger();
         try {
@@ -55,15 +55,15 @@ public class EntityRefreshAttemptTest {
         } catch (IllegalStateException expected) {
             assertEquals(0, expected.getSuppressed().length);
             assertEquals(1, tab.get());
-            assertTrue(gate.enabled());
-            assertEquals(1, gate.failures());
+            assertTrue(!gate.isOpen());
+            assertEquals(1, gate.failureCount());
         } catch (InvocationTargetException unexpected) {
             fail("Unexpected exception");
         }
     }
 
     @Test public void failedImmediateFallbackDoesNotHideOriginalWorldFailure() {
-        EntityRefreshFailureGate gate = new EntityRefreshFailureGate(1);
+        PacketRewriteBreaker gate = new PacketRewriteBreaker(1);
         EntityRefreshAttempt attempt = new EntityRefreshAttempt(gate);
         try {
             attempt.deliver(() -> { throw new InvocationTargetException(new Exception("world")); },
@@ -74,18 +74,18 @@ public class EntityRefreshAttemptTest {
             assertTrue(expected.getSuppressed()[0]
                     instanceof EntityRefreshAttempt.EntityCircuitOpenedException);
             assertEquals("tab failed", expected.getSuppressed()[1].getMessage());
-            assertFalse(gate.enabled());
+            assertFalse(!gate.isOpen());
         }
     }
 
     @Test public void successfulEntityUpdateResetsActualWorldFailureCount() throws Exception {
-        EntityRefreshFailureGate gate = new EntityRefreshFailureGate(2);
+        PacketRewriteBreaker gate = new PacketRewriteBreaker(2);
         EntityRefreshAttempt attempt = new EntityRefreshAttempt(gate);
         try {
             attempt.deliver(() -> { throw new IllegalStateException("bad world"); }, () -> { });
             fail("Expected failure");
-        } catch (IllegalStateException expected) { assertEquals(1, gate.failures()); }
+        } catch (IllegalStateException expected) { assertEquals(1, gate.failureCount()); }
         attempt.deliver(() -> true, () -> fail("Unneeded tab refresh"));
-        assertEquals(0, gate.failures());
+        assertEquals(0, gate.failureCount());
     }
 }
