@@ -4,7 +4,7 @@ import dev.fyre.disguise.api.Disguise;
 import dev.fyre.disguise.api.DisguiseService;
 import dev.fyre.disguise.skin.MojangSkinSource;
 import dev.fyre.disguise.protocol.entity.NameplateCompatibility;
-import dev.fyre.disguise.protocol.entity.ViewerAliasCollisionPolicy;
+import dev.fyre.disguise.protocol.entity.EntityRefreshPolicy;
 import java.util.Objects;
 import java.util.UUID;
 import java.util.List;
@@ -111,7 +111,7 @@ public final class DisguiseCommand implements CommandExecutor {
             java.util.List<UUID> onlineSubjects = new java.util.ArrayList<UUID>();
             for (Player online : Bukkit.getOnlinePlayers())
                 onlineSubjects.add(online.getUniqueId());
-            boolean duplicateAlias = alias != null && ViewerAliasCollisionPolicy.conflicts(
+            boolean duplicateAlias = alias != null && EntityRefreshPolicy.conflicts(
                     disguises, viewer.getUniqueId(), subject.getUniqueId(), alias, onlineSubjects);
             boolean spectator = "SPECTATOR".equals(viewer.getGameMode().name())
                     || "SPECTATOR".equals(subject.getGameMode().name());
