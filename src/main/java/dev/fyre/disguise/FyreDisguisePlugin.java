@@ -17,7 +17,6 @@ import dev.fyre.disguise.protocol.packet.PlayerInfoTabRefresh;
 import dev.fyre.disguise.protocol.spawn.SpawnPacketObserver;
 import dev.fyre.disguise.protocol.spawn.TrackedSpawnPackets;
 import dev.fyre.disguise.render.identity.IdentityRenderer;
-import dev.fyre.disguise.render.identity.LoggedIdentityRenderer;
 import dev.fyre.disguise.render.RefreshQueue;
 import dev.fyre.disguise.render.RefreshTargetPlanner;
 import dev.fyre.disguise.render.TabListIdentityRenderer;
@@ -73,7 +72,9 @@ public final class FyreDisguisePlugin extends JavaPlugin implements Listener {
             tabRenderer = new TabListIdentityRenderer(tab, getLogger(), 2048, registry, world);
             refreshPlanner = new RefreshTargetPlanner(registry);
         }
-        IdentityRenderer renderer = experimentalRefresh ? tabRenderer : new LoggedIdentityRenderer(getLogger());
+        IdentityRenderer renderer = experimentalRefresh ? tabRenderer : transition -> getLogger().fine("Identity transition for viewer "
+                + transition.getViewerId() + " subject " + transition.getSubjectId()
+                + ": " + (transition.getAfter().isPresent() ? "disguise requested" : "restore requested"));
         disguises = new ObservableDisguiseService(registry, renderer, this::onlineViewerIds, this::assertMainThread);
         skins = new AsyncSkinService(new MojangSkinSource(3000, 5000),
                 new SkinCache(512, TimeUnit.MINUTES.toNanos(30)), 2, 128);
