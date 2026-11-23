@@ -1,5 +1,7 @@
 package dev.fyre.disguise.protocol;
 
+import dev.fyre.disguise.protocol.packet.PlayerInfoRewriter;
+
 import dev.fyre.disguise.protocol.entity.EntityRefreshPolicy;
 
 import dev.fyre.disguise.api.Disguise;
