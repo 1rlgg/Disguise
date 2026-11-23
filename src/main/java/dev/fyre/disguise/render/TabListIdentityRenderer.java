@@ -93,13 +93,12 @@ public final class TabListIdentityRenderer implements Consumer<IdentityTransitio
     public void enqueue(UUID viewer, UUID subject) {
         assertPrimaryThread();
 
-        if (state != null && applied.contains(viewer, subject)
-                && !state.getDisguiseFor(viewer, subject).isPresent()) {
+        boolean currentDisguise = state != null && state.getDisguiseFor(viewer, subject).isPresent();
+        if (state != null && applied.contains(viewer, subject) && !currentDisguise) {
             enqueueRestoration(viewer, subject);
             return;
         }
-        if (state != null && state.getDisguiseFor(viewer, subject).isPresent())
-            manualRestores.remove(new RefreshQueue.Pair(viewer, subject));
+        if (currentDisguise) manualRestores.remove(new RefreshQueue.Pair(viewer, subject));
         if (pending.offer(viewer, subject)) {
 
             deferred.cancel(viewer, subject);
@@ -248,11 +247,8 @@ public final class TabListIdentityRenderer implements Consumer<IdentityTransitio
                 deliver(viewer, subject, !manualRestore);
                 retries.succeeded(pair);
                 if (state != null) {
-                    if (state.getDisguiseFor(pair.getViewer(), pair.getSubject()).isPresent()) {
-                        applied.applied(pair.getViewer(), pair.getSubject());
-                    } else {
-                        applied.restored(pair.getViewer(), pair.getSubject());
-                    }
+                    if (currentDisguise) applied.applied(pair.getViewer(), pair.getSubject());
+                    else applied.restored(pair.getViewer(), pair.getSubject());
                 }
             } catch (InvocationTargetException | RuntimeException ex) {
 
@@ -263,8 +259,7 @@ public final class TabListIdentityRenderer implements Consumer<IdentityTransitio
                 boolean retry = retries.shouldRetry(pair);
                 if (retry) {
 
-                    boolean restore = state != null
-                            && !state.getDisguiseFor(pair.getViewer(), pair.getSubject()).isPresent();
+                    boolean restore = state != null && !currentDisguise;
                     if (restore) {
                         if (enqueueRestoration(pair.getViewer(), pair.getSubject()) && manualRestore)
                             manualRestores.add(pair);
