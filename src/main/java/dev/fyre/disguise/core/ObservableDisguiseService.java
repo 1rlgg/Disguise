@@ -179,7 +179,7 @@ public final class ObservableDisguiseService implements DisguiseService {
         for (java.util.Map.Entry<UUID, java.util.Map<UUID, Disguise>> subject : before.entrySet()) {
             for (java.util.Map.Entry<UUID, Disguise> identity : subject.getValue().entrySet()) {
                 IdentityTransition.plan(identity.getKey(), subject.getKey(), identity.getValue(), null)
-                        .ifPresent(renderer::render);
+                        .ifPresent(renderer::accept);
             }
         }
     }
