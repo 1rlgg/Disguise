@@ -24,10 +24,11 @@ import dev.fyre.disguise.render.TabListIdentityRenderer;
 import dev.fyre.disguise.skin.AsyncSkinService;
 import dev.fyre.disguise.skin.MojangSkinSource;
 import dev.fyre.disguise.skin.cache.SkinCache;
-import java.util.ArrayList;
 import java.util.Collection;
 import java.util.HashMap;
+import java.util.LinkedHashSet;
 import java.util.Map;
+import java.util.Set;
 import java.util.UUID;
 import java.util.concurrent.TimeUnit;
 import org.bukkit.Bukkit;
@@ -54,10 +55,13 @@ public final class FyreDisguisePlugin extends JavaPlugin implements Listener {
     private RefreshTargetPlanner refreshPlanner;
     private TrackedSpawnPackets spawnPackets;
     private final Map<UUID, BukkitTask> resyncTasks = new HashMap<UUID, BukkitTask>();
+    private final Set<UUID> onlineViewers = new LinkedHashSet<UUID>();
 
     @Override public void onEnable() {
         saveDefaultConfig();
         registry = new InMemoryDisguiseService();
+        onlineViewers.clear();
+        for (Player player : Bukkit.getOnlinePlayers()) onlineViewers.add(player.getUniqueId());
         packets = ProtocolLibrary.getProtocolManager();
         boolean experimentalRefresh = getConfig().getBoolean("experimental-tab-refresh", false);
         boolean entityRefresh = getConfig().getBoolean("experimental-entity-refresh", false);
@@ -113,10 +117,7 @@ public final class FyreDisguisePlugin extends JavaPlugin implements Listener {
     }
 
     private Collection<UUID> onlineViewerIds() {
-        Collection<? extends Player> online = Bukkit.getOnlinePlayers();
-        Collection<UUID> ids = new ArrayList<UUID>(online.size());
-        for (Player player : online) ids.add(player.getUniqueId());
-        return ids;
+        return onlineViewers;
     }
 
     private void assertMainThread() {
@@ -143,7 +144,11 @@ public final class FyreDisguisePlugin extends JavaPlugin implements Listener {
         resyncTasks.put(playerId, task);
     }
 
-    @EventHandler public void onJoin(PlayerJoinEvent event) { scheduleResync(event.getPlayer().getUniqueId()); }
+    @EventHandler public void onJoin(PlayerJoinEvent event) {
+        UUID id = event.getPlayer().getUniqueId();
+        onlineViewers.add(id);
+        scheduleResync(id);
+    }
     @EventHandler public void onRespawn(PlayerRespawnEvent event) {
         invalidateSpawns(event.getPlayer().getUniqueId());
         scheduleResync(event.getPlayer().getUniqueId());
@@ -167,6 +172,7 @@ public final class FyreDisguisePlugin extends JavaPlugin implements Listener {
 
     @EventHandler public void onQuit(PlayerQuitEvent event) {
         UUID id = event.getPlayer().getUniqueId();
+        onlineViewers.remove(id);
         BukkitTask pendingResync = resyncTasks.remove(id);
         if (pendingResync != null) pendingResync.cancel();
         if (skinCommands != null) skinCommands.forgetPlayer(id);
@@ -179,6 +185,7 @@ public final class FyreDisguisePlugin extends JavaPlugin implements Listener {
     @Override public void onDisable() {
         for (BukkitTask task : resyncTasks.values()) task.cancel();
         resyncTasks.clear();
+        onlineViewers.clear();
         if (registry != null) registry.clear();
         if (tabRenderer != null) {
             tabRenderer.restoreApplied();
