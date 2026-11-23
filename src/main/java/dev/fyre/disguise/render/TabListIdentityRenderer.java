@@ -98,10 +98,10 @@ public final class TabListIdentityRenderer implements Consumer<IdentityTransitio
             enqueueRestoration(viewer, subject);
             return;
         }
-        if (currentDisguise) manualRestores.remove(new RefreshQueue.Pair(viewer, subject));
+        if (currentDisguise && !manualRestores.isEmpty())
+            manualRestores.remove(new RefreshQueue.Pair(viewer, subject));
         if (pending.offer(viewer, subject)) {
-
-            deferred.cancel(viewer, subject);
+            if (deferred.size() > 0) deferred.cancel(viewer, subject);
         } else {
             if (!deferred.offer(viewer, subject) && !capacityWarning) {
                 capacityWarning = true;
@@ -111,7 +111,7 @@ public final class TabListIdentityRenderer implements Consumer<IdentityTransitio
     }
 
     private boolean enqueueRestoration(UUID viewer, UUID subject) {
-        deferred.cancel(viewer, subject);
+        if (deferred.size() > 0) deferred.cancel(viewer, subject);
         return pending.offerRestoration(viewer, subject, evicted ->
                 deferred.offer(evicted.getViewer(), evicted.getSubject()));
     }
@@ -239,7 +239,7 @@ public final class TabListIdentityRenderer implements Consumer<IdentityTransitio
             boolean currentDisguise = state != null
                     && state.getDisguiseFor(pair.getViewer(), pair.getSubject()).isPresent();
             if (state != null && !RefreshPolicy.shouldSend(
-                    currentDisguise, applied.contains(pair.getViewer(), pair.getSubject()))) {
+                    currentDisguise, applied.contains(pair))) {
                 retries.succeeded(pair);
                 continue;
             }
@@ -247,14 +247,14 @@ public final class TabListIdentityRenderer implements Consumer<IdentityTransitio
                 deliver(viewer, subject, !manualRestore);
                 retries.succeeded(pair);
                 if (state != null) {
-                    if (currentDisguise) applied.applied(pair.getViewer(), pair.getSubject());
-                    else applied.restored(pair.getViewer(), pair.getSubject());
+                    if (currentDisguise) applied.applied(pair);
+                    else applied.restored(pair);
                 }
             } catch (InvocationTargetException | RuntimeException ex) {
 
                 if (RefreshPolicy.keepForRestore(currentDisguise,
-                        applied.contains(pair.getViewer(), pair.getSubject()))) {
-                    applied.applied(pair.getViewer(), pair.getSubject());
+                        applied.contains(pair))) {
+                    applied.applied(pair);
                 }
                 boolean retry = retries.shouldRetry(pair);
                 if (retry) {
@@ -300,7 +300,7 @@ public final class TabListIdentityRenderer implements Consumer<IdentityTransitio
             try {
 
                 transport.restoreOriginal(viewer, subject);
-                applied.restored(pair.getViewer(), pair.getSubject());
+                applied.restored(pair);
                 restored++;
             } catch (InvocationTargetException | RuntimeException ex) {
                 failed++;

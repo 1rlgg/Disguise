@@ -14,15 +14,27 @@ public final class AppliedTabEntries {
     private Set<RefreshQueue.Pair> cachedSnapshot;
 
     public void applied(UUID viewer, UUID subject) {
-        if (applied.add(new RefreshQueue.Pair(viewer, subject))) cachedSnapshot = null;
+        applied(new RefreshQueue.Pair(viewer, subject));
+    }
+
+    public void applied(RefreshQueue.Pair pair) {
+        if (applied.add(Objects.requireNonNull(pair, "pair"))) cachedSnapshot = null;
     }
 
     public boolean contains(UUID viewer, UUID subject) {
-        return applied.contains(new RefreshQueue.Pair(viewer, subject));
+        return contains(new RefreshQueue.Pair(viewer, subject));
+    }
+
+    public boolean contains(RefreshQueue.Pair pair) {
+        return applied.contains(Objects.requireNonNull(pair, "pair"));
     }
 
     public void restored(UUID viewer, UUID subject) {
-        if (applied.remove(new RefreshQueue.Pair(viewer, subject))) cachedSnapshot = null;
+        restored(new RefreshQueue.Pair(viewer, subject));
+    }
+
+    public void restored(RefreshQueue.Pair pair) {
+        if (applied.remove(Objects.requireNonNull(pair, "pair"))) cachedSnapshot = null;
     }
 
     public void forget(UUID playerId) {
