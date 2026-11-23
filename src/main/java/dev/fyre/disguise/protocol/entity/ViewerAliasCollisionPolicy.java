@@ -1,10 +1,9 @@
-package dev.fyre.disguise.protocol;
+package dev.fyre.disguise.protocol.entity;
 
 import dev.fyre.disguise.api.DisguiseService;
 import java.util.Collection;
 import java.util.Objects;
 import java.util.UUID;
-
 
 public final class ViewerAliasCollisionPolicy {
     private ViewerAliasCollisionPolicy() { }

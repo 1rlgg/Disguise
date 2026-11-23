@@ -5,7 +5,6 @@ import java.util.Map;
 import java.util.Objects;
 import java.util.UUID;
 
-
 public final class ResyncTicketLedger {
     private final Map<UUID, Long> latest = new HashMap<UUID, Long>();
     private long sequence;
@@ -16,7 +15,6 @@ public final class ResyncTicketLedger {
         latest.put(playerId, ticket);
         return ticket;
     }
-
 
     public boolean consume(UUID playerId, long ticket) {
         Objects.requireNonNull(playerId, "playerId");

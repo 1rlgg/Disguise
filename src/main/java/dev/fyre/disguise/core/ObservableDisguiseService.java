@@ -11,7 +11,6 @@ import java.util.Objects;
 import java.util.Optional;
 import java.util.UUID;
 
-
 public final class ObservableDisguiseService implements DisguiseService {
     private final DisguiseService delegate;
     private final IdentityRenderer renderer;
@@ -32,7 +31,6 @@ public final class ObservableDisguiseService implements DisguiseService {
         this.viewers = Objects.requireNonNull(viewers, "viewers");
         this.mutationGuard = Objects.requireNonNull(mutationGuard, "mutationGuard");
     }
-
 
     private void refreshAliasNeighbours(UUID viewer, UUID changedSubject,
                                         Disguise before, Disguise after) {
@@ -127,7 +125,6 @@ public final class ObservableDisguiseService implements DisguiseService {
         mutationGuard.run();
         Objects.requireNonNull(id, "id");
 
-
         Collection<UUID> online = new ArrayList<UUID>(viewers.get());
         java.util.Map<UUID, Disguise> beforeSubject = new java.util.LinkedHashMap<UUID, Disguise>();
         for (UUID viewer : online) {
@@ -165,7 +162,6 @@ public final class ObservableDisguiseService implements DisguiseService {
     @Override public void clear() {
         mutationGuard.run();
         if (!(delegate instanceof DisguiseSubjectCatalog)) {
-
 
             delegate.clear();
             return;

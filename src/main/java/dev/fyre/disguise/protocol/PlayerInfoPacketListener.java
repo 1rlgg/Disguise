@@ -1,5 +1,7 @@
 package dev.fyre.disguise.protocol;
 
+import dev.fyre.disguise.protocol.packet.PlayerInfoPacketPolicy;
+
 import com.comphenix.protocol.PacketType;
 import com.comphenix.protocol.events.ListenerPriority;
 import com.comphenix.protocol.events.PacketAdapter;
@@ -11,7 +13,6 @@ import java.util.List;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.logging.Level;
 import org.bukkit.plugin.Plugin;
-
 
 public final class PlayerInfoPacketListener extends PacketAdapter {
     private final PlayerInfoRewriter rewriter;
@@ -35,7 +36,6 @@ public final class PlayerInfoPacketListener extends PacketAdapter {
             if (!PlayerInfoPacketPolicy.mayRewrite(event.isCancelled(), add, display,
                     existing != null && !existing.isEmpty())) return;
             List<PlayerInfoData> updated = rewriter.rewrite(event.getPlayer().getUniqueId(), existing);
-
 
             if (updated != existing) {
                 packet.getPlayerInfoDataLists().write(0, updated);

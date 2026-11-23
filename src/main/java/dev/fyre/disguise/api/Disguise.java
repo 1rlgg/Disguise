@@ -4,7 +4,6 @@ import java.util.Objects;
 import java.util.Optional;
 import java.util.UUID;
 
-
 public final class Disguise {
     private final UUID playerId;
     private final String name;

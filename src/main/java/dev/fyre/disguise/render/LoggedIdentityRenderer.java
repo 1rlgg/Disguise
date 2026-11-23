@@ -3,7 +3,6 @@ package dev.fyre.disguise.render;
 import java.util.Objects;
 import java.util.logging.Logger;
 
-
 public final class LoggedIdentityRenderer implements IdentityRenderer {
     private final Logger logger;
     public LoggedIdentityRenderer(Logger logger) { this.logger = Objects.requireNonNull(logger, "logger"); }

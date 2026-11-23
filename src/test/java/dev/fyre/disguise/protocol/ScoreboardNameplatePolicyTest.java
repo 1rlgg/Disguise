@@ -1,5 +1,7 @@
 package dev.fyre.disguise.protocol;
 
+import dev.fyre.disguise.protocol.entity.ScoreboardNameplatePolicy;
+
 import org.junit.Test;
 import static org.junit.Assert.*;
 

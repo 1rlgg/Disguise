@@ -6,7 +6,6 @@ import java.util.UUID;
 import org.junit.Test;
 import static org.junit.Assert.*;
 
-
 public class RestorationCosmeticBurstTest {
     @Test public void urgentBurstPreservesDisplacedAliasUpdatesWithoutDuplicateSends() {
         UUID viewer = UUID.randomUUID();

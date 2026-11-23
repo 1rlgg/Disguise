@@ -1,5 +1,8 @@
 package dev.fyre.disguise;
 
+import dev.fyre.disguise.api.Disguise;
+import dev.fyre.disguise.command.DisguiseDiagnostics;
+
 import com.comphenix.protocol.ProtocolLibrary;
 import com.comphenix.protocol.ProtocolManager;
 import dev.fyre.disguise.api.DisguiseService;
@@ -30,7 +33,7 @@ import org.bukkit.Bukkit;
 import org.bukkit.entity.Player;
 import org.bukkit.event.EventHandler;
 import org.bukkit.event.EventPriority;
-import dev.fyre.disguise.protocol.TeleportSnapshotPolicy;
+import dev.fyre.disguise.protocol.entity.TeleportSnapshotPolicy;
 import org.bukkit.event.Listener;
 import org.bukkit.event.player.PlayerChangedWorldEvent;
 import org.bukkit.event.player.PlayerJoinEvent;
@@ -38,7 +41,6 @@ import org.bukkit.event.player.PlayerQuitEvent;
 import org.bukkit.event.player.PlayerRespawnEvent;
 import org.bukkit.event.player.PlayerTeleportEvent;
 import org.bukkit.plugin.java.JavaPlugin;
-
 
 public final class FyreDisguisePlugin extends JavaPlugin implements Listener {
     private DisguiseService disguises;
@@ -124,7 +126,6 @@ public final class FyreDisguisePlugin extends JavaPlugin implements Listener {
         final long ticket = resyncTickets.schedule(playerId);
         Bukkit.getScheduler().runTaskLater(this, () -> {
 
-
             if (!resyncTickets.consume(playerId, ticket)) return;
             if (tabRenderer == null || refreshPlanner == null || !isEnabled()) return;
             Player player = Bukkit.getPlayer(playerId);
@@ -164,7 +165,6 @@ public final class FyreDisguisePlugin extends JavaPlugin implements Listener {
         if (skinCommands != null) skinCommands.forgetPlayer(id);
         if (tabRenderer != null) tabRenderer.forget(id);
         if (spawnPackets != null) spawnPackets.forget(id);
-
 
         if (registry != null) registry.clearPlayer(id);
     }

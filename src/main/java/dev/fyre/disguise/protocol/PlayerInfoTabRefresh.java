@@ -14,7 +14,6 @@ import java.util.List;
 import java.util.Objects;
 import org.bukkit.entity.Player;
 
-
 public final class PlayerInfoTabRefresh {
     private final ProtocolManager protocol;
     private final PlayerInfoRewriter rewriter;
@@ -27,7 +26,6 @@ public final class PlayerInfoTabRefresh {
     public void refresh(Player viewer, Player subject) throws InvocationTargetException {
         send(viewer, subject, false);
     }
-
 
     public void restoreOriginal(Player viewer, Player subject) throws InvocationTargetException {
         send(viewer, subject, true);
@@ -50,7 +48,6 @@ public final class PlayerInfoTabRefresh {
 
         PacketContainer remove = makePacket(EnumWrappers.PlayerInfoAction.REMOVE_PLAYER, input);
         PacketContainer add = makePacket(EnumWrappers.PlayerInfoAction.ADD_PLAYER, output);
-
 
         PacketContainer restore = makePacket(EnumWrappers.PlayerInfoAction.ADD_PLAYER, input);
         TabRefreshTransaction.execute(remove, add, restore,

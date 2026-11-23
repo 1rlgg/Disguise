@@ -7,7 +7,6 @@ import java.util.List;
 import java.util.Objects;
 import java.util.function.Predicate;
 
-
 public final class RestorationReconciler {
     private int offset;
 
@@ -21,7 +20,6 @@ public final class RestorationReconciler {
             offset = 0;
             return restore;
         }
-
 
         int inspected = Math.min(maxInspect, applied.size());
         int from = offset % applied.size();

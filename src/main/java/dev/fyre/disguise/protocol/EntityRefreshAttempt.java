@@ -3,7 +3,6 @@ package dev.fyre.disguise.protocol;
 import java.lang.reflect.InvocationTargetException;
 import java.util.Objects;
 
-
 public final class EntityRefreshAttempt {
     @FunctionalInterface public interface WorldSender {
         boolean refresh() throws InvocationTargetException;
@@ -17,7 +16,6 @@ public final class EntityRefreshAttempt {
     public EntityRefreshAttempt(EntityRefreshFailureGate gate) {
         this.gate = Objects.requireNonNull(gate, "gate");
     }
-
 
     public boolean deliver(WorldSender world, TabSender tab) throws InvocationTargetException {
         Objects.requireNonNull(world, "world");
@@ -33,10 +31,8 @@ public final class EntityRefreshAttempt {
             boolean disabled = gate.failure();
             if (disabled) {
 
-
                 failure.addSuppressed(new EntityCircuitOpenedException());
             }
-
 
             try {
                 tab.refresh();
@@ -49,7 +45,6 @@ public final class EntityRefreshAttempt {
         else tab.refresh();
         return false;
     }
-
 
     public static final class EntityCircuitOpenedException extends RuntimeException {
         public EntityCircuitOpenedException() { super("Experimental entity refresh circuit opened"); }

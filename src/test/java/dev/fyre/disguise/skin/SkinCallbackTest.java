@@ -7,7 +7,6 @@ import java.util.concurrent.TimeUnit;
 import org.junit.Test;
 import static org.junit.Assert.*;
 
-
 public class SkinCallbackTest {
     @Test public void callbackCanReadServiceStateAndStartNextLookup() throws Exception {
         SkinProperty skin = new SkinProperty("dGVzdA==", "c2ln");

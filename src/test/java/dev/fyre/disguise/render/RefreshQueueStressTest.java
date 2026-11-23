@@ -9,7 +9,6 @@ import java.util.UUID;
 import org.junit.Test;
 import static org.junit.Assert.*;
 
-
 public class RefreshQueueStressTest {
     @Test public void survivesTenThousandMixedMutationsWithoutDuplicateWork() {
         final int capacity = 64;

@@ -9,7 +9,6 @@ import java.util.UUID;
 import java.util.logging.Level;
 import org.bukkit.plugin.Plugin;
 
-
 public final class SpawnPacketObserver extends PacketAdapter {
     private final TrackedSpawnPackets snapshots;
     private final SpawnObservationCircuit observation = new SpawnObservationCircuit();
@@ -36,7 +35,6 @@ public final class SpawnPacketObserver extends PacketAdapter {
             }
         } catch (RuntimeException ex) {
             if (observation.trip()) {
-
 
                 snapshots.clear();
                 getPlugin().getLogger().log(Level.WARNING,

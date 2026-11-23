@@ -5,7 +5,6 @@ import java.util.Map;
 import java.util.Objects;
 import java.util.UUID;
 
-
 public final class SkinRequestTracker {
     private static final class Target {
         final UUID viewer;
@@ -47,7 +46,6 @@ public final class SkinRequestTracker {
         Long value = latest.get(new Target(viewer, subject));
         return value != null && value.longValue() == token;
     }
-
 
     public synchronized void finish(UUID viewer, UUID subject, long token) {
         latest.remove(new Target(viewer, subject), token);
