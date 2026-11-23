@@ -1,20 +1,20 @@
 package dev.fyre.disguise.skin;
 
-import dev.fyre.disguise.skin.cache.SkinFailureBackoff;
-
-import dev.fyre.disguise.skin.cache.SkinCache;
-
 import dev.fyre.disguise.api.SkinProperty;
+import dev.fyre.disguise.skin.cache.SkinCache;
+import dev.fyre.disguise.skin.cache.SkinFailureBackoff;
 import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 import java.util.Objects;
+import java.util.Optional;
 import java.util.UUID;
 import java.util.concurrent.ArrayBlockingQueue;
 import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.RejectedExecutionException;
 import java.util.concurrent.ThreadPoolExecutor;
 import java.util.concurrent.TimeUnit;
-import java.util.concurrent.RejectedExecutionException;
 
 public final class AsyncSkinService implements AutoCloseable {
     private final SkinSource source;
@@ -51,7 +51,7 @@ public final class AsyncSkinService implements AutoCloseable {
         boolean submit = false;
         synchronized (this) {
             if (closed) return failed(new IllegalStateException("Skin service is closed"));
-            java.util.Optional<SkinProperty> cached = cache.get(id);
+            Optional<SkinProperty> cached = cache.get(id);
             if (cached.isPresent()) return CompletableFuture.completedFuture(cached.get());
             shared = inFlight.get(id);
             if (shared == null) {
@@ -65,7 +65,6 @@ public final class AsyncSkinService implements AutoCloseable {
         }
 
         if (submit) {
-
             final CompletableFuture<SkinProperty> taskFuture = shared;
             try {
                 executor.execute(() -> resolve(id, taskFuture));
@@ -87,7 +86,6 @@ public final class AsyncSkinService implements AutoCloseable {
             skin = source.load(id);
             if (skin == null || !skin.isSigned()) throw new IllegalStateException("Missing signed textures");
         } catch (Throwable ex) {
-
             failure = ex;
         }
         boolean stopped;
@@ -117,7 +115,7 @@ public final class AsyncSkinService implements AutoCloseable {
     public synchronized int coolingDownSources() { return failures.size(); }
 
     @Override public void close() {
-        java.util.List<CompletableFuture<SkinProperty>> pending;
+        List<CompletableFuture<SkinProperty>> pending;
         synchronized (this) {
             if (closed) return;
             closed = true;

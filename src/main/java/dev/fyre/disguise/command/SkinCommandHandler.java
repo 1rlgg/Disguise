@@ -65,7 +65,6 @@ public final class SkinCommandHandler {
         }
         reply(sender, ChatColor.YELLOW + "Looking up signed Mojang textures asynchronously...");
         skins.lookup(sourceId).whenComplete((skin, error) -> {
-
             if (!requests.isCurrent(viewerId, subjectId, token)) return;
             if (!plugin.isEnabled()) {
                 requests.finish(viewerId, subjectId, token);
@@ -79,28 +78,27 @@ public final class SkinCommandHandler {
                     }
                     if (!requests.isCurrent(viewerId, subjectId, token)) return;
                     try {
-                    Player currentSubject = Bukkit.getPlayer(subjectId);
-                    Player currentViewer = viewerId == null ? null : Bukkit.getPlayer(viewerId);
-                    if (currentSubject == null || !currentSubject.isOnline()
-                            || (viewerId != null && (currentViewer == null || !currentViewer.isOnline()))) {
-                        reply(sender, ChatColor.YELLOW + "Player disconnected; skin request discarded.");
-                    } else if (error != null) {
-                        plugin.getLogger().log(Level.WARNING, "Signed texture lookup failed for " + sourceId, error);
-                        reply(sender, ChatColor.RED + "Mojang texture lookup failed.");
-                    } else {
-                        boolean applied = viewerId == null
-                                ? assignments.applyIfCurrent(subjectId, expected, skin)
-                                : assignments.applyForViewerIfCurrent(viewerId, subjectId, expected, skin);
-                        reply(sender, applied
-                                ? ChatColor.GREEN + "Skin stored; experimental client refresh may update appearance."
-                                : ChatColor.YELLOW + "Alias changed; stale skin request discarded.");
-                    }
+                        Player currentSubject = Bukkit.getPlayer(subjectId);
+                        Player currentViewer = viewerId == null ? null : Bukkit.getPlayer(viewerId);
+                        if (currentSubject == null || !currentSubject.isOnline()
+                                || (viewerId != null && (currentViewer == null || !currentViewer.isOnline()))) {
+                            reply(sender, ChatColor.YELLOW + "Player disconnected; skin request discarded.");
+                        } else if (error != null) {
+                            plugin.getLogger().log(Level.WARNING, "Signed texture lookup failed for " + sourceId, error);
+                            reply(sender, ChatColor.RED + "Mojang texture lookup failed.");
+                        } else {
+                            boolean applied = viewerId == null
+                                    ? assignments.applyIfCurrent(subjectId, expected, skin)
+                                    : assignments.applyForViewerIfCurrent(viewerId, subjectId, expected, skin);
+                            reply(sender, applied
+                                    ? ChatColor.GREEN + "Skin stored; experimental client refresh may update appearance."
+                                    : ChatColor.YELLOW + "Alias changed; stale skin request discarded.");
+                        }
                     } finally {
                         requests.finish(viewerId, subjectId, token);
                     }
                 });
             } catch (RuntimeException ex) {
-
                 requests.finish(viewerId, subjectId, token);
                 if (plugin.isEnabled()) {
                     plugin.getLogger().log(Level.WARNING,
