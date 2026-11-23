@@ -9,7 +9,6 @@ import java.util.Set;
 import java.util.UUID;
 import java.util.function.Predicate;
 
-
 public final class RefreshTargetPlanner {
     private final DisguiseService disguises;
 
@@ -20,7 +19,6 @@ public final class RefreshTargetPlanner {
     public Collection<RefreshQueue.Pair> around(UUID changedPlayer, Collection<UUID> onlinePlayers) {
         return around(changedPlayer, onlinePlayers, pair -> false);
     }
-
 
     public Collection<RefreshQueue.Pair> around(UUID changedPlayer, Collection<UUID> onlinePlayers,
                                                 Predicate<RefreshQueue.Pair> previouslyApplied) {

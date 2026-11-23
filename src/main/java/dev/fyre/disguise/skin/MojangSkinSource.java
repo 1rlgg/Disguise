@@ -11,7 +11,6 @@ import java.nio.charset.StandardCharsets;
 import java.util.Objects;
 import java.util.UUID;
 
-
 public final class MojangSkinSource implements SkinSource {
     private static final int MAX_BODY_CHARS = 32768;
     private final int connectTimeoutMillis;

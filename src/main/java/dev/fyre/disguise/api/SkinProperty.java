@@ -3,7 +3,6 @@ package dev.fyre.disguise.api;
 import java.util.Base64;
 import java.util.Objects;
 
-
 public final class SkinProperty {
     private static final int MAX_ENCODED_LENGTH = 32768;
     private final String value;

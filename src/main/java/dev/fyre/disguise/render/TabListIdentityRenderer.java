@@ -1,5 +1,10 @@
 package dev.fyre.disguise.render;
 
+import dev.fyre.disguise.render.refresh.RefreshBatchPolicy;
+import dev.fyre.disguise.render.refresh.RefreshPolicy;
+import dev.fyre.disguise.render.restoration.ManualRestorationPolicy;
+import dev.fyre.disguise.render.restoration.RestorationEligibility;
+
 import dev.fyre.disguise.api.DisguiseService;
 import dev.fyre.disguise.protocol.LegacyEntityRefresh;
 import dev.fyre.disguise.protocol.EntityRefreshFailureGate;
@@ -13,7 +18,6 @@ import java.util.logging.Level;
 import java.util.logging.Logger;
 import org.bukkit.Bukkit;
 import org.bukkit.entity.Player;
-
 
 public final class TabListIdentityRenderer implements IdentityRenderer {
     private final PlayerInfoTabRefresh transport;
@@ -62,7 +66,6 @@ public final class TabListIdentityRenderer implements IdentityRenderer {
         if (!Bukkit.isPrimaryThread()) throw new IllegalStateException("Refresh requires primary thread");
     }
 
-
     public boolean requestOriginalRestoration(UUID viewer, UUID subject) {
         assertPrimaryThread();
         Objects.requireNonNull(viewer, "viewer");
@@ -83,7 +86,6 @@ public final class TabListIdentityRenderer implements IdentityRenderer {
 
     public void enqueue(UUID viewer, UUID subject) {
         assertPrimaryThread();
-
 
         if (state != null && applied.contains(viewer, subject)
                 && !state.getDisguiseFor(viewer, subject).isPresent()) {
@@ -111,7 +113,6 @@ public final class TabListIdentityRenderer implements IdentityRenderer {
 
     @Override public void render(IdentityTransition transition) {
         assertPrimaryThread();
-
 
         RefreshQueue.Pair changedPair = new RefreshQueue.Pair(
                 transition.getViewerId(), transition.getSubjectId());
@@ -207,8 +208,7 @@ public final class TabListIdentityRenderer implements IdentityRenderer {
         for (RefreshQueue.Pair pair : work) {
             boolean manualRestore = manualRestores.remove(pair);
 
-
-            if (!RefreshAdmissionPolicy.mayAttempt(retries.suppressed(pair))) continue;
+            if (!RefreshPolicy.mayAttempt(retries.suppressed(pair))) continue;
             Player viewer = Bukkit.getPlayer(pair.getViewer());
             Player subject = Bukkit.getPlayer(pair.getSubject());
             if (viewer == null || subject == null || !viewer.isOnline() || !subject.isOnline()
@@ -217,10 +217,9 @@ public final class TabListIdentityRenderer implements IdentityRenderer {
                 continue;
             }
 
-
             boolean currentDisguise = state != null
                     && state.getDisguiseFor(pair.getViewer(), pair.getSubject()).isPresent();
-            if (state != null && !RefreshDeliveryPolicy.shouldSend(
+            if (state != null && !RefreshPolicy.shouldSend(
                     currentDisguise, applied.contains(pair.getViewer(), pair.getSubject()))) {
                 retries.succeeded(pair);
                 continue;
@@ -237,14 +236,12 @@ public final class TabListIdentityRenderer implements IdentityRenderer {
                 }
             } catch (InvocationTargetException | RuntimeException ex) {
 
-
-                if (RefreshFailureStatePolicy.keepForRestore(currentDisguise,
+                if (RefreshPolicy.keepForRestore(currentDisguise,
                         applied.contains(pair.getViewer(), pair.getSubject()))) {
                     applied.applied(pair.getViewer(), pair.getSubject());
                 }
                 boolean retry = retries.shouldRetry(pair);
                 if (retry) {
-
 
                     boolean restore = state != null
                             && !state.getDisguiseFor(pair.getViewer(), pair.getSubject()).isPresent();
@@ -263,7 +260,6 @@ public final class TabListIdentityRenderer implements IdentityRenderer {
                         + " subject " + subject.getUniqueId(), ex);
             }
         }
-
 
         deferred.drainTo(pending, 32);
         workMeter.record(work.size(), Math.max(0L, System.nanoTime() - started));
@@ -287,7 +283,6 @@ public final class TabListIdentityRenderer implements IdentityRenderer {
                 continue;
             }
             try {
-
 
                 transport.restoreOriginal(viewer, subject);
                 applied.restored(pair.getViewer(), pair.getSubject());

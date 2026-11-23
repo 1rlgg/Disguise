@@ -4,7 +4,6 @@ import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
 
-
 public final class DisguiseDiagnostics {
     private final boolean tabEnabled;
     private final boolean entityEnabled;

@@ -7,7 +7,6 @@ import java.util.UUID;
 import org.junit.Test;
 import static org.junit.Assert.*;
 
-
 public class TabClientStateSimulationTest {
     private static final class FakeClient {
         private final Map<UUID, String> entries = new LinkedHashMap<UUID, String>();
@@ -21,7 +20,6 @@ public class TabClientStateSimulationTest {
             if ("remove".equals(operation)) entries.remove(subject);
             if ("alias".equals(operation)) entries.put(subject, "OtherName");
             if ("original".equals(operation)) entries.put(subject, "RealName");
-
 
             if (calls == failOnCall || calls == failAlsoOnCall)
                 throw new InvocationTargetException(new Exception("ambiguous send " + calls));

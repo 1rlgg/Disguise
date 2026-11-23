@@ -5,7 +5,6 @@ import java.util.LinkedHashSet;
 import java.util.Objects;
 import java.util.UUID;
 
-
 public final class DeferredRefreshBacklog {
     private final int capacity;
     private final LinkedHashSet<RefreshQueue.Pair> deferred = new LinkedHashSet<RefreshQueue.Pair>();
@@ -35,7 +34,6 @@ public final class DeferredRefreshBacklog {
             RefreshQueue.Pair pair = iter.next();
             if (queue.contains(pair.getViewer(), pair.getSubject())) {
 
-
                 iter.remove();
                 continue;
             }
@@ -46,7 +44,6 @@ public final class DeferredRefreshBacklog {
         }
         return moved;
     }
-
 
     public boolean cancel(UUID viewer, UUID subject) {
         return deferred.remove(new RefreshQueue.Pair(viewer, subject));

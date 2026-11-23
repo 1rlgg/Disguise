@@ -1,6 +1,5 @@
 package dev.fyre.disguise.render;
 
-
 public final class RefreshWorkMeter {
     private long flushes;
     private long totalPairs;

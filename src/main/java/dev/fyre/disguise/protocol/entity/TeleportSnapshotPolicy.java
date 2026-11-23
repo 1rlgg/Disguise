@@ -1,5 +1,4 @@
-package dev.fyre.disguise.protocol;
-
+package dev.fyre.disguise.protocol.entity;
 
 public final class TeleportSnapshotPolicy {
     private TeleportSnapshotPolicy() { }

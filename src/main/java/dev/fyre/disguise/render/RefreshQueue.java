@@ -11,7 +11,6 @@ import java.util.Set;
 import java.util.UUID;
 import java.util.function.Consumer;
 
-
 public final class RefreshQueue {
     public static final class Pair {
         private final UUID viewer;
@@ -47,7 +46,6 @@ public final class RefreshQueue {
         this.capacity = capacity;
     }
 
-
     public boolean offer(UUID viewer, UUID subject) {
         Objects.requireNonNull(viewer, "viewer");
         Objects.requireNonNull(subject, "subject");
@@ -63,11 +61,9 @@ public final class RefreshQueue {
         return true;
     }
 
-
     public boolean offerRestoration(UUID viewer, UUID subject) {
         return offerRestoration(viewer, subject, evicted -> { });
     }
-
 
     public boolean offerRestoration(UUID viewer, UUID subject,
                                     Consumer<Pair> onCosmeticEvicted) {
@@ -85,11 +81,9 @@ public final class RefreshQueue {
         if (size() >= capacity) {
             if (normal.isEmpty()) {
 
-
                 droppedRestoration++;
                 return false;
             }
-
 
             Pair evicted = takeFirst(normal);
             queued.remove(evicted);
@@ -132,7 +126,6 @@ public final class RefreshQueue {
         return queued.contains(new Pair(viewer, subject));
     }
     public int pendingRestorations() { return urgent.size(); }
-
 
     public List<Pair> pendingRestorationSnapshot() {
         return Collections.unmodifiableList(new ArrayList<Pair>(urgent));

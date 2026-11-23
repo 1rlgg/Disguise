@@ -3,8 +3,8 @@ package dev.fyre.disguise.command;
 import dev.fyre.disguise.api.Disguise;
 import dev.fyre.disguise.api.DisguiseService;
 import dev.fyre.disguise.skin.SkinSourceId;
-import dev.fyre.disguise.protocol.NameplateCompatibility;
-import dev.fyre.disguise.protocol.ViewerAliasCollisionPolicy;
+import dev.fyre.disguise.protocol.entity.NameplateCompatibility;
+import dev.fyre.disguise.protocol.entity.ViewerAliasCollisionPolicy;
 import java.util.Objects;
 import java.util.UUID;
 import java.util.List;
@@ -16,7 +16,6 @@ import org.bukkit.command.Command;
 import org.bukkit.command.CommandExecutor;
 import org.bukkit.command.CommandSender;
 import org.bukkit.entity.Player;
-
 
 public final class DisguiseCommand implements CommandExecutor {
     private final DisguiseService disguises;
@@ -67,7 +66,6 @@ public final class DisguiseCommand implements CommandExecutor {
             return true;
         }
         if (args.length == 1 && args[0].equalsIgnoreCase("reset")) {
-
 
             if (skins != null) skins.clearPending();
             disguises.clear();

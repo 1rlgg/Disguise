@@ -8,7 +8,6 @@ import java.util.UUID;
 import java.util.concurrent.TimeUnit;
 import java.util.function.LongSupplier;
 
-
 public final class SkinFailureBackoff {
     private final int capacity;
     private final long durationNanos;
@@ -50,7 +49,6 @@ public final class SkinFailureBackoff {
     public synchronized void succeeded(UUID id) {
         failures.remove(Objects.requireNonNull(id, "id"));
     }
-
 
     public synchronized int size() {
         purgeExpired();

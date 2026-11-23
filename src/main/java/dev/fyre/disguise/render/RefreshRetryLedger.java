@@ -8,7 +8,6 @@ import java.util.Set;
 import java.util.Objects;
 import java.util.UUID;
 
-
 public final class RefreshRetryLedger {
     private final int maxRetries;
     private final int capacity;
@@ -24,7 +23,6 @@ public final class RefreshRetryLedger {
         this.capacity = capacity;
     }
 
-
     public boolean shouldRetry(RefreshQueue.Pair pair) {
         Objects.requireNonNull(pair, "pair");
         Integer prior = failures.get(pair);
@@ -33,7 +31,6 @@ public final class RefreshRetryLedger {
         if (count > maxRetries) {
             failures.remove(pair);
             exhausted++;
-
 
             if (terminal.size() >= capacity) {
                 java.util.Iterator<RefreshQueue.Pair> it = terminal.iterator();

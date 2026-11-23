@@ -1,5 +1,8 @@
 package dev.fyre.disguise.protocol;
 
+import dev.fyre.disguise.protocol.entity.ViewerAliasCollisionPolicy;
+import dev.fyre.disguise.protocol.packet.PlayerInfoPacketPolicy;
+
 import com.comphenix.protocol.wrappers.PlayerInfoData;
 import com.comphenix.protocol.wrappers.WrappedChatComponent;
 import com.comphenix.protocol.wrappers.WrappedGameProfile;
@@ -16,7 +19,6 @@ import java.util.Optional;
 import java.util.Set;
 import java.util.UUID;
 
-
 public final class PlayerInfoRewriter {
     private final DisguiseService disguises;
 
@@ -28,22 +30,19 @@ public final class PlayerInfoRewriter {
         Objects.requireNonNull(viewerId, "viewerId");
         Objects.requireNonNull(original, "original");
 
-
         if (disguises instanceof DisguiseSubjectCatalog
                 && !((DisguiseSubjectCatalog) disguises).hasAnySubjects()) return original;
         List<PlayerInfoData> result = null;
-
 
         Set<UUID> knownSubjects = null;
         for (int index = 0; index < original.size(); index++) {
             PlayerInfoData info = original.get(index);
             if (info == null || info.getProfile() == null) continue;
             UUID subjectId = info.getProfile().getUUID();
-            if (subjectId == null || !PlayerInfoRewritePolicy.mayRewrite(viewerId, subjectId)) continue;
+            if (subjectId == null || !PlayerInfoPacketPolicy.mayRewrite(viewerId, subjectId)) continue;
             Optional<Disguise> wanted = disguises.getDisguiseFor(viewerId, subjectId);
             if (!wanted.isPresent()) continue;
             Disguise disguise = wanted.get();
-
 
             if (disguises instanceof DisguiseSubjectCatalog) {
                 if (knownSubjects == null)
@@ -65,7 +64,6 @@ public final class PlayerInfoRewriter {
                 profile.getProperties().put("textures",
                         new WrappedSignedProperty("textures", skin.getValue(), skin.getSignature()));
             }
-
 
             WrappedChatComponent label = WrappedChatComponent.fromText(disguise.getName());
             result.set(index, new PlayerInfoData(profile, info.getLatency(), info.getGameMode(), label));

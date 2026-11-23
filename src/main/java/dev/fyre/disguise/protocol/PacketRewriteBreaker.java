@@ -2,7 +2,6 @@ package dev.fyre.disguise.protocol;
 
 import java.util.concurrent.atomic.AtomicInteger;
 
-
 public final class PacketRewriteBreaker {
     private final int threshold;
     private final AtomicInteger failures = new AtomicInteger();
@@ -14,7 +13,6 @@ public final class PacketRewriteBreaker {
 
     public boolean isOpen() { return failures.get() >= threshold; }
     public int failureCount() { return failures.get(); }
-
 
     public boolean recordFailure() {
         int previous = failures.getAndUpdate(old -> old >= threshold ? threshold : old + 1);

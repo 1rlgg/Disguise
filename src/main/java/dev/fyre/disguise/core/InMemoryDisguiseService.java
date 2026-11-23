@@ -11,7 +11,6 @@ import java.util.HashSet;
 import java.util.Collections;
 import java.util.UUID;
 
-
 public final class InMemoryDisguiseService implements DisguiseService, DisguiseSubjectCatalog {
     private final Map<UUID, Disguise> global = new HashMap<UUID, Disguise>();
     private final Map<UUID, Map<UUID, Disguise>> perViewer = new HashMap<UUID, Map<UUID, Disguise>>();

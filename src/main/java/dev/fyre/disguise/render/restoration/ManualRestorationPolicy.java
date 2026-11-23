@@ -1,5 +1,4 @@
-package dev.fyre.disguise.render;
-
+package dev.fyre.disguise.render.restoration;
 
 public final class ManualRestorationPolicy {
     private ManualRestorationPolicy() { }

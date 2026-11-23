@@ -12,7 +12,6 @@ import java.util.UUID;
 import java.util.concurrent.TimeUnit;
 import java.util.function.LongSupplier;
 
-
 public final class TrackedSpawnPackets {
     public static final class Snapshot {
         private final int entityId;

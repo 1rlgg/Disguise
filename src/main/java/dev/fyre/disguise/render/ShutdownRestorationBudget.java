@@ -8,7 +8,6 @@ import java.util.LinkedHashSet;
 import java.util.Set;
 import java.util.Objects;
 
-
 public final class ShutdownRestorationBudget {
     private final int limit;
 
@@ -26,7 +25,6 @@ public final class ShutdownRestorationBudget {
         }
         return Collections.unmodifiableList(result);
     }
-
 
     public List<RefreshQueue.Pair> selectPrioritized(Collection<RefreshQueue.Pair> applied,
                                                       Collection<RefreshQueue.Pair> urgent) {

@@ -1,5 +1,9 @@
 package dev.fyre.disguise.protocol;
 
+import dev.fyre.disguise.protocol.entity.EntityRefreshPolicy;
+import dev.fyre.disguise.protocol.entity.ScoreboardNameplatePolicy;
+import dev.fyre.disguise.protocol.entity.ViewerAliasCollisionPolicy;
+
 import com.comphenix.protocol.PacketType;
 import dev.fyre.disguise.api.DisguiseService;
 import com.comphenix.protocol.ProtocolManager;
@@ -11,7 +15,6 @@ import org.bukkit.Bukkit;
 import org.bukkit.Location;
 import org.bukkit.entity.Player;
 import org.bukkit.inventory.ItemStack;
-
 
 public final class LegacyEntityRefresh {
     private final ProtocolManager packets;
@@ -39,7 +42,6 @@ public final class LegacyEntityRefresh {
         if (viewer.equals(subject) || !viewer.isOnline() || !subject.isOnline()) return false;
         if (!viewer.getWorld().equals(subject.getWorld())) return false;
 
-
         String alias = disguises == null ? null : disguises.getDisguiseFor(
                 viewer.getUniqueId(), subject.getUniqueId())
                 .map(disguise -> disguise.getName()).orElse(null);
@@ -47,7 +49,6 @@ public final class LegacyEntityRefresh {
         boolean aliasCollision = conflicting != null && conflicting.isOnline()
                 && !conflicting.getUniqueId().equals(subject.getUniqueId());
         if (!aliasCollision && alias != null && disguises != null) {
-
 
             java.util.List<java.util.UUID> onlineIds = new java.util.ArrayList<java.util.UUID>();
             for (Player online : Bukkit.getOnlinePlayers()) onlineIds.add(online.getUniqueId());
@@ -77,7 +78,6 @@ public final class LegacyEntityRefresh {
         spawn.getBytes().write(1, angle(loc.getPitch()));
         spawn.getDataWatcherModifier().write(0, WrappedDataWatcher.getEntityWatcher(subject));
 
-
         ItemStack hand = subject.getItemInHand();
         spawn.getShorts().write(0, heldItemId(hand == null ? 0 : hand.getTypeId()));
 
@@ -96,15 +96,12 @@ public final class LegacyEntityRefresh {
             PacketContainer item = packets.createPacket(PacketType.Play.Server.ENTITY_EQUIPMENT);
             item.getIntegers().write(0, tracked.getEntityId());
 
-
             item.getShorts().write(0, equipmentSlot(slot));
             item.getItemModifier().write(0, equipment[slot]);
             gear[slot] = item;
         }
 
-
         tab.refresh(viewer, subject);
-
 
         EntityRefreshTransaction.execute(destroy, spawn, spawn.deepClone(), head,
                 java.util.Arrays.asList(gear),
@@ -112,12 +109,10 @@ public final class LegacyEntityRefresh {
         return true;
     }
 
-
     public static short heldItemId(int id) {
         if (id < 0 || id > Short.MAX_VALUE) throw new IllegalArgumentException("Invalid legacy item ID");
         return (short) id;
     }
-
 
     public static short equipmentSlot(int slot) {
         if (slot < 0 || slot > 4) throw new IllegalArgumentException("Invalid 1.8 equipment slot");

@@ -1,6 +1,5 @@
 package dev.fyre.disguise.protocol;
 
-
 public final class EntityRefreshFailureGate {
     private final PacketRewriteBreaker breaker;
     public EntityRefreshFailureGate(int threshold) {

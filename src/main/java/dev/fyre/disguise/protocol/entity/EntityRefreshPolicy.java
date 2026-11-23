@@ -1,9 +1,7 @@
-package dev.fyre.disguise.protocol;
-
+package dev.fyre.disguise.protocol.entity;
 
 public final class EntityRefreshPolicy {
     private EntityRefreshPolicy() { }
-
 
     public static boolean permitted(boolean sameWorld, boolean visible, boolean online,
                                     boolean dead, boolean sleeping, boolean mounted,
@@ -12,7 +10,6 @@ public final class EntityRefreshPolicy {
                 false, inTrackingRange, hasMatchingSpawn);
     }
 
-
     public static boolean permitted(boolean sameWorld, boolean visible, boolean online,
                                     boolean dead, boolean sleeping, boolean mounted,
                                     boolean spectator, boolean inTrackingRange,
@@ -20,7 +17,6 @@ public final class EntityRefreshPolicy {
         return sameWorld && visible && online && !dead && !sleeping && !mounted
                 && !spectator && inTrackingRange && hasMatchingSpawn;
     }
-
 
     public static boolean withinTrackingRange(double distanceSquared, int viewDistanceChunks) {
         if (Double.isNaN(distanceSquared) || Double.isInfinite(distanceSquared) || distanceSquared < 0

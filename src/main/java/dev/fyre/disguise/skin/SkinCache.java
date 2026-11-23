@@ -9,7 +9,6 @@ import java.util.Optional;
 import java.util.UUID;
 import java.util.function.LongSupplier;
 
-
 public final class SkinCache {
     private static final class Entry {
         final SkinProperty skin;
