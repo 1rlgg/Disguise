@@ -27,7 +27,7 @@ import java.util.logging.Logger;
 import org.bukkit.Bukkit;
 import org.bukkit.entity.Player;
 
-public final class TabListIdentityRenderer implements IdentityRenderer {
+public final class TabListIdentityRenderer implements java.util.function.Consumer<dev.fyre.disguise.render.identity.IdentityTransition> {
     private final PlayerInfoTabRefresh transport;
     private final Logger logger;
     private final RefreshQueue pending;
@@ -119,7 +119,9 @@ public final class TabListIdentityRenderer implements IdentityRenderer {
                 deferred.offer(evicted.getViewer(), evicted.getSubject()));
     }
 
-    @Override public void render(IdentityTransition transition) {
+    @Override public void accept(IdentityTransition transition) { render(transition); }
+
+    public void render(IdentityTransition transition) {
         assertPrimaryThread();
 
         RefreshQueue.Pair changedPair = new RefreshQueue.Pair(

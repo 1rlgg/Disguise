@@ -2,7 +2,7 @@ package dev.fyre.disguise.core;
 
 import dev.fyre.disguise.api.Disguise;
 import dev.fyre.disguise.api.DisguiseService;
-import dev.fyre.disguise.render.identity.IdentityRenderer;
+import java.util.function.Consumer;
 import dev.fyre.disguise.render.identity.IdentityTransition;
 import java.util.ArrayList;
 import java.util.Collection;
@@ -12,16 +12,16 @@ import java.util.UUID;
 
 public final class ObservableDisguiseService implements DisguiseService {
     private final DisguiseService delegate;
-    private final IdentityRenderer renderer;
+    private final Consumer<IdentityTransition> renderer;
     private final java.util.function.Supplier<Collection<UUID>> viewers;
     private final Runnable mutationGuard;
 
-    public ObservableDisguiseService(DisguiseService delegate, IdentityRenderer renderer,
+    public ObservableDisguiseService(DisguiseService delegate, Consumer<IdentityTransition> renderer,
                                      java.util.function.Supplier<Collection<UUID>> viewers) {
         this(delegate, renderer, viewers, () -> { });
     }
 
-    public ObservableDisguiseService(DisguiseService delegate, IdentityRenderer renderer,
+    public ObservableDisguiseService(DisguiseService delegate, Consumer<IdentityTransition> renderer,
                                      java.util.function.Supplier<Collection<UUID>> viewers,
                                      Runnable mutationGuard) {
         this.delegate = Objects.requireNonNull(delegate, "delegate");
@@ -44,7 +44,7 @@ public final class ObservableDisguiseService implements DisguiseService {
             String name = active.getName();
             if ((oldName != null && name.equalsIgnoreCase(oldName))
                     || (newName != null && name.equalsIgnoreCase(newName))) {
-                renderer.render(new IdentityTransition(viewer, other, active, active));
+                renderer.accept(new IdentityTransition(viewer, other, active, active));
             }
         }
     }
@@ -60,7 +60,7 @@ public final class ObservableDisguiseService implements DisguiseService {
             Optional<dev.fyre.disguise.render.identity.IdentityTransition> transition =
                     IdentityTransition.plan(viewer, subject, before, after);
             if (transition.isPresent()) {
-                renderer.render(transition.get());
+                renderer.accept(transition.get());
                 refreshAliasNeighbours(viewer, subject, before, after);
             }
         }
@@ -91,7 +91,7 @@ public final class ObservableDisguiseService implements DisguiseService {
         Disguise after = delegate.getDisguiseFor(viewerId, disguise.getPlayerId()).orElse(null);
         Optional<IdentityTransition> transition = IdentityTransition.plan(viewerId, disguise.getPlayerId(), before, after);
         if (transition.isPresent()) {
-            renderer.render(transition.get());
+            renderer.accept(transition.get());
             refreshAliasNeighbours(viewerId, disguise.getPlayerId(), before, after);
         }
     }
@@ -112,7 +112,7 @@ public final class ObservableDisguiseService implements DisguiseService {
             Disguise after = delegate.getDisguiseFor(viewerId, subjectId).orElse(null);
             Optional<IdentityTransition> transition = IdentityTransition.plan(viewerId, subjectId, before, after);
             if (transition.isPresent()) {
-                renderer.render(transition.get());
+                renderer.accept(transition.get());
                 refreshAliasNeighbours(viewerId, subjectId, before, after);
             }
         }
@@ -142,7 +142,7 @@ public final class ObservableDisguiseService implements DisguiseService {
             Optional<IdentityTransition> transition =
                     IdentityTransition.plan(entry.getKey(), id, entry.getValue(), after);
             if (transition.isPresent()) {
-                renderer.render(transition.get());
+                renderer.accept(transition.get());
                 refreshAliasNeighbours(entry.getKey(), id, entry.getValue(), after);
             }
         }
@@ -151,7 +151,7 @@ public final class ObservableDisguiseService implements DisguiseService {
             Optional<IdentityTransition> transition =
                     IdentityTransition.plan(id, entry.getKey(), entry.getValue(), after);
             if (transition.isPresent()) {
-                renderer.render(transition.get());
+                renderer.accept(transition.get());
                 refreshAliasNeighbours(id, entry.getKey(), entry.getValue(), after);
             }
         }
