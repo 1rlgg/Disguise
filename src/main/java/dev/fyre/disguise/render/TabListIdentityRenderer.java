@@ -1,9 +1,9 @@
 package dev.fyre.disguise.render;
 
-import dev.fyre.disguise.render.refresh.RefreshBatchPolicy;
 import dev.fyre.disguise.render.refresh.RefreshPolicy;
-import dev.fyre.disguise.render.restoration.ManualRestorationPolicy;
-import dev.fyre.disguise.render.restoration.RestorationEligibility;
+import dev.fyre.disguise.render.refresh.RefreshPolicy;
+import dev.fyre.disguise.render.refresh.RefreshPolicy;
+import dev.fyre.disguise.render.refresh.RefreshPolicy;
 
 import dev.fyre.disguise.api.DisguiseService;
 import dev.fyre.disguise.protocol.LegacyEntityRefresh;
@@ -71,7 +71,7 @@ public final class TabListIdentityRenderer implements IdentityRenderer {
         Objects.requireNonNull(viewer, "viewer");
         Objects.requireNonNull(subject, "subject");
         boolean current = state != null && state.getDisguiseFor(viewer, subject).isPresent();
-        if (!ManualRestorationPolicy.allowed(applied.contains(viewer, subject),
+        if (!RefreshPolicy.manualRestorationAllowed(applied.contains(viewer, subject),
                 current, viewer.equals(subject))) return false;
         retries.newTransition(new RefreshQueue.Pair(viewer, subject));
         if (!enqueueRestoration(viewer, subject)) return false;
@@ -191,7 +191,7 @@ public final class TabListIdentityRenderer implements IdentityRenderer {
                         Player viewer = Bukkit.getPlayer(candidate.getViewer());
                         Player subject = Bukkit.getPlayer(candidate.getSubject());
                         if (viewer == null || subject == null) return false;
-                        return RestorationEligibility.canRestore(true,
+                        return RefreshPolicy.canRestore(true,
                                 state.getDisguiseFor(candidate.getViewer(), candidate.getSubject()).isPresent(),
                                 viewer.isOnline(), subject.isOnline(), viewer.canSee(subject),
                                 viewer.equals(subject));
@@ -201,7 +201,7 @@ public final class TabListIdentityRenderer implements IdentityRenderer {
             }
         }
 
-        int batchSize = RefreshBatchPolicy.size(maxPerTick,
+        int batchSize = RefreshPolicy.batchSize(maxPerTick,
                 entityRefresh != null && !entityGate.isOpen());
         long started = System.nanoTime();
         java.util.List<RefreshQueue.Pair> work = pending.poll(batchSize);
