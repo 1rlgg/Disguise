@@ -1,4 +1,4 @@
-package dev.fyre.disguise.render;
+package dev.fyre.disguise.render.identity;
 
 import dev.fyre.disguise.api.Disguise;
 import dev.fyre.disguise.api.SkinProperty;

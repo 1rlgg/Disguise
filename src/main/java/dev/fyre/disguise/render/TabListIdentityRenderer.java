@@ -1,5 +1,9 @@
 package dev.fyre.disguise.render;
 
+import dev.fyre.disguise.render.identity.IdentityRenderer;
+
+import dev.fyre.disguise.render.identity.IdentityTransition;
+
 import dev.fyre.disguise.render.refresh.RefreshWorkMeter;
 import dev.fyre.disguise.render.refresh.DeferredRefreshBacklog;
 import dev.fyre.disguise.render.refresh.RefreshRetryLedger;

@@ -1,5 +1,7 @@
 package dev.fyre.disguise.render;
 
+import dev.fyre.disguise.render.identity.IdentityTransition;
+
 import dev.fyre.disguise.api.Disguise;
 import dev.fyre.disguise.api.SkinProperty;
 import java.util.UUID;

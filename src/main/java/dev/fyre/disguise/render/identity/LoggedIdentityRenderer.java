@@ -1,4 +1,4 @@
-package dev.fyre.disguise.render;
+package dev.fyre.disguise.render.identity;
 
 import java.util.Objects;
 import java.util.logging.Logger;
