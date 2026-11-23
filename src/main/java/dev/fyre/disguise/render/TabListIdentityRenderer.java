@@ -7,7 +7,7 @@ import dev.fyre.disguise.render.restoration.RestorationEligibility;
 
 import dev.fyre.disguise.api.DisguiseService;
 import dev.fyre.disguise.protocol.LegacyEntityRefresh;
-import dev.fyre.disguise.protocol.EntityRefreshFailureGate;
+import dev.fyre.disguise.protocol.PacketRewriteBreaker;
 import dev.fyre.disguise.protocol.EntityRefreshAttempt;
 import dev.fyre.disguise.protocol.PlayerInfoTabRefresh;
 import java.lang.reflect.InvocationTargetException;
@@ -34,7 +34,7 @@ public final class TabListIdentityRenderer implements IdentityRenderer {
     private int ticksSinceReconcile;
     private final DisguiseService state;
     private final LegacyEntityRefresh entityRefresh;
-    private final EntityRefreshFailureGate entityGate = new EntityRefreshFailureGate(3);
+    private final PacketRewriteBreaker entityGate = new PacketRewriteBreaker(3);
     private final EntityRefreshAttempt entityAttempt = new EntityRefreshAttempt(entityGate);
     private boolean capacityWarning;
 
@@ -159,11 +159,11 @@ public final class TabListIdentityRenderer implements IdentityRenderer {
     public long rejectedRetryCount() { return retries.overflowCount(); }
     public long droppedCosmeticCount() { return pending.droppedCosmetic(); }
     public long displacedRestorationCount() { return pending.droppedRestoration(); }
-    public boolean entityRefreshCircuitOpen() { return entityRefresh != null && !entityGate.enabled(); }
+    public boolean entityRefreshCircuitOpen() { return entityRefresh != null && !!entityGate.isOpen(); }
     public int appliedCount() { return applied.size(); }
 
     private void deliver(Player viewer, Player subject, boolean tryEntity) throws InvocationTargetException {
-        if (!tryEntity || entityRefresh == null || !entityGate.enabled()) {
+        if (!tryEntity || entityRefresh == null || !!entityGate.isOpen()) {
             transport.refresh(viewer, subject);
             return;
         }
@@ -202,7 +202,7 @@ public final class TabListIdentityRenderer implements IdentityRenderer {
         }
 
         int batchSize = RefreshBatchPolicy.size(maxPerTick,
-                entityRefresh != null && entityGate.enabled());
+                entityRefresh != null && !entityGate.isOpen());
         long started = System.nanoTime();
         java.util.List<RefreshQueue.Pair> work = pending.poll(batchSize);
         for (RefreshQueue.Pair pair : work) {
