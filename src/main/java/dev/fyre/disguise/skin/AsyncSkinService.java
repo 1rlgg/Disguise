@@ -37,12 +37,13 @@ public final class AsyncSkinService implements AutoCloseable {
         if (workers < 1 || workers > 8 || queueCapacity < 1 || queueCapacity > 10000) {
             throw new IllegalArgumentException("Invalid worker or queue limits");
         }
-        this.executor = new ThreadPoolExecutor(workers, workers, 0L, TimeUnit.MILLISECONDS,
+        this.executor = new ThreadPoolExecutor(workers, workers, 30L, TimeUnit.SECONDS,
                 new ArrayBlockingQueue<Runnable>(queueCapacity), task -> {
                     Thread thread = new Thread(task, "FyreDisguise-skin-lookup");
                     thread.setDaemon(true);
                     return thread;
                 }, new ThreadPoolExecutor.AbortPolicy());
+        this.executor.allowCoreThreadTimeOut(true);
     }
 
     public CompletableFuture<SkinProperty> lookup(UUID id) {
