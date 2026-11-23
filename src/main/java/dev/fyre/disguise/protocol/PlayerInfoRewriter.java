@@ -1,6 +1,6 @@
 package dev.fyre.disguise.protocol;
 
-import dev.fyre.disguise.protocol.entity.ViewerAliasCollisionPolicy;
+import dev.fyre.disguise.protocol.entity.EntityRefreshPolicy;
 import dev.fyre.disguise.protocol.packet.PlayerInfoPacketPolicy;
 
 import com.comphenix.protocol.wrappers.PlayerInfoData;
@@ -47,7 +47,7 @@ public final class PlayerInfoRewriter {
             if (disguises instanceof DisguiseSubjectCatalog) {
                 if (knownSubjects == null)
                     knownSubjects = ((DisguiseSubjectCatalog) disguises).subjectIds();
-                if (ViewerAliasCollisionPolicy.conflicts(disguises, viewerId, subjectId,
+                if (EntityRefreshPolicy.conflicts(disguises, viewerId, subjectId,
                         disguise.getName(), knownSubjects)) continue;
             }
             if (result == null) result = new ArrayList<PlayerInfoData>(original);
