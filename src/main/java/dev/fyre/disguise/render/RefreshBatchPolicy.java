@@ -1,6 +1,6 @@
 package dev.fyre.disguise.render;
 
-/** Bound expensive experimental world respawns without throttling tab fallback. */
+
 public final class RefreshBatchPolicy {
     private RefreshBatchPolicy() { }
 

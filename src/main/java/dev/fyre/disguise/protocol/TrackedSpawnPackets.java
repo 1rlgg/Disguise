@@ -12,10 +12,7 @@ import java.util.UUID;
 import java.util.concurrent.TimeUnit;
 import java.util.function.LongSupplier;
 
-/**
- * Thread-safe bounded collection of actual server-produced player spawn packets.
- * Never invents entity IDs, UUIDs or metadata; callers receive deep copies.
- */
+
 public final class TrackedSpawnPackets {
     public static final class Snapshot {
         private final int entityId;
@@ -65,7 +62,7 @@ public final class TrackedSpawnPackets {
             cache.remove(new RefreshQueue.Pair(viewer, subject));
             return null;
         }
-        // Snapshot.getPacket() clones for the consumer: avoid cloning twice here.
+
         return new Snapshot(entry.entityId, entry.packet, entry.capturedAt);
     }
 

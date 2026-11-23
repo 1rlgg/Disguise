@@ -62,7 +62,7 @@ public class AppliedTabEntriesTest {
             firstSnapshot.clear();
             fail("snapshot must be immutable");
         } catch (UnsupportedOperationException expected) {
-            // expected
+
         }
         entries.forget(viewer);
         assertTrue(entries.snapshot().isEmpty());

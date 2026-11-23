@@ -4,10 +4,7 @@ import java.util.UUID;
 import org.junit.Test;
 import static org.junit.Assert.*;
 
-/**
- * Exercises queue saturation and reconciliation together without Bukkit or
- * ProtocolLib, simulating many applied aliases being cleared in one burst.
- */
+
 public class RestorationRecoveryStressTest {
     @Test public void eventuallySchedulesEveryDisplacedRestorationWithoutEviction() {
         UUID viewer = UUID.randomUUID();

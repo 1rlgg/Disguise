@@ -16,11 +16,7 @@ import java.util.Optional;
 import java.util.Set;
 import java.util.UUID;
 
-/**
- * Applies per-viewer visible player-info profile and display name. A non-null
- * old display name can expose the undisguised username, so the alias is used
- * in both places. Original packets and unrelated profile properties remain intact.
- */
+
 public final class PlayerInfoRewriter {
     private final DisguiseService disguises;
 
@@ -31,14 +27,13 @@ public final class PlayerInfoRewriter {
     public List<PlayerInfoData> rewrite(UUID viewerId, List<PlayerInfoData> original) {
         Objects.requireNonNull(viewerId, "viewerId");
         Objects.requireNonNull(original, "original");
-        // Most packets on a normal server need no profile rewrite. Avoid
-        // allocating/copying profile structures when the registry is empty.
+
+
         if (disguises instanceof DisguiseSubjectCatalog
                 && !((DisguiseSubjectCatalog) disguises).hasAnySubjects()) return original;
         List<PlayerInfoData> result = null;
-        // Freeze the subject catalog once per outgoing packet. Without this,
-        // each entry in a batch could allocate a new subject set and observe
-        // a different collision set during concurrent disguise updates.
+
+
         Set<UUID> knownSubjects = null;
         for (int index = 0; index < original.size(); index++) {
             PlayerInfoData info = original.get(index);
@@ -48,10 +43,8 @@ public final class PlayerInfoRewriter {
             Optional<Disguise> wanted = disguises.getDisguiseFor(viewerId, subjectId);
             if (!wanted.isPresent()) continue;
             Disguise disguise = wanted.get();
-            // Packet listeners may run off the Bukkit thread. Use only the
-            // synchronized disguise catalog, never Bukkit online-player
-            // lookups, to reject conflicting desired names for this viewer.
-            // On conflict leave the vanilla entry unchanged.
+
+
             if (disguises instanceof DisguiseSubjectCatalog) {
                 if (knownSubjects == null)
                     knownSubjects = ((DisguiseSubjectCatalog) disguises).subjectIds();
@@ -72,8 +65,8 @@ public final class PlayerInfoRewriter {
                 profile.getProperties().put("textures",
                         new WrappedSignedProperty("textures", skin.getValue(), skin.getSignature()));
             }
-            // The 1.8 player-info display-name field overrides the profile name.
-            // Explicitly use the alias to avoid retaining a real-name list label.
+
+
             WrappedChatComponent label = WrappedChatComponent.fromText(disguise.getName());
             result.set(index, new PlayerInfoData(profile, info.getLatency(), info.getGameMode(), label));
         }

@@ -7,11 +7,7 @@ import java.util.List;
 import java.util.Objects;
 import java.util.function.Predicate;
 
-/**
- * Round-robin bounded scan of tab entries actually applied to clients.
- * Reconciles restoration work lost during queue saturation without creating
- * unbounded scheduled jobs or client packets.
- */
+
 public final class RestorationReconciler {
     private int offset;
 
@@ -25,9 +21,8 @@ public final class RestorationReconciler {
             offset = 0;
             return restore;
         }
-        // AppliedTabEntries returns an immutable insertion-ordered snapshot.
-        // Do not allocate an O(N) copy on each reconciliation scan; iterators
-        // let us inspect the bounded slice with only output allocations.
+
+
         int inspected = Math.min(maxInspect, applied.size());
         int from = offset % applied.size();
         Iterator<RefreshQueue.Pair> iter = applied.iterator();

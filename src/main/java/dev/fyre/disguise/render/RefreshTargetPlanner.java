@@ -9,10 +9,7 @@ import java.util.Set;
 import java.util.UUID;
 import java.util.function.Predicate;
 
-/**
- * Plans the smallest useful tab-list resynchronization after a join/respawn/world change.
- * This class never sends packets or touches world entity tracking.
- */
+
 public final class RefreshTargetPlanner {
     private final DisguiseService disguises;
 
@@ -24,7 +21,7 @@ public final class RefreshTargetPlanner {
         return around(changedPlayer, onlinePlayers, pair -> false);
     }
 
-    /** Include pairs the plugin may already have changed even after state removal. */
+
     public Collection<RefreshQueue.Pair> around(UUID changedPlayer, Collection<UUID> onlinePlayers,
                                                 Predicate<RefreshQueue.Pair> previouslyApplied) {
         Objects.requireNonNull(previouslyApplied, "previouslyApplied");

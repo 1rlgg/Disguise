@@ -14,10 +14,7 @@ import java.util.logging.Logger;
 import org.bukkit.Bukkit;
 import org.bukkit.entity.Player;
 
-/**
- * Experimental tab-list and opt-in entity renderer. Tracks only successful
- * updates and never mutates the underlying Bukkit entity.
- */
+
 public final class TabListIdentityRenderer implements IdentityRenderer {
     private final PlayerInfoTabRefresh transport;
     private final Logger logger;
@@ -65,11 +62,7 @@ public final class TabListIdentityRenderer implements IdentityRenderer {
         if (!Bukkit.isPrimaryThread()) throw new IllegalStateException("Refresh requires primary thread");
     }
 
-    /**
-     * Operator-directed retry of an original tab entry. Avoid mutating unrelated
-     * clients, self entries, or an alias that is still desired. This does not
-     * send world entity packets and is always subject to the normal tick budget.
-     */
+
     public boolean requestOriginalRestoration(UUID viewer, UUID subject) {
         assertPrimaryThread();
         Objects.requireNonNull(viewer, "viewer");
@@ -90,8 +83,8 @@ public final class TabListIdentityRenderer implements IdentityRenderer {
 
     public void enqueue(UUID viewer, UUID subject) {
         assertPrimaryThread();
-        // A delayed resync may run after undisguise. Its old applied alias
-        // must be restored urgently, not treated as expendable cosmetics.
+
+
         if (state != null && applied.contains(viewer, subject)
                 && !state.getDisguiseFor(viewer, subject).isPresent()) {
             enqueueRestoration(viewer, subject);
@@ -100,7 +93,7 @@ public final class TabListIdentityRenderer implements IdentityRenderer {
         if (state != null && state.getDisguiseFor(viewer, subject).isPresent())
             manualRestores.remove(new RefreshQueue.Pair(viewer, subject));
         if (pending.offer(viewer, subject)) {
-            // A newer primary update supersedes an older deferred copy.
+
             deferred.cancel(viewer, subject);
         } else {
             if (!deferred.offer(viewer, subject) && !capacityWarning) {
@@ -118,15 +111,14 @@ public final class TabListIdentityRenderer implements IdentityRenderer {
 
     @Override public void render(IdentityTransition transition) {
         assertPrimaryThread();
-        // An explicit alias transition supersedes any pending manual repair.
-        // This avoids delivering a stale tab-only repair after a new skin or
-        // alias is requested for the same viewer/subject pair.
+
+
         RefreshQueue.Pair changedPair = new RefreshQueue.Pair(
                 transition.getViewerId(), transition.getSubjectId());
         manualRestores.remove(changedPair);
-        // Only explicit transitions reset terminal retry quarantine.
+
         retries.newTransition(changedPair);
-        // On saturation, never prefer a cosmetic alias update to a removal.
+
         if (!transition.getAfter().isPresent()) {
             enqueueRestoration(transition.getViewerId(), transition.getSubjectId());
         } else {
@@ -207,16 +199,15 @@ public final class TabListIdentityRenderer implements IdentityRenderer {
                 enqueueRestoration(pair.getViewer(), pair.getSubject());
             }
         }
-        // Defer excess entity work instead of silently downgrading it to tab-only updates.
+
         int batchSize = RefreshBatchPolicy.size(maxPerTick,
                 entityRefresh != null && entityGate.enabled());
         long started = System.nanoTime();
         java.util.List<RefreshQueue.Pair> work = pending.poll(batchSize);
         for (RefreshQueue.Pair pair : work) {
             boolean manualRestore = manualRestores.remove(pair);
-            // A stale deferred/resync queue entry is not a new identity
-            // transition. Quarantine exhausted transports until an explicit
-            // transition resets the retry gate.
+
+
             if (!RefreshAdmissionPolicy.mayAttempt(retries.suppressed(pair))) continue;
             Player viewer = Bukkit.getPlayer(pair.getViewer());
             Player subject = Bukkit.getPlayer(pair.getSubject());
@@ -225,9 +216,8 @@ public final class TabListIdentityRenderer implements IdentityRenderer {
                 retries.succeeded(pair);
                 continue;
             }
-            // A set/clear burst may leave nothing to display. Never remove/add
-            // a normal player's tab entry unless this plugin actually applied
-            // an alias before or a disguise remains desired.
+
+
             boolean currentDisguise = state != null
                     && state.getDisguiseFor(pair.getViewer(), pair.getSubject()).isPresent();
             if (state != null && !RefreshDeliveryPolicy.shouldSend(
@@ -246,17 +236,16 @@ public final class TabListIdentityRenderer implements IdentityRenderer {
                     }
                 }
             } catch (InvocationTargetException | RuntimeException ex) {
-                // A send can fail after the client received REMOVE or ADD.
-                // Conservatively remember the pair as possibly modified so
-                // undisguise and shutdown can still attempt real-profile restore.
+
+
                 if (RefreshFailureStatePolicy.keepForRestore(currentDisguise,
                         applied.contains(pair.getViewer(), pair.getSubject()))) {
                     applied.applied(pair.getViewer(), pair.getSubject());
                 }
                 boolean retry = retries.shouldRetry(pair);
                 if (retry) {
-                    // Never retry in this same flush; defer until the next tick.
-                    // Urgent undisguise restoration gets precedence over cosmetics.
+
+
                     boolean restore = state != null
                             && !state.getDisguiseFor(pair.getViewer(), pair.getSubject()).isPresent();
                     if (restore) {
@@ -274,8 +263,8 @@ public final class TabListIdentityRenderer implements IdentityRenderer {
                         + " subject " + subject.getUniqueId(), ex);
             }
         }
-        // After current work, refill a bounded number of normal slots.
-        // Urgent restorations already in the primary queue retain priority.
+
+
         deferred.drainTo(pending, 32);
         workMeter.record(work.size(), Math.max(0L, System.nanoTime() - started));
         if (pending.size() == 0 && deferred.size() == 0) capacityWarning = false;
@@ -298,10 +287,8 @@ public final class TabListIdentityRenderer implements IdentityRenderer {
                 continue;
             }
             try {
-                // During shutdown never destroy and manually respawn world
-                // entities. The server is about to tear down our listeners,
-                // and tab-only restoration avoids ghost entities and armor
-                // packet bursts in the final server tick.
+
+
                 transport.restoreOriginal(viewer, subject);
                 applied.restored(pair.getViewer(), pair.getSubject());
                 restored++;

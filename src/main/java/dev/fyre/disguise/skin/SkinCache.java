@@ -9,7 +9,7 @@ import java.util.Optional;
 import java.util.UUID;
 import java.util.function.LongSupplier;
 
-/** Thread-safe, bounded, positive-only cache with monotonic expiry. */
+
 public final class SkinCache {
     private static final class Entry {
         final SkinProperty skin;

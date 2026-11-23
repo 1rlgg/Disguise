@@ -7,11 +7,7 @@ import java.util.UUID;
 import org.junit.Test;
 import static org.junit.Assert.*;
 
-/**
- * Small deterministic fake client: models UUID-keyed tab state and ambiguous
- * transport exceptions after the client has already applied a packet.
- * This does not simulate Minecraft 1.8 entity or network internals.
- */
+
 public class TabClientStateSimulationTest {
     private static final class FakeClient {
         private final Map<UUID, String> entries = new LinkedHashMap<UUID, String>();
@@ -25,8 +21,8 @@ public class TabClientStateSimulationTest {
             if ("remove".equals(operation)) entries.remove(subject);
             if ("alias".equals(operation)) entries.put(subject, "OtherName");
             if ("original".equals(operation)) entries.put(subject, "RealName");
-            // Throw AFTER the fake client received the packet. This is the
-            // ambiguous failure that most mocks miss.
+
+
             if (calls == failOnCall || calls == failAlsoOnCall)
                 throw new InvocationTargetException(new Exception("ambiguous send " + calls));
         }

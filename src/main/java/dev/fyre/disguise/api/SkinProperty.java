@@ -3,10 +3,7 @@ package dev.fyre.disguise.api;
 import java.util.Base64;
 import java.util.Objects;
 
-/**
- * Validated texture property encoding. A signature being present is NOT proof
- * of authenticity; RSA signature verification is not performed here.
- */
+
 public final class SkinProperty {
     private static final int MAX_ENCODED_LENGTH = 32768;
     private final String value;

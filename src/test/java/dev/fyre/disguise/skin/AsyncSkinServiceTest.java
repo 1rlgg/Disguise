@@ -130,7 +130,7 @@ public class AsyncSkinServiceTest {
                 assertTrue(expected.getCause() instanceof AssertionError);
             }
             assertEquals(0, service.pendingLookups());
-            // Different target should still resolve using the same executor.
+
             assertNotNull(service.lookup(UUID.randomUUID()).get(2, TimeUnit.SECONDS));
             assertEquals(2, calls.get());
         }

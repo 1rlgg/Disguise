@@ -12,7 +12,7 @@ import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.logging.Level;
 import org.bukkit.plugin.Plugin;
 
-/** Fail-open PLAYER_INFO listener: an invalid alias must never cancel an outgoing packet. */
+
 public final class PlayerInfoPacketListener extends PacketAdapter {
     private final PlayerInfoRewriter rewriter;
     private final PacketRewriteBreaker breaker = new PacketRewriteBreaker(5);
@@ -35,8 +35,8 @@ public final class PlayerInfoPacketListener extends PacketAdapter {
             if (!PlayerInfoPacketPolicy.mayRewrite(event.isCancelled(), add, display,
                     existing != null && !existing.isEmpty())) return;
             List<PlayerInfoData> updated = rewriter.rewrite(event.getPlayer().getUniqueId(), existing);
-            // An unchanged packet is not evidence that rewriting works.
-            // Only a successful actual alias write resets prior failures.
+
+
             if (updated != existing) {
                 packet.getPlayerInfoDataLists().write(0, updated);
                 breaker.recordSuccess();

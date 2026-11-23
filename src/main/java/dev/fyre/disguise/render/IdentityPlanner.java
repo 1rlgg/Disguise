@@ -6,7 +6,7 @@ import java.util.Objects;
 import java.util.Optional;
 import java.util.UUID;
 
-/** Pure, side-effect-free transition planning. Never emits a redundant refresh. */
+
 public final class IdentityPlanner {
     public Optional<IdentityTransition> plan(UUID viewer, UUID subject, Disguise before, Disguise after) {
         Objects.requireNonNull(viewer, "viewer");

@@ -4,10 +4,7 @@ import java.util.Objects;
 import java.util.Optional;
 import java.util.UUID;
 
-/**
- * An immutable desired player identity. No packets are sent by this model.
- * Skin properties are not cryptographically verified by the constructor.
- */
+
 public final class Disguise {
     private final UUID playerId;
     private final String name;

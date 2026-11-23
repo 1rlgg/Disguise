@@ -8,10 +8,7 @@ import java.util.Set;
 import java.util.Objects;
 import java.util.UUID;
 
-/**
- * Main-thread-only bounded retry ledger for failed player-info / entity sends.
- * Does not schedule timers or retry offline/vanished players on its own.
- */
+
 public final class RefreshRetryLedger {
     private final int maxRetries;
     private final int capacity;
@@ -27,10 +24,7 @@ public final class RefreshRetryLedger {
         this.capacity = capacity;
     }
 
-    /**
-     * True only while another retry is allowed. After exhaustion remove state
-     * to avoid retaining player identifiers across failed refresh lifecycles.
-     */
+
     public boolean shouldRetry(RefreshQueue.Pair pair) {
         Objects.requireNonNull(pair, "pair");
         Integer prior = failures.get(pair);
@@ -39,8 +33,8 @@ public final class RefreshRetryLedger {
         if (count > maxRetries) {
             failures.remove(pair);
             exhausted++;
-            // Do not auto-retry hopeless pairs every second during periodic
-            // reconciliation. A new identity transition may reset the gate.
+
+
             if (terminal.size() >= capacity) {
                 java.util.Iterator<RefreshQueue.Pair> it = terminal.iterator();
                 it.next();

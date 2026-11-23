@@ -12,10 +12,7 @@ import org.bukkit.Location;
 import org.bukkit.entity.Player;
 import org.bukkit.inventory.ItemStack;
 
-/**
- * EXPERIMENTAL Minecraft 1.8.8/1.8.9 client-side destroy and respawn.
- * No Bukkit entity, hitbox, server combat, or visibility is changed.
- */
+
 public final class LegacyEntityRefresh {
     private final ProtocolManager packets;
     private final PlayerInfoTabRefresh tab;
@@ -41,9 +38,8 @@ public final class LegacyEntityRefresh {
         Objects.requireNonNull(subject, "subject");
         if (viewer.equals(subject) || !viewer.isOnline() || !subject.isOnline()) return false;
         if (!viewer.getWorld().equals(subject.getWorld())) return false;
-        // 1.8 scoreboard teams may control nameplates, prefixes and invisibility.
-        // Never replace an entity client-side while its real-name entry is
-        // managed by another plugin; the caller can still refresh the tab list.
+
+
         String alias = disguises == null ? null : disguises.getDisguiseFor(
                 viewer.getUniqueId(), subject.getUniqueId())
                 .map(disguise -> disguise.getName()).orElse(null);
@@ -51,9 +47,8 @@ public final class LegacyEntityRefresh {
         boolean aliasCollision = conflicting != null && conflicting.isOnline()
                 && !conflicting.getUniqueId().equals(subject.getUniqueId());
         if (!aliasCollision && alias != null && disguises != null) {
-            // UUID-preserving profile rewrites do not make duplicate profile
-            // usernames safe. Reject the entity packet path for this viewer
-            // if another online subject resolves to the same visible alias.
+
+
             java.util.List<java.util.UUID> onlineIds = new java.util.ArrayList<java.util.UUID>();
             for (Player online : Bukkit.getOnlinePlayers()) onlineIds.add(online.getUniqueId());
             aliasCollision = ViewerAliasCollisionPolicy.conflicts(
@@ -81,8 +76,8 @@ public final class LegacyEntityRefresh {
         spawn.getBytes().write(0, angle(loc.getYaw()));
         spawn.getBytes().write(1, angle(loc.getPitch()));
         spawn.getDataWatcherModifier().write(0, WrappedDataWatcher.getEntityWatcher(subject));
-        // The 1.8 player spawn packet also encodes the CURRENT held item as
-        // a short. Do not replay a stale item ID from a captured spawn.
+
+
         ItemStack hand = subject.getItemInHand();
         spawn.getShorts().write(0, heldItemId(hand == null ? 0 : hand.getTypeId()));
 
@@ -100,33 +95,30 @@ public final class LegacyEntityRefresh {
         for (int slot = 0; slot < equipment.length; slot++) {
             PacketContainer item = packets.createPacket(PacketType.Play.Server.ENTITY_EQUIPMENT);
             item.getIntegers().write(0, tracked.getEntityId());
-            // Spigot 1.8.8/NMS PacketPlayOutEntityEquipment: int entityId,
-            // short slot, ItemStack item. There is NO second int field.
+
+
             item.getShorts().write(0, equipmentSlot(slot));
             item.getItemModifier().write(0, equipment[slot]);
             gear[slot] = item;
         }
 
-        // All packets are fully prepared before any client-side destroy.
-        // The transaction restores the captured spawn and current equipment
-        // if any send (including head rotation or armor) fails mid-sequence.
+
         tab.refresh(viewer, subject);
-        // Recovery uses the same current-coordinate, current-metadata spawn
-        // packet, not the two-minute-old captured location. Both packets
-        // retain the real entity UUID and ID from the server's tracker.
+
+
         EntityRefreshTransaction.execute(destroy, spawn, spawn.deepClone(), head,
                 java.util.Arrays.asList(gear),
                 packet -> packets.sendServerPacket(viewer, packet, false));
         return true;
     }
 
-    /** The 1.8 spawn-player current-item field is a non-negative short. */
+
     public static short heldItemId(int id) {
         if (id < 0 || id > Short.MAX_VALUE) throw new IllegalArgumentException("Invalid legacy item ID");
         return (short) id;
     }
 
-    /** In Minecraft 1.8 equipment indices are shorts 0=hand, 1-4=armor. */
+
     public static short equipmentSlot(int slot) {
         if (slot < 0 || slot > 4) throw new IllegalArgumentException("Invalid 1.8 equipment slot");
         return (short) slot;

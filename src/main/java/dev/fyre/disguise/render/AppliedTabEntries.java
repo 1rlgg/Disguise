@@ -7,7 +7,7 @@ import java.util.Objects;
 import java.util.Set;
 import java.util.UUID;
 
-/** Main-thread-only bookkeeping for tab entries this plugin successfully refreshed. */
+
 public final class AppliedTabEntries {
     private final Set<RefreshQueue.Pair> applied = new LinkedHashSet<RefreshQueue.Pair>();
     private Set<RefreshQueue.Pair> cachedSnapshot;
@@ -32,8 +32,8 @@ public final class AppliedTabEntries {
     }
 
     public Set<RefreshQueue.Pair> snapshot() {
-        // This is a versioned immutable view. Repeated one-second scans with
-        // no identity mutations do not clone every applied pair again.
+
+
         if (cachedSnapshot == null) {
             cachedSnapshot = Collections.unmodifiableSet(new LinkedHashSet<RefreshQueue.Pair>(applied));
         }

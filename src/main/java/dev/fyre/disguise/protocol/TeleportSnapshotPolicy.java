@@ -1,10 +1,6 @@
 package dev.fyre.disguise.protocol;
 
-/**
- * Only movement/world changes invalidate tracked entity spawn snapshots.
- * Legacy Spigot fires teleport events for some look-only changes; those must
- * not flush per-viewer tracking caches.
- */
+
 public final class TeleportSnapshotPolicy {
     private TeleportSnapshotPolicy() { }
 

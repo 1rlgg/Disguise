@@ -9,7 +9,7 @@ import java.util.UUID;
 import org.junit.Test;
 import static org.junit.Assert.*;
 
-/** Tests a collision appearing and later disappearing without changing B's own alias. */
+
 public class ObservableDisguiseCollisionTest {
     @Test public void newCollisionTriggersRefreshForPreviouslyUnchangedAlias() {
         UUID viewer = UUID.randomUUID(), a = UUID.randomUUID(), b = UUID.randomUUID();

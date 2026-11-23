@@ -8,7 +8,7 @@ import java.util.UUID;
 import org.junit.Test;
 import static org.junit.Assert.*;
 
-/** Public observable API must preserve the difference between an override and fallback. */
+
 public class ObservableOverrideApiTest {
     @Test public void explicitOverrideSurvivesObservableWrapperEvenWhenSharedWithGlobal() {
         UUID subject = UUID.randomUUID(), viewer = UUID.randomUUID(), other = UUID.randomUUID();

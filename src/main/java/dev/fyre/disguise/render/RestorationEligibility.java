@@ -1,9 +1,6 @@
 package dev.fyre.disguise.render;
 
-/**
- * Reconciliation must not send tab packets for offline or vanished entities.
- * Keep applied bookkeeping so restoration can be reconsidered later.
- */
+
 public final class RestorationEligibility {
     private RestorationEligibility() { }
 

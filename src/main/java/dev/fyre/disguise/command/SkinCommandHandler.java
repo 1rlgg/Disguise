@@ -14,7 +14,7 @@ import org.bukkit.command.CommandSender;
 import org.bukkit.entity.Player;
 import org.bukkit.plugin.java.JavaPlugin;
 
-/** Asynchronous signed texture lookup with main-thread, stale-safe application. */
+
 public final class SkinCommandHandler {
     private final JavaPlugin plugin;
     private final DisguiseService disguises;
@@ -66,9 +66,8 @@ public final class SkinCommandHandler {
         }
         reply(sender, ChatColor.YELLOW + "Looking up signed Mojang textures asynchronously...");
         skins.lookup(sourceId).whenComplete((skin, error) -> {
-            // Mojang work can complete long after a replacement command.
-            // Skip queuing a Bukkit main-thread task for a superseded token.
-            // The tracker is synchronized, so this check is thread-safe.
+
+
             if (!requests.isCurrent(viewerId, subjectId, token)) return;
             if (!plugin.isEnabled()) {
                 requests.finish(viewerId, subjectId, token);
@@ -103,9 +102,8 @@ public final class SkinCommandHandler {
                     }
                 });
             } catch (RuntimeException ex) {
-                // Bukkit may reject scheduling with IllegalPluginAccessException
-                // (a RuntimeException, not necessarily IllegalStateException)
-                // during disable. Never leave an in-flight target reserved.
+
+
                 requests.finish(viewerId, subjectId, token);
                 if (plugin.isEnabled()) {
                     plugin.getLogger().log(Level.WARNING,
@@ -115,7 +113,7 @@ public final class SkinCommandHandler {
         });
     }
 
-    /** Called on Bukkit lifecycle cleanup to reject callbacks after disconnect. */
+
     public void forgetPlayer(UUID playerId) { requests.forgetPlayer(playerId); }
     public void clearPending() { requests.clear(); }
 

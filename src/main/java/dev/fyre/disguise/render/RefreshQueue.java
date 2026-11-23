@@ -11,10 +11,7 @@ import java.util.Set;
 import java.util.UUID;
 import java.util.function.Consumer;
 
-/**
- * Main-thread-only FIFO for tab-list refresh work. Duplicates are coalesced and
- * capacity is bounded to prevent a burst of alias updates monopolizing a tick.
- */
+
 public final class RefreshQueue {
     public static final class Pair {
         private final UUID viewer;
@@ -50,7 +47,7 @@ public final class RefreshQueue {
         this.capacity = capacity;
     }
 
-    /** Returns false only if capacity would be exceeded. Re-adding a pending pair is a no-op. */
+
     public boolean offer(UUID viewer, UUID subject) {
         Objects.requireNonNull(viewer, "viewer");
         Objects.requireNonNull(subject, "subject");
@@ -66,20 +63,12 @@ public final class RefreshQueue {
         return true;
     }
 
-    /**
-     * Restoration is served before cosmetic updates. A queued cosmetic update
-     * for the same pair is promoted, and saturation evicts a normal update
-     * before sacrificing any pending restoration.
-     */
+
     public boolean offerRestoration(UUID viewer, UUID subject) {
         return offerRestoration(viewer, subject, evicted -> { });
     }
 
-    /**
-     * A caller may requeue the cosmetic pair evicted to make room for an
-     * urgent restoration. The callback runs synchronously on the main thread
-     * and is called only for an actual evicted cosmetic update.
-     */
+
     public boolean offerRestoration(UUID viewer, UUID subject,
                                     Consumer<Pair> onCosmeticEvicted) {
         Objects.requireNonNull(onCosmeticEvicted, "onCosmeticEvicted");
@@ -95,14 +84,13 @@ public final class RefreshQueue {
         }
         if (size() >= capacity) {
             if (normal.isEmpty()) {
-                // Never discard a restoration already waiting for delivery.
-                // The applied-entry reconciler can retry this rejected pair
-                // once capacity becomes available.
+
+
                 droppedRestoration++;
                 return false;
             }
-            // Evict the oldest cosmetic in O(1) iterator work instead of
-            // scanning the entire queue to find the newest entry.
+
+
             Pair evicted = takeFirst(normal);
             queued.remove(evicted);
             droppedCosmetic++;
@@ -145,7 +133,7 @@ public final class RefreshQueue {
     }
     public int pendingRestorations() { return urgent.size(); }
 
-    /** Immutable snapshot of pending undisguises in their delivery order. */
+
     public List<Pair> pendingRestorationSnapshot() {
         return Collections.unmodifiableList(new ArrayList<Pair>(urgent));
     }

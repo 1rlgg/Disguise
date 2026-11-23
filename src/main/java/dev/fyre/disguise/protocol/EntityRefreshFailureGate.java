@@ -1,9 +1,6 @@
 package dev.fyre.disguise.protocol;
 
-/**
- * Disables optional world entity refresh after consecutive failures.
- * The tab-list-only packet path remains available.
- */
+
 public final class EntityRefreshFailureGate {
     private final PacketRewriteBreaker breaker;
     public EntityRefreshFailureGate(int threshold) {

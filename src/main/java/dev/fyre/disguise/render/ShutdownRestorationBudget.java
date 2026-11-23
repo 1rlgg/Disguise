@@ -8,10 +8,7 @@ import java.util.LinkedHashSet;
 import java.util.Set;
 import java.util.Objects;
 
-/**
- * Prevent synchronous packet storms when a plugin is disabling.
- * Any unattempted identities MUST be reported; this is not client recovery.
- */
+
 public final class ShutdownRestorationBudget {
     private final int limit;
 
@@ -30,10 +27,7 @@ public final class ShutdownRestorationBudget {
         return Collections.unmodifiableList(result);
     }
 
-    /**
-     * First restore pairs with an explicit undisguise waiting; then use the
-     * stable applied-entry order. Never include pairs not actually applied.
-     */
+
     public List<RefreshQueue.Pair> selectPrioritized(Collection<RefreshQueue.Pair> applied,
                                                       Collection<RefreshQueue.Pair> urgent) {
         Objects.requireNonNull(applied, "applied");

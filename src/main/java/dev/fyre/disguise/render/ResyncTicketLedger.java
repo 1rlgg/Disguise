@@ -5,10 +5,7 @@ import java.util.Map;
 import java.util.Objects;
 import java.util.UUID;
 
-/**
- * Main-thread-only tickets for delayed join/respawn/world resync tasks.
- * An older delayed callback must never operate on a newer player session.
- */
+
 public final class ResyncTicketLedger {
     private final Map<UUID, Long> latest = new HashMap<UUID, Long>();
     private long sequence;
@@ -20,7 +17,7 @@ public final class ResyncTicketLedger {
         return ticket;
     }
 
-    /** Consumes a ticket so accidental repeated callbacks are harmless. */
+
     public boolean consume(UUID playerId, long ticket) {
         Objects.requireNonNull(playerId, "playerId");
         Long current = latest.get(playerId);

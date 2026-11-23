@@ -4,16 +4,7 @@ import java.lang.reflect.InvocationTargetException;
 import java.util.List;
 import java.util.Objects;
 
-/**
- * Testable sequencing for the experimental client-side player respawn.
- * The caller prepares all packets before invoking this class.
- *
- * A send may have reached the client even when the transport reports failure.
- * On any error after starting the destroy, replay a prepared recovery spawn
- * with CURRENT coordinates and metadata plus current equipment. A stale
- * captured spawn must never be used to recover a moving player.
- * This is best effort; do not mutate Bukkit entities.
- */
+
 public final class EntityRefreshTransaction {
     private EntityRefreshTransaction() { }
 
@@ -36,11 +27,8 @@ public final class EntityRefreshTransaction {
             transport.send(head);
             for (T item : equipment) transport.send(item);
         } catch (InvocationTargetException | RuntimeException failure) {
-            // A send failure is ambiguous: the client may have received the
-            // packet. Best effort, always restore a coherent original spawn.
-            // A recovery step may also throw. Still attempt every subsequent
-            // step; preserving all failures on the original exception improves
-            // diagnosis and gives the client the best chance to regain state.
+
+
             trySend(transport, destroy, failure);
             trySend(transport, recoverySpawn, failure);
             trySend(transport, head, failure);
