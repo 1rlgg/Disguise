@@ -104,7 +104,8 @@ public final class RefreshQueue {
 
     public List<Pair> poll(int limit) {
         if (limit < 1) throw new IllegalArgumentException("limit must be positive");
-        List<Pair> out = new ArrayList<Pair>();
+        if (queued.isEmpty()) return Collections.emptyList();
+        List<Pair> out = new ArrayList<Pair>(Math.min(limit, queued.size()));
         while (out.size() < limit && !queued.isEmpty()) {
             Pair pair = urgent.isEmpty() ? takeFirst(normal) : takeFirst(urgent);
                         queued.remove(pair);

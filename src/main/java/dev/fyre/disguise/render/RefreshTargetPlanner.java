@@ -1,7 +1,6 @@
 package dev.fyre.disguise.render;
 
 import dev.fyre.disguise.api.DisguiseService;
-import java.util.ArrayList;
 import java.util.Collection;
 import java.util.LinkedHashSet;
 import java.util.Objects;
@@ -26,7 +25,7 @@ public final class RefreshTargetPlanner {
         Objects.requireNonNull(changedPlayer, "changedPlayer");
         Objects.requireNonNull(onlinePlayers, "onlinePlayers");
         Set<RefreshQueue.Pair> targets = new LinkedHashSet<RefreshQueue.Pair>();
-        for (UUID other : new ArrayList<UUID>(onlinePlayers)) {
+        for (UUID other : onlinePlayers) {
             if (other == null || other.equals(changedPlayer)) continue;
             RefreshQueue.Pair asViewer = new RefreshQueue.Pair(changedPlayer, other);
             RefreshQueue.Pair asSubject = new RefreshQueue.Pair(other, changedPlayer);

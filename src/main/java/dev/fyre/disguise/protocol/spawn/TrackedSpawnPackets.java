@@ -63,14 +63,14 @@ public final class TrackedSpawnPackets {
     }
 
     public synchronized Snapshot lookup(UUID viewer, UUID subject) {
-        Snapshot entry = cache.get(new RefreshQueue.Pair(viewer, subject));
+        RefreshQueue.Pair key = new RefreshQueue.Pair(viewer, subject);
+        Snapshot entry = cache.get(key);
         if (entry == null) return null;
         if (expiredSince(entry.capturedAt, ttlNanos, clock)) {
-            cache.remove(new RefreshQueue.Pair(viewer, subject));
+            cache.remove(key);
             return null;
         }
-
-        return new Snapshot(entry.entityId, entry.packet, entry.capturedAt);
+        return entry;
     }
 
     public synchronized void destroy(UUID viewer, int[] entityIds) {

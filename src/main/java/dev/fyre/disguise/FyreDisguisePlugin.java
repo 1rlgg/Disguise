@@ -110,8 +110,9 @@ public final class FyreDisguisePlugin extends JavaPlugin implements Listener {
     }
 
     private Collection<UUID> onlineViewerIds() {
-        Collection<UUID> ids = new ArrayList<UUID>();
-        for (Player player : Bukkit.getOnlinePlayers()) ids.add(player.getUniqueId());
+        Collection<? extends Player> online = Bukkit.getOnlinePlayers();
+        Collection<UUID> ids = new ArrayList<UUID>(online.size());
+        for (Player player : online) ids.add(player.getUniqueId());
         return ids;
     }
 

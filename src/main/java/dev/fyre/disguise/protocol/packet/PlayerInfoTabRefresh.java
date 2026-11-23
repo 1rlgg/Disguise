@@ -12,6 +12,7 @@ import java.lang.reflect.InvocationTargetException;
 import java.util.Collections;
 import java.util.List;
 import java.util.Objects;
+import java.util.function.Supplier;
 import org.bukkit.entity.Player;
 
 public final class PlayerInfoTabRefresh {
@@ -49,8 +50,8 @@ public final class PlayerInfoTabRefresh {
         PacketContainer remove = makePacket(EnumWrappers.PlayerInfoAction.REMOVE_PLAYER, input);
         PacketContainer add = makePacket(EnumWrappers.PlayerInfoAction.ADD_PLAYER, output);
 
-        PacketContainer restore = makePacket(EnumWrappers.PlayerInfoAction.ADD_PLAYER, input);
-        execute(remove, add, restore,
+        execute(remove, add,
+                () -> makePacket(EnumWrappers.PlayerInfoAction.ADD_PLAYER, input),
                 packet -> protocol.sendServerPacket(viewer, packet, false));
     }
 

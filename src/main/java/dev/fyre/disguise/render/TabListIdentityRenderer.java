@@ -194,9 +194,10 @@ public final class TabListIdentityRenderer implements Consumer<IdentityTransitio
 
     public void flush(int maxPerTick) {
         assertPrimaryThread();
-        if (++ticksSinceReconcile >= 20 && state != null) {
-            ticksSinceReconcile = 0;
-            for (RefreshQueue.Pair pair : reconciler.scan(applied.snapshot(),
+        if (state != null && applied.size() > 0) {
+            if (++ticksSinceReconcile >= 20) {
+                ticksSinceReconcile = 0;
+                for (RefreshQueue.Pair pair : reconciler.scan(applied.snapshot(),
                     candidate -> {
                         if (retries.suppressed(candidate)) return false;
                         Player viewer = Bukkit.getPlayer(candidate.getViewer());
@@ -208,8 +209,16 @@ public final class TabListIdentityRenderer implements Consumer<IdentityTransitio
                                 viewer.equals(subject));
                     },
                     128)) {
-                enqueueRestoration(pair.getViewer(), pair.getSubject());
+                    enqueueRestoration(pair.getViewer(), pair.getSubject());
+                }
             }
+        } else {
+            ticksSinceReconcile = 0;
+        }
+
+        if (pending.size() == 0 && deferred.size() == 0) {
+            capacityWarning = false;
+            return;
         }
 
         int batchSize = RefreshPolicy.batchSize(maxPerTick,

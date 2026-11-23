@@ -14,10 +14,11 @@ import java.util.UUID;
 public final class InMemoryDisguiseService implements DisguiseService, DisguiseSubjectCatalog {
     private final Map<UUID, Disguise> global = new HashMap<UUID, Disguise>();
     private final Map<UUID, Map<UUID, Disguise>> perViewer = new HashMap<UUID, Map<UUID, Disguise>>();
+    private Set<UUID> cachedSubjectIds;
 
     @Override public synchronized void setDisguise(Disguise disguise) {
         Objects.requireNonNull(disguise, "disguise");
-        global.put(disguise.getPlayerId(), disguise);
+        if (global.put(disguise.getPlayerId(), disguise) == null) cachedSubjectIds = null;
     }
 
     @Override public synchronized Optional<Disguise> getDisguise(UUID playerId) {
@@ -25,7 +26,9 @@ public final class InMemoryDisguiseService implements DisguiseService, DisguiseS
     }
 
     @Override public synchronized boolean removeDisguise(UUID playerId) {
-        return global.remove(Objects.requireNonNull(playerId, "playerId")) != null;
+        boolean removed = global.remove(Objects.requireNonNull(playerId, "playerId")) != null;
+        if (removed) cachedSubjectIds = null;
+        return removed;
     }
 
     @Override public synchronized boolean hasAnySubjects() {
@@ -33,16 +36,20 @@ public final class InMemoryDisguiseService implements DisguiseService, DisguiseS
     }
 
     @Override public synchronized Set<UUID> subjectIds() {
-        Set<UUID> ids = new HashSet<UUID>(global.keySet());
-        for (Map<UUID, Disguise> overrides : perViewer.values()) {
-            ids.addAll(overrides.keySet());
+        if (cachedSubjectIds == null) {
+            Set<UUID> ids = new HashSet<UUID>(global.keySet());
+            for (Map<UUID, Disguise> overrides : perViewer.values()) {
+                ids.addAll(overrides.keySet());
+            }
+            cachedSubjectIds = Collections.unmodifiableSet(ids);
         }
-        return Collections.unmodifiableSet(ids);
+        return cachedSubjectIds;
     }
 
     @Override public synchronized void clear() {
         global.clear();
         perViewer.clear();
+        cachedSubjectIds = null;
     }
 
     @Override public synchronized void setDisguiseFor(UUID viewerId, Disguise disguise) {
@@ -53,7 +60,7 @@ public final class InMemoryDisguiseService implements DisguiseService, DisguiseS
             overrides = new HashMap<UUID, Disguise>();
             perViewer.put(viewerId, overrides);
         }
-        overrides.put(disguise.getPlayerId(), disguise);
+        if (overrides.put(disguise.getPlayerId(), disguise) == null) cachedSubjectIds = null;
     }
 
     @Override public synchronized Optional<Disguise> getDisguiseFor(UUID viewerId, UUID playerId) {
@@ -80,6 +87,7 @@ public final class InMemoryDisguiseService implements DisguiseService, DisguiseS
         if (overrides == null) return false;
         boolean removed = overrides.remove(playerId) != null;
         if (overrides.isEmpty()) perViewer.remove(viewerId);
+        if (removed) cachedSubjectIds = null;
         return removed;
     }
 
@@ -87,6 +95,7 @@ public final class InMemoryDisguiseService implements DisguiseService, DisguiseS
         Objects.requireNonNull(playerId, "playerId");
         global.remove(playerId);
         perViewer.remove(playerId);
+        cachedSubjectIds = null;
         perViewer.values().removeIf(overrides -> {
             overrides.remove(playerId);
             return overrides.isEmpty();
