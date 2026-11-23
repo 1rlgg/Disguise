@@ -5,8 +5,8 @@ import dev.fyre.disguise.api.DisguiseService;
 import dev.fyre.disguise.render.identity.IdentityTransition;
 import java.util.ArrayList;
 import java.util.Collection;
-import java.util.HashMap;
 import java.util.LinkedHashMap;
+import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
@@ -54,12 +54,14 @@ public final class ObservableDisguiseService implements DisguiseService {
     }
 
     private void update(UUID subject, Runnable mutation) {
-        Collection<UUID> recipients = new ArrayList<UUID>(viewers.get());
-        Map<UUID, Disguise> previous = new HashMap<UUID, Disguise>();
-        for (UUID viewer : recipients) previous.put(viewer, delegate.getDisguiseFor(viewer, subject).orElse(null));
+        List<UUID> recipients = new ArrayList<UUID>(viewers.get());
+        List<Disguise> previous = new ArrayList<Disguise>(recipients.size());
+        for (UUID viewer : recipients)
+            previous.add(delegate.getDisguiseFor(viewer, subject).orElse(null));
         mutation.run();
-        for (UUID viewer : recipients) {
-            Disguise before = previous.get(viewer);
+        for (int i = 0; i < recipients.size(); i++) {
+            UUID viewer = recipients.get(i);
+            Disguise before = previous.get(i);
             Disguise after = delegate.getDisguiseFor(viewer, subject).orElse(null);
             Optional<IdentityTransition> transition =
                     IdentityTransition.plan(viewer, subject, before, after);
@@ -127,11 +129,10 @@ public final class ObservableDisguiseService implements DisguiseService {
         mutationGuard.run();
         Objects.requireNonNull(id, "id");
 
-        Collection<UUID> online = new ArrayList<UUID>(viewers.get());
-        Map<UUID, Disguise> beforeSubject = new LinkedHashMap<UUID, Disguise>();
-        for (UUID viewer : online) {
-            beforeSubject.put(viewer, delegate.getDisguiseFor(viewer, id).orElse(null));
-        }
+        List<UUID> online = new ArrayList<UUID>(viewers.get());
+        List<Disguise> beforeSubject = new ArrayList<Disguise>(online.size());
+        for (UUID viewer : online)
+            beforeSubject.add(delegate.getDisguiseFor(viewer, id).orElse(null));
         Map<UUID, Disguise> beforeViewer = new LinkedHashMap<UUID, Disguise>();
         if (online.contains(id) && delegate instanceof DisguiseSubjectCatalog) {
             for (UUID subject : ((DisguiseSubjectCatalog) delegate).subjectIds()) {
@@ -141,13 +142,15 @@ public final class ObservableDisguiseService implements DisguiseService {
             }
         }
         delegate.clearPlayer(id);
-        for (java.util.Map.Entry<UUID, Disguise> entry : beforeSubject.entrySet()) {
-            Disguise after = delegate.getDisguiseFor(entry.getKey(), id).orElse(null);
+        for (int i = 0; i < online.size(); i++) {
+            UUID viewer = online.get(i);
+            Disguise before = beforeSubject.get(i);
+            Disguise after = delegate.getDisguiseFor(viewer, id).orElse(null);
             Optional<IdentityTransition> transition =
-                    IdentityTransition.plan(entry.getKey(), id, entry.getValue(), after);
+                    IdentityTransition.plan(viewer, id, before, after);
             if (transition.isPresent()) {
                 renderer.accept(transition.get());
-                refreshAliasNeighbours(entry.getKey(), id, entry.getValue(), after);
+                refreshAliasNeighbours(viewer, id, before, after);
             }
         }
         for (java.util.Map.Entry<UUID, Disguise> entry : beforeViewer.entrySet()) {
