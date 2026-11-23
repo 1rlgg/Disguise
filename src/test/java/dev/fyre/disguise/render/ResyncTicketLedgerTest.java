@@ -5,7 +5,7 @@ import dev.fyre.disguise.FyreDisguisePlugin.ResyncTickets;
 import org.junit.Test;
 import static org.junit.Assert.*;
 
-public class ResyncTicketsTest {
+public class ResyncTicketLedgerTest {
     @Test public void aStaleJoinCannotResyncTheNextSession() {
         ResyncTickets ledger = new ResyncTickets();
         UUID player = UUID.randomUUID();
