@@ -34,13 +34,11 @@ public final class DeferredRefreshBacklog {
         Iterator<RefreshQueue.Pair> iter = deferred.iterator();
         while (iter.hasNext() && moved < maxPerTick) {
             RefreshQueue.Pair pair = iter.next();
-            if (queue.contains(pair.getViewer(), pair.getSubject())) {
-
+            if (queue.contains(pair)) {
                 iter.remove();
                 continue;
             }
-            if (!queue.hasFreeSlot()
-                    || !queue.offer(pair.getViewer(), pair.getSubject())) break;
+            if (!queue.hasFreeSlot() || !queue.offer(pair)) break;
             iter.remove();
             moved++;
         }

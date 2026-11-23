@@ -50,7 +50,12 @@ public final class RefreshQueue {
         Objects.requireNonNull(viewer, "viewer");
         Objects.requireNonNull(subject, "subject");
         if (viewer.equals(subject)) return true;
-        Pair pair = new Pair(viewer, subject);
+        return offer(new Pair(viewer, subject));
+    }
+
+    public boolean offer(Pair pair) {
+        Objects.requireNonNull(pair, "pair");
+        if (pair.viewer.equals(pair.subject)) return true;
         if (queued.contains(pair)) return true;
         if (size() == capacity) {
             droppedCosmetic++;
@@ -124,7 +129,11 @@ public final class RefreshQueue {
     public int size() { return queued.size(); }
     public boolean hasFreeSlot() { return queued.size() < capacity; }
     public boolean contains(UUID viewer, UUID subject) {
-        return queued.contains(new Pair(viewer, subject));
+        return contains(new Pair(viewer, subject));
+    }
+
+    public boolean contains(Pair pair) {
+        return queued.contains(Objects.requireNonNull(pair, "pair"));
     }
     public int pendingRestorations() { return urgent.size(); }
 
