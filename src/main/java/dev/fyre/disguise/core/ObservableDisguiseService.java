@@ -57,7 +57,7 @@ public final class ObservableDisguiseService implements DisguiseService {
         for (UUID viewer : recipients) {
             Disguise before = previous.get(viewer);
             Disguise after = delegate.getDisguiseFor(viewer, subject).orElse(null);
-            Optional<dev.fyre.disguise.render.IdentityTransition> transition =
+            Optional<dev.fyre.disguise.render.identity.IdentityTransition> transition =
                     IdentityTransition.plan(viewer, subject, before, after);
             if (transition.isPresent()) {
                 renderer.render(transition.get());
