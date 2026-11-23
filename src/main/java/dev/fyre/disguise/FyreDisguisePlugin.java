@@ -50,8 +50,7 @@ public final class FyreDisguisePlugin extends JavaPlugin implements Listener {
     private TabListIdentityRenderer tabRenderer;
     private RefreshTargetPlanner refreshPlanner;
     private TrackedSpawnPackets spawnPackets;
-    private final java.util.Map<UUID, Long> resyncTickets = new java.util.HashMap<UUID, Long>();
-    private long resyncSequence;
+    private final ResyncTickets resyncTickets = new ResyncTickets();
 
     @Override public void onEnable() {
         saveDefaultConfig();
@@ -123,12 +122,10 @@ public final class FyreDisguisePlugin extends JavaPlugin implements Listener {
 
     private void scheduleResync(UUID playerId) {
         if (tabRenderer == null) return;
-        final long ticket = ++resyncSequence;
-        resyncTickets.put(playerId, ticket);
+        final long ticket = resyncTickets.schedule(playerId);
         Bukkit.getScheduler().runTaskLater(this, () -> {
 
-            if (!java.util.Objects.equals(resyncTickets.get(playerId), ticket)) return;
-            resyncTickets.remove(playerId);
+            if (!resyncTickets.consume(playerId, ticket)) return;
             if (tabRenderer == null || refreshPlanner == null || !isEnabled()) return;
             Player player = Bukkit.getPlayer(playerId);
             if (player == null || !player.isOnline()) return;
@@ -163,7 +160,7 @@ public final class FyreDisguisePlugin extends JavaPlugin implements Listener {
 
     @EventHandler public void onQuit(PlayerQuitEvent event) {
         UUID id = event.getPlayer().getUniqueId();
-        resyncTickets.remove(id);
+        resyncTickets.forget(id);
         if (skinCommands != null) skinCommands.forgetPlayer(id);
         if (tabRenderer != null) tabRenderer.forget(id);
         if (spawnPackets != null) spawnPackets.forget(id);
@@ -201,5 +198,26 @@ public final class FyreDisguisePlugin extends JavaPlugin implements Listener {
     public AsyncSkinService getSkinService() {
         if (skins == null) throw new IllegalStateException("Plugin is not enabled");
         return skins;
+    }
+    public static final class ResyncTickets {
+        private final java.util.Map<UUID, Long> latest = new java.util.HashMap<UUID, Long>();
+        private long sequence;
+
+        public long schedule(UUID playerId) {
+            long ticket = ++sequence;
+            latest.put(java.util.Objects.requireNonNull(playerId, "playerId"), ticket);
+            return ticket;
+        }
+
+        public boolean consume(UUID playerId, long ticket) {
+            Long current = latest.get(java.util.Objects.requireNonNull(playerId, "playerId"));
+            if (current == null || current.longValue() != ticket) return false;
+            latest.remove(playerId);
+            return true;
+        }
+
+        public void forget(UUID playerId) { latest.remove(java.util.Objects.requireNonNull(playerId, "playerId")); }
+        public int pendingCount() { return latest.size(); }
+        public void clear() { latest.clear(); }
     }
 }

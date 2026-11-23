@@ -1,12 +1,13 @@
 package dev.fyre.disguise.render;
 
 import java.util.UUID;
+import dev.fyre.disguise.FyreDisguisePlugin.ResyncTickets;
 import org.junit.Test;
 import static org.junit.Assert.*;
 
-public class ResyncTicketLedgerTest {
+public class ResyncTicketsTest {
     @Test public void aStaleJoinCannotResyncTheNextSession() {
-        ResyncTicketLedger ledger = new ResyncTicketLedger();
+        ResyncTickets ledger = new ResyncTickets();
         UUID player = UUID.randomUUID();
         long join1 = ledger.schedule(player);
         ledger.forget(player);
@@ -17,7 +18,7 @@ public class ResyncTicketLedgerTest {
     }
 
     @Test public void latestWorldChangeSupersedesEarlierDelayedTasks() {
-        ResyncTicketLedger ledger = new ResyncTicketLedger();
+        ResyncTickets ledger = new ResyncTickets();
         UUID player = UUID.randomUUID();
         long first = ledger.schedule(player);
         long latest = ledger.schedule(player);
@@ -27,7 +28,7 @@ public class ResyncTicketLedgerTest {
     }
 
     @Test public void rapidReconnectAndWorldChangesNeverAcceptSupersededTickets() {
-        ResyncTicketLedger ledger = new ResyncTicketLedger();
+        ResyncTickets ledger = new ResyncTickets();
         UUID player = UUID.randomUUID();
         for (int cycle = 0; cycle < 1000; cycle++) {
             long old = ledger.schedule(player);
@@ -44,7 +45,7 @@ public class ResyncTicketLedgerTest {
     }
 
     @Test public void playerCleanupDoesNotCancelOtherPlayersResync() {
-        ResyncTicketLedger ledger = new ResyncTicketLedger();
+        ResyncTickets ledger = new ResyncTickets();
         UUID one = UUID.randomUUID(), two = UUID.randomUUID();
         long a = ledger.schedule(one), b = ledger.schedule(two);
         ledger.forget(one);
