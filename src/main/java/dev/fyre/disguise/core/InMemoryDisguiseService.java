@@ -35,6 +35,12 @@ public final class InMemoryDisguiseService implements DisguiseService, DisguiseS
         return !global.isEmpty() || !perViewer.isEmpty();
     }
 
+    @Override public synchronized boolean hasAnySubjectsFor(UUID viewerId) {
+        Objects.requireNonNull(viewerId, "viewerId");
+        Map<UUID, Disguise> overrides = perViewer.get(viewerId);
+        return !global.isEmpty() || (overrides != null && !overrides.isEmpty());
+    }
+
     @Override public synchronized Set<UUID> subjectIds() {
         if (cachedSubjectIds == null) {
             Set<UUID> ids = new HashSet<UUID>(global.keySet());
@@ -67,10 +73,9 @@ public final class InMemoryDisguiseService implements DisguiseService, DisguiseS
         Objects.requireNonNull(viewerId, "viewerId");
         Objects.requireNonNull(playerId, "playerId");
         Map<UUID, Disguise> overrides = perViewer.get(viewerId);
-        if (overrides != null && overrides.containsKey(playerId)) {
-            return Optional.of(overrides.get(playerId));
-        }
-        return getDisguise(playerId);
+        Disguise override = overrides == null ? null : overrides.get(playerId);
+        if (override != null) return Optional.of(override);
+        return Optional.ofNullable(global.get(playerId));
     }
 
     @Override public synchronized Optional<Disguise> getViewerOverride(UUID viewerId, UUID playerId) {

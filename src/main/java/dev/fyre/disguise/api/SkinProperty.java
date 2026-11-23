@@ -15,8 +15,7 @@ public final class SkinProperty {
 
     private static String requireBase64(String input, String field) {
         Objects.requireNonNull(input, field);
-        if (input.length() == 0 || input.length() > MAX_ENCODED_LENGTH
-                || !input.matches("[A-Za-z0-9+/]+={0,2}")) {
+        if (input.length() == 0 || input.length() > MAX_ENCODED_LENGTH) {
             throw new IllegalArgumentException("Invalid Base64 " + field);
         }
         try {

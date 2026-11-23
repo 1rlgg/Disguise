@@ -30,7 +30,7 @@ public final class PlayerInfoRewriter {
         Objects.requireNonNull(original, "original");
 
         if (disguises instanceof DisguiseSubjectCatalog
-                && !((DisguiseSubjectCatalog) disguises).hasAnySubjects()) return original;
+                && !((DisguiseSubjectCatalog) disguises).hasAnySubjectsFor(viewerId)) return original;
         List<PlayerInfoData> result = null;
 
         Set<UUID> knownSubjects = null;

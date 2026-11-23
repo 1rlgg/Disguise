@@ -36,6 +36,17 @@ public class DisguiseSubjectCatalogTest {
         assertFalse(registry.hasAnySubjects());
     }
 
+    @Test public void viewerFastPathIgnoresOverridesOwnedByOtherViewers() {
+        InMemoryDisguiseService registry = new InMemoryDisguiseService();
+        UUID viewer = UUID.randomUUID(), otherViewer = UUID.randomUUID(), subject = UUID.randomUUID();
+        registry.setDisguiseFor(otherViewer, new Disguise(subject, "PrivateName"));
+        assertTrue(registry.hasAnySubjects());
+        assertFalse(registry.hasAnySubjectsFor(viewer));
+        assertTrue(registry.hasAnySubjectsFor(otherViewer));
+        registry.setDisguise(new Disguise(subject, "GlobalAlias"));
+        assertTrue(registry.hasAnySubjectsFor(viewer));
+    }
+
     @Test public void reusesSubjectSnapshotUntilMembershipChanges() {
         InMemoryDisguiseService registry = new InMemoryDisguiseService();
         UUID subject = UUID.randomUUID();
