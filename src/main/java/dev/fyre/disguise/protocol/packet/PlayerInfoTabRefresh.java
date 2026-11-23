@@ -50,8 +50,8 @@ public final class PlayerInfoTabRefresh {
         PacketContainer remove = makePacket(EnumWrappers.PlayerInfoAction.REMOVE_PLAYER, input);
         PacketContainer add = makePacket(EnumWrappers.PlayerInfoAction.ADD_PLAYER, output);
 
-        execute(remove, add,
-                (Supplier<PacketContainer>) () -> makePacket(EnumWrappers.PlayerInfoAction.ADD_PLAYER, input),
+        executeLazy(remove, add,
+                () -> makePacket(EnumWrappers.PlayerInfoAction.ADD_PLAYER, input),
                 packet -> protocol.sendServerPacket(viewer, packet, false));
     }
 
@@ -68,10 +68,10 @@ public final class PlayerInfoTabRefresh {
     public static <T> void execute(T remove, T aliasAdd, T originalAdd,
                                    Sender<T> sender) throws InvocationTargetException {
         Objects.requireNonNull(originalAdd, "originalAdd");
-        execute(remove, aliasAdd, (Supplier<T>) () -> originalAdd, sender);
+        executeLazy(remove, aliasAdd, () -> originalAdd, sender);
     }
 
-    public static <T> void execute(T remove, T aliasAdd, Supplier<T> originalAdd,
+    public static <T> void executeLazy(T remove, T aliasAdd, Supplier<T> originalAdd,
                                    Sender<T> sender) throws InvocationTargetException {
         Objects.requireNonNull(remove, "remove");
         Objects.requireNonNull(aliasAdd, "aliasAdd");

@@ -19,8 +19,8 @@ public class TabRefreshTransactionTest {
     @Test public void successfulRefreshDoesNotBuildRecoveryPacket() throws Exception {
         List<String> sent = new ArrayList<String>();
         final int[] recoveryBuilds = {0};
-        PlayerInfoTabRefresh.execute("remove", "alias",
-                (java.util.function.Supplier<String>) () -> {
+        PlayerInfoTabRefresh.executeLazy("remove", "alias",
+                () -> {
                     recoveryBuilds[0]++;
                     return "original";
                 }, sent::add);
@@ -32,8 +32,8 @@ public class TabRefreshTransactionTest {
         List<String> sent = new ArrayList<String>();
         final int[] recoveryBuilds = {0};
         try {
-            PlayerInfoTabRefresh.execute("remove", "alias",
-                    (java.util.function.Supplier<String>) () -> {
+            PlayerInfoTabRefresh.executeLazy("remove", "alias",
+                    () -> {
                         recoveryBuilds[0]++;
                         return "original";
                     }, entry -> {
