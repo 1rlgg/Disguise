@@ -1,6 +1,5 @@
 package dev.fyre.disguise.protocol;
 
-import dev.fyre.disguise.protocol.packet.PlayerInfoPacketPolicy;
 
 import com.comphenix.protocol.PacketType;
 import com.comphenix.protocol.events.ListenerPriority;
@@ -33,7 +32,7 @@ public final class PlayerInfoPacketListener extends PacketAdapter {
             boolean display = action == EnumWrappers.PlayerInfoAction.UPDATE_DISPLAY_NAME;
             if (!add && !display) return;
             List<PlayerInfoData> existing = packet.getPlayerInfoDataLists().read(0);
-            if (!PlayerInfoPacketPolicy.mayRewrite(event.isCancelled(), add, display,
+            if (!PlayerInfoRewriter.mayRewrite(event.isCancelled(), add, display,
                     existing != null && !existing.isEmpty())) return;
             List<PlayerInfoData> updated = rewriter.rewrite(event.getPlayer().getUniqueId(), existing);
 

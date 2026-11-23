@@ -1,7 +1,6 @@
 package dev.fyre.disguise.protocol;
 
 import dev.fyre.disguise.protocol.entity.EntityRefreshPolicy;
-import dev.fyre.disguise.protocol.packet.PlayerInfoPacketPolicy;
 
 import com.comphenix.protocol.wrappers.PlayerInfoData;
 import com.comphenix.protocol.wrappers.WrappedChatComponent;
@@ -39,7 +38,7 @@ public final class PlayerInfoRewriter {
             PlayerInfoData info = original.get(index);
             if (info == null || info.getProfile() == null) continue;
             UUID subjectId = info.getProfile().getUUID();
-            if (subjectId == null || !PlayerInfoPacketPolicy.mayRewrite(viewerId, subjectId)) continue;
+            if (subjectId == null || !mayRewrite(viewerId, subjectId)) continue;
             Optional<Disguise> wanted = disguises.getDisguiseFor(viewerId, subjectId);
             if (!wanted.isPresent()) continue;
             Disguise disguise = wanted.get();
@@ -69,5 +68,20 @@ public final class PlayerInfoRewriter {
             result.set(index, new PlayerInfoData(profile, info.getLatency(), info.getGameMode(), label));
         }
         return result == null ? original : result;
+    }
+    public static boolean mayRewrite(boolean packetCancelled, boolean addPlayerAction,
+                                     boolean hasEntries) {
+
+        return mayRewrite(packetCancelled, addPlayerAction, false, hasEntries);
+    }
+
+    public static boolean mayRewrite(boolean packetCancelled, boolean addPlayerAction,
+                                     boolean updateDisplayNameAction, boolean hasEntries) {
+        return !packetCancelled && (addPlayerAction || updateDisplayNameAction) && hasEntries;
+    }
+    public static boolean mayRewrite(java.util.UUID viewer, java.util.UUID subject) {
+        java.util.Objects.requireNonNull(viewer, "viewer");
+        java.util.Objects.requireNonNull(subject, "subject");
+        return !viewer.equals(subject);
     }
 }
