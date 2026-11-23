@@ -1,5 +1,9 @@
 package dev.fyre.disguise.render;
 
+import dev.fyre.disguise.render.refresh.DeferredRefreshBacklog;
+import dev.fyre.disguise.render.restoration.AppliedTabEntries;
+import dev.fyre.disguise.render.restoration.ShutdownRestorationBudget;
+
 import java.util.HashSet;
 import java.util.Set;
 import java.util.UUID;

@@ -1,5 +1,7 @@
 package dev.fyre.disguise.render;
 
+import dev.fyre.disguise.render.refresh.RefreshRetryLedger;
+
 import dev.fyre.disguise.render.refresh.RefreshPolicy;
 
 import java.util.UUID;
