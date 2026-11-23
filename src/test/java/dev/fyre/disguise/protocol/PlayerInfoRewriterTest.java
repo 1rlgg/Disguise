@@ -1,6 +1,6 @@
 package dev.fyre.disguise.protocol;
 
-import dev.fyre.disguise.protocol.entity.ViewerAliasCollisionPolicy;
+import dev.fyre.disguise.protocol.entity.EntityRefreshPolicy;
 
 import dev.fyre.disguise.api.Disguise;
 import dev.fyre.disguise.core.InMemoryDisguiseService;
@@ -21,10 +21,10 @@ public class PlayerInfoRewriterTest {
         UUID viewer = UUID.randomUUID(), a = UUID.randomUUID(), b = UUID.randomUUID();
         registry.setDisguise(new Disguise(a, "Duplicate"));
         registry.setDisguise(new Disguise(b, "duplicate"));
-        assertTrue(ViewerAliasCollisionPolicy.conflicts(registry, viewer, a,
+        assertTrue(EntityRefreshPolicy.conflicts(registry, viewer, a,
                 "Duplicate", registry.subjectIds()));
         registry.setDisguiseFor(viewer, new Disguise(b, "Different"));
-        assertFalse(ViewerAliasCollisionPolicy.conflicts(registry, viewer, a,
+        assertFalse(EntityRefreshPolicy.conflicts(registry, viewer, a,
                 "Duplicate", registry.subjectIds()));
     }
 
