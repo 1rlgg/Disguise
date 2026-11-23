@@ -2,7 +2,6 @@ package dev.fyre.disguise.core;
 
 import dev.fyre.disguise.api.Disguise;
 import dev.fyre.disguise.api.DisguiseService;
-import dev.fyre.disguise.render.IdentityPlanner;
 import dev.fyre.disguise.render.IdentityRenderer;
 import dev.fyre.disguise.render.IdentityTransition;
 import java.util.ArrayList;
@@ -16,7 +15,6 @@ public final class ObservableDisguiseService implements DisguiseService {
     private final IdentityRenderer renderer;
     private final java.util.function.Supplier<Collection<UUID>> viewers;
     private final Runnable mutationGuard;
-    private final IdentityPlanner planner = new IdentityPlanner();
 
     public ObservableDisguiseService(DisguiseService delegate, IdentityRenderer renderer,
                                      java.util.function.Supplier<Collection<UUID>> viewers) {
@@ -60,7 +58,7 @@ public final class ObservableDisguiseService implements DisguiseService {
             Disguise before = previous.get(viewer);
             Disguise after = delegate.getDisguiseFor(viewer, subject).orElse(null);
             Optional<dev.fyre.disguise.render.IdentityTransition> transition =
-                    planner.plan(viewer, subject, before, after);
+                    IdentityTransition.plan(viewer, subject, before, after);
             if (transition.isPresent()) {
                 renderer.render(transition.get());
                 refreshAliasNeighbours(viewer, subject, before, after);
@@ -91,7 +89,7 @@ public final class ObservableDisguiseService implements DisguiseService {
         delegate.setDisguiseFor(viewerId, disguise);
         if (!viewers.get().contains(viewerId)) return;
         Disguise after = delegate.getDisguiseFor(viewerId, disguise.getPlayerId()).orElse(null);
-        Optional<IdentityTransition> transition = planner.plan(viewerId, disguise.getPlayerId(), before, after);
+        Optional<IdentityTransition> transition = IdentityTransition.plan(viewerId, disguise.getPlayerId(), before, after);
         if (transition.isPresent()) {
             renderer.render(transition.get());
             refreshAliasNeighbours(viewerId, disguise.getPlayerId(), before, after);
@@ -112,7 +110,7 @@ public final class ObservableDisguiseService implements DisguiseService {
         boolean removed = delegate.removeDisguiseFor(viewerId, subjectId);
         if (removed && viewers.get().contains(viewerId)) {
             Disguise after = delegate.getDisguiseFor(viewerId, subjectId).orElse(null);
-            Optional<IdentityTransition> transition = planner.plan(viewerId, subjectId, before, after);
+            Optional<IdentityTransition> transition = IdentityTransition.plan(viewerId, subjectId, before, after);
             if (transition.isPresent()) {
                 renderer.render(transition.get());
                 refreshAliasNeighbours(viewerId, subjectId, before, after);
@@ -142,7 +140,7 @@ public final class ObservableDisguiseService implements DisguiseService {
         for (java.util.Map.Entry<UUID, Disguise> entry : beforeSubject.entrySet()) {
             Disguise after = delegate.getDisguiseFor(entry.getKey(), id).orElse(null);
             Optional<IdentityTransition> transition =
-                    planner.plan(entry.getKey(), id, entry.getValue(), after);
+                    IdentityTransition.plan(entry.getKey(), id, entry.getValue(), after);
             if (transition.isPresent()) {
                 renderer.render(transition.get());
                 refreshAliasNeighbours(entry.getKey(), id, entry.getValue(), after);
@@ -151,7 +149,7 @@ public final class ObservableDisguiseService implements DisguiseService {
         for (java.util.Map.Entry<UUID, Disguise> entry : beforeViewer.entrySet()) {
             Disguise after = delegate.getDisguiseFor(id, entry.getKey()).orElse(null);
             Optional<IdentityTransition> transition =
-                    planner.plan(id, entry.getKey(), entry.getValue(), after);
+                    IdentityTransition.plan(id, entry.getKey(), entry.getValue(), after);
             if (transition.isPresent()) {
                 renderer.render(transition.get());
                 refreshAliasNeighbours(id, entry.getKey(), entry.getValue(), after);
@@ -180,7 +178,7 @@ public final class ObservableDisguiseService implements DisguiseService {
         delegate.clear();
         for (java.util.Map.Entry<UUID, java.util.Map<UUID, Disguise>> subject : before.entrySet()) {
             for (java.util.Map.Entry<UUID, Disguise> identity : subject.getValue().entrySet()) {
-                planner.plan(identity.getKey(), subject.getKey(), identity.getValue(), null)
+                IdentityTransition.plan(identity.getKey(), subject.getKey(), identity.getValue(), null)
                         .ifPresent(renderer::render);
             }
         }
