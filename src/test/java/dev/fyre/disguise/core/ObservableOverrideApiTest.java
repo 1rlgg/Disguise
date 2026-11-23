@@ -8,7 +8,6 @@ import java.util.UUID;
 import org.junit.Test;
 import static org.junit.Assert.*;
 
-
 public class ObservableOverrideApiTest {
     @Test public void explicitOverrideSurvivesObservableWrapperEvenWhenSharedWithGlobal() {
         UUID subject = UUID.randomUUID(), viewer = UUID.randomUUID(), other = UUID.randomUUID();

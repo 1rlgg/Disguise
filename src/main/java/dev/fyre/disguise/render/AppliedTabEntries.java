@@ -7,7 +7,6 @@ import java.util.Objects;
 import java.util.Set;
 import java.util.UUID;
 
-
 public final class AppliedTabEntries {
     private final Set<RefreshQueue.Pair> applied = new LinkedHashSet<RefreshQueue.Pair>();
     private Set<RefreshQueue.Pair> cachedSnapshot;
@@ -32,7 +31,6 @@ public final class AppliedTabEntries {
     }
 
     public Set<RefreshQueue.Pair> snapshot() {
-
 
         if (cachedSnapshot == null) {
             cachedSnapshot = Collections.unmodifiableSet(new LinkedHashSet<RefreshQueue.Pair>(applied));

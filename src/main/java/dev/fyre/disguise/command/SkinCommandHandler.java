@@ -14,7 +14,6 @@ import org.bukkit.command.CommandSender;
 import org.bukkit.entity.Player;
 import org.bukkit.plugin.java.JavaPlugin;
 
-
 public final class SkinCommandHandler {
     private final JavaPlugin plugin;
     private final DisguiseService disguises;
@@ -67,7 +66,6 @@ public final class SkinCommandHandler {
         reply(sender, ChatColor.YELLOW + "Looking up signed Mojang textures asynchronously...");
         skins.lookup(sourceId).whenComplete((skin, error) -> {
 
-
             if (!requests.isCurrent(viewerId, subjectId, token)) return;
             if (!plugin.isEnabled()) {
                 requests.finish(viewerId, subjectId, token);
@@ -103,7 +101,6 @@ public final class SkinCommandHandler {
                 });
             } catch (RuntimeException ex) {
 
-
                 requests.finish(viewerId, subjectId, token);
                 if (plugin.isEnabled()) {
                     plugin.getLogger().log(Level.WARNING,
@@ -112,7 +109,6 @@ public final class SkinCommandHandler {
             }
         });
     }
-
 
     public void forgetPlayer(UUID playerId) { requests.forgetPlayer(playerId); }
     public void clearPending() { requests.clear(); }

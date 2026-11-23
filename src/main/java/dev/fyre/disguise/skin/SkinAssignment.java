@@ -6,7 +6,6 @@ import dev.fyre.disguise.api.SkinProperty;
 import java.util.Objects;
 import java.util.UUID;
 
-
 public final class SkinAssignment {
     private final DisguiseService disguises;
 
@@ -29,12 +28,10 @@ public final class SkinAssignment {
         return true;
     }
 
-
     public boolean applyForViewerIfCurrent(UUID viewerId, UUID playerId,
                                            Disguise expected, SkinProperty skin) {
         Objects.requireNonNull(viewerId, "viewerId");
         validate(playerId, expected, skin);
-
 
         if (disguises.getViewerOverride(viewerId, playerId).orElse(null) != expected) return false;
         disguises.setDisguiseFor(viewerId, new Disguise(playerId, expected.getName(), skin));

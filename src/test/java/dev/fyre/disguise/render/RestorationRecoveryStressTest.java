@@ -4,7 +4,6 @@ import java.util.UUID;
 import org.junit.Test;
 import static org.junit.Assert.*;
 
-
 public class RestorationRecoveryStressTest {
     @Test public void eventuallySchedulesEveryDisplacedRestorationWithoutEviction() {
         UUID viewer = UUID.randomUUID();

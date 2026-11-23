@@ -6,7 +6,6 @@ import java.util.Objects;
 import java.util.Optional;
 import java.util.UUID;
 
-
 public final class SpawnIdentityDecision {
     private final DisguiseService disguises;
 

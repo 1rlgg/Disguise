@@ -1,5 +1,4 @@
-package dev.fyre.disguise.render;
-
+package dev.fyre.disguise.render.refresh;
 
 public final class RefreshBatchPolicy {
     private RefreshBatchPolicy() { }

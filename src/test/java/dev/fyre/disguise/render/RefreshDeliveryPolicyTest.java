@@ -1,22 +1,24 @@
 package dev.fyre.disguise.render;
 
+import dev.fyre.disguise.render.refresh.RefreshPolicy;
+
 import org.junit.Test;
 import static org.junit.Assert.*;
 
 public class RefreshDeliveryPolicyTest {
     @Test public void initialDisguiseRequiresDelivery() {
-        assertTrue(RefreshDeliveryPolicy.shouldSend(true, false));
+        assertTrue(RefreshPolicy.shouldSend(true, false));
     }
 
     @Test public void updatedDisguiseRequiresDelivery() {
-        assertTrue(RefreshDeliveryPolicy.shouldSend(true, true));
+        assertTrue(RefreshPolicy.shouldSend(true, true));
     }
 
     @Test public void undisguiseRequiresRestoration() {
-        assertTrue(RefreshDeliveryPolicy.shouldSend(false, true));
+        assertTrue(RefreshPolicy.shouldSend(false, true));
     }
 
     @Test public void transientSetThenClearWithoutAppliedEntryIsNoOp() {
-        assertFalse(RefreshDeliveryPolicy.shouldSend(false, false));
+        assertFalse(RefreshPolicy.shouldSend(false, false));
     }
 }

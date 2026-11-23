@@ -12,7 +12,6 @@ import java.util.concurrent.ThreadPoolExecutor;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.RejectedExecutionException;
 
-
 public final class AsyncSkinService implements AutoCloseable {
     private final SkinSource source;
     private final SkinCache cache;
@@ -63,7 +62,6 @@ public final class AsyncSkinService implements AutoCloseable {
 
         if (submit) {
 
-
             final CompletableFuture<SkinProperty> taskFuture = shared;
             try {
                 executor.execute(() -> resolve(id, taskFuture));
@@ -85,7 +83,6 @@ public final class AsyncSkinService implements AutoCloseable {
             skin = source.load(id);
             if (skin == null || !skin.isSigned()) throw new IllegalStateException("Missing signed textures");
         } catch (Throwable ex) {
-
 
             failure = ex;
         }

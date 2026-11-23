@@ -3,7 +3,6 @@ package dev.fyre.disguise.protocol;
 import java.lang.reflect.InvocationTargetException;
 import java.util.Objects;
 
-
 public final class TabRefreshTransaction {
     private TabRefreshTransaction() { }
 
@@ -21,7 +20,6 @@ public final class TabRefreshTransaction {
             sender.send(remove);
             sender.send(aliasAdd);
         } catch (InvocationTargetException | RuntimeException failure) {
-
 
             attempt(sender, remove, failure);
             attempt(sender, originalAdd, failure);

@@ -4,7 +4,6 @@ import java.lang.reflect.InvocationTargetException;
 import java.util.List;
 import java.util.Objects;
 
-
 public final class EntityRefreshTransaction {
     private EntityRefreshTransaction() { }
 
@@ -27,7 +26,6 @@ public final class EntityRefreshTransaction {
             transport.send(head);
             for (T item : equipment) transport.send(item);
         } catch (InvocationTargetException | RuntimeException failure) {
-
 
             trySend(transport, destroy, failure);
             trySend(transport, recoverySpawn, failure);
