@@ -19,7 +19,6 @@ import dev.fyre.disguise.protocol.TrackedSpawnPackets;
 import dev.fyre.disguise.render.IdentityRenderer;
 import dev.fyre.disguise.render.LoggedIdentityRenderer;
 import dev.fyre.disguise.render.RefreshQueue;
-import dev.fyre.disguise.render.ResyncTicketLedger;
 import dev.fyre.disguise.render.RefreshTargetPlanner;
 import dev.fyre.disguise.render.TabListIdentityRenderer;
 import dev.fyre.disguise.skin.AsyncSkinService;
@@ -51,7 +50,8 @@ public final class FyreDisguisePlugin extends JavaPlugin implements Listener {
     private TabListIdentityRenderer tabRenderer;
     private RefreshTargetPlanner refreshPlanner;
     private TrackedSpawnPackets spawnPackets;
-    private final ResyncTicketLedger resyncTickets = new ResyncTicketLedger();
+    private final java.util.Map<UUID, Long> resyncTickets = new java.util.HashMap<UUID, Long>();
+    private long resyncSequence;
 
     @Override public void onEnable() {
         saveDefaultConfig();
@@ -123,10 +123,12 @@ public final class FyreDisguisePlugin extends JavaPlugin implements Listener {
 
     private void scheduleResync(UUID playerId) {
         if (tabRenderer == null) return;
-        final long ticket = resyncTickets.schedule(playerId);
+        final long ticket = ++resyncSequence;
+        resyncTickets.put(playerId, ticket);
         Bukkit.getScheduler().runTaskLater(this, () -> {
 
-            if (!resyncTickets.consume(playerId, ticket)) return;
+            if (!java.util.Objects.equals(resyncTickets.get(playerId), ticket)) return;
+            resyncTickets.remove(playerId);
             if (tabRenderer == null || refreshPlanner == null || !isEnabled()) return;
             Player player = Bukkit.getPlayer(playerId);
             if (player == null || !player.isOnline()) return;
@@ -161,7 +163,7 @@ public final class FyreDisguisePlugin extends JavaPlugin implements Listener {
 
     @EventHandler public void onQuit(PlayerQuitEvent event) {
         UUID id = event.getPlayer().getUniqueId();
-        resyncTickets.forget(id);
+        resyncTickets.remove(id);
         if (skinCommands != null) skinCommands.forgetPlayer(id);
         if (tabRenderer != null) tabRenderer.forget(id);
         if (spawnPackets != null) spawnPackets.forget(id);
