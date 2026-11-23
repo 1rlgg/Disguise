@@ -1,8 +1,8 @@
 package dev.fyre.disguise.protocol;
 
 import dev.fyre.disguise.protocol.entity.EntityRefreshPolicy;
-import dev.fyre.disguise.protocol.entity.ScoreboardNameplatePolicy;
-import dev.fyre.disguise.protocol.entity.ViewerAliasCollisionPolicy;
+import dev.fyre.disguise.protocol.entity.EntityRefreshPolicy;
+import dev.fyre.disguise.protocol.entity.EntityRefreshPolicy;
 
 import com.comphenix.protocol.PacketType;
 import dev.fyre.disguise.api.DisguiseService;
@@ -52,10 +52,10 @@ public final class LegacyEntityRefresh {
 
             java.util.List<java.util.UUID> onlineIds = new java.util.ArrayList<java.util.UUID>();
             for (Player online : Bukkit.getOnlinePlayers()) onlineIds.add(online.getUniqueId());
-            aliasCollision = ViewerAliasCollisionPolicy.conflicts(
+            aliasCollision = EntityRefreshPolicy.conflicts(
                     disguises, viewer.getUniqueId(), subject.getUniqueId(), alias, onlineIds);
         }
-        if (!ScoreboardNameplatePolicy.mayRefreshEntity(
+        if (!EntityRefreshPolicy.mayRefreshEntity(
                 viewer.getScoreboard().getEntryTeam(subject.getName()) != null,
                 alias != null && viewer.getScoreboard().getEntryTeam(alias) != null,
                 aliasCollision)) return false;
