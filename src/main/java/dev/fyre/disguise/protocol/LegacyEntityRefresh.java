@@ -8,6 +8,7 @@ import dev.fyre.disguise.protocol.entity.EntityRefreshPolicy;
 
 import com.comphenix.protocol.PacketType;
 import dev.fyre.disguise.api.DisguiseService;
+import dev.fyre.disguise.core.DisguiseSubjectCatalog;
 import com.comphenix.protocol.ProtocolManager;
 import com.comphenix.protocol.events.PacketContainer;
 import com.comphenix.protocol.wrappers.WrappedDataWatcher;
@@ -51,11 +52,17 @@ public final class LegacyEntityRefresh {
         boolean aliasCollision = conflicting != null && conflicting.isOnline()
                 && !conflicting.getUniqueId().equals(subject.getUniqueId());
         if (!aliasCollision && alias != null && disguises != null) {
-
-            java.util.List<java.util.UUID> onlineIds = new java.util.ArrayList<java.util.UUID>();
-            for (Player online : Bukkit.getOnlinePlayers()) onlineIds.add(online.getUniqueId());
+            java.util.Collection<java.util.UUID> candidates;
+            if (disguises instanceof DisguiseSubjectCatalog) {
+                candidates = ((DisguiseSubjectCatalog) disguises).subjectIds();
+            } else {
+                java.util.List<java.util.UUID> onlineIds = new java.util.ArrayList<java.util.UUID>(
+                        Bukkit.getOnlinePlayers().size());
+                for (Player online : Bukkit.getOnlinePlayers()) onlineIds.add(online.getUniqueId());
+                candidates = onlineIds;
+            }
             aliasCollision = EntityRefreshPolicy.conflicts(
-                    disguises, viewer.getUniqueId(), subject.getUniqueId(), alias, onlineIds);
+                    disguises, viewer.getUniqueId(), subject.getUniqueId(), alias, candidates);
         }
         if (!EntityRefreshPolicy.mayRefreshEntity(
                 viewer.getScoreboard().getEntryTeam(subject.getName()) != null,
@@ -64,15 +71,17 @@ public final class LegacyEntityRefresh {
 
         TrackedSpawnPackets.Snapshot tracked = snapshots.lookup(viewer.getUniqueId(), subject.getUniqueId());
         boolean matchingSpawn = tracked != null && tracked.getEntityId() == subject.getEntityId();
+        Location viewerLocation = viewer.getLocation();
+        Location subjectLocation = subject.getLocation();
         if (!EntityRefreshPolicy.permitted(true, viewer.canSee(subject), true,
                 subject.isDead(), subject.isSleeping(), subject.isInsideVehicle() || subject.getPassenger() != null,
                 "SPECTATOR".equals(subject.getGameMode().name())
                         || "SPECTATOR".equals(viewer.getGameMode().name()),
-                EntityRefreshPolicy.withinTrackingRange(viewer.getLocation().distanceSquared(subject.getLocation()),
+                EntityRefreshPolicy.withinTrackingRange(viewerLocation.distanceSquared(subjectLocation),
                         Bukkit.getViewDistance()), matchingSpawn)) return false;
 
         PacketContainer spawn = tracked.getPacket();
-        Location loc = subject.getLocation();
+        Location loc = subjectLocation;
         spawn.getIntegers().write(1, fixed(loc.getX()));
         spawn.getIntegers().write(2, fixed(loc.getY()));
         spawn.getIntegers().write(3, fixed(loc.getZ()));
