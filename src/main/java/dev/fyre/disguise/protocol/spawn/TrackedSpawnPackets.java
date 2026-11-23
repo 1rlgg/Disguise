@@ -1,4 +1,4 @@
-package dev.fyre.disguise.protocol;
+package dev.fyre.disguise.protocol.spawn;
 
 import com.comphenix.protocol.events.PacketContainer;
 import dev.fyre.disguise.render.RefreshQueue;
@@ -44,7 +44,7 @@ public final class TrackedSpawnPackets {
         this.clock = Objects.requireNonNull(clock, "clock");
     }
 
-    static boolean expiredSince(long captured, long ttl, LongSupplier clock) {
+    public static boolean expiredSince(long captured, long ttl, LongSupplier clock) {
         if (ttl < 1) throw new IllegalArgumentException("ttl must be positive");
         return Objects.requireNonNull(clock, "clock").getAsLong() - captured >= ttl;
     }

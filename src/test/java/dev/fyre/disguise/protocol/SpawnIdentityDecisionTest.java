@@ -1,5 +1,7 @@
 package dev.fyre.disguise.protocol;
 
+import dev.fyre.disguise.protocol.spawn.SpawnIdentityDecision;
+
 import dev.fyre.disguise.api.Disguise;
 import dev.fyre.disguise.core.InMemoryDisguiseService;
 import java.util.UUID;

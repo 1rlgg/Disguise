@@ -1,4 +1,4 @@
-package dev.fyre.disguise.protocol;
+package dev.fyre.disguise.protocol.spawn;
 
 import dev.fyre.disguise.api.Disguise;
 import dev.fyre.disguise.api.DisguiseService;

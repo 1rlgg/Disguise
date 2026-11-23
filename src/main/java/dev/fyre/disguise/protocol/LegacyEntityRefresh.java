@@ -1,5 +1,7 @@
 package dev.fyre.disguise.protocol;
 
+import dev.fyre.disguise.protocol.spawn.TrackedSpawnPackets;
+
 import dev.fyre.disguise.protocol.entity.EntityRefreshPolicy;
 
 import com.comphenix.protocol.PacketType;

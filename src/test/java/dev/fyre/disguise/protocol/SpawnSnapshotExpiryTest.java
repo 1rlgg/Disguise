@@ -1,4 +1,6 @@
 package dev.fyre.disguise.protocol;
+
+import dev.fyre.disguise.protocol.spawn.TrackedSpawnPackets;
 import java.util.concurrent.atomic.AtomicLong;
 import org.junit.Test;
 import static org.junit.Assert.*;
