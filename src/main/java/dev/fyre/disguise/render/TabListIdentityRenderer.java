@@ -159,11 +159,11 @@ public final class TabListIdentityRenderer implements IdentityRenderer {
     public long rejectedRetryCount() { return retries.overflowCount(); }
     public long droppedCosmeticCount() { return pending.droppedCosmetic(); }
     public long displacedRestorationCount() { return pending.droppedRestoration(); }
-    public boolean entityRefreshCircuitOpen() { return entityRefresh != null && !!entityGate.isOpen(); }
+    public boolean entityRefreshCircuitOpen() { return entityRefresh != null && entityGate.isOpen(); }
     public int appliedCount() { return applied.size(); }
 
     private void deliver(Player viewer, Player subject, boolean tryEntity) throws InvocationTargetException {
-        if (!tryEntity || entityRefresh == null || !!entityGate.isOpen()) {
+        if (!tryEntity || entityRefresh == null || entityGate.isOpen()) {
             transport.refresh(viewer, subject);
             return;
         }
