@@ -51,7 +51,7 @@ public final class PlayerInfoTabRefresh {
         PacketContainer add = makePacket(EnumWrappers.PlayerInfoAction.ADD_PLAYER, output);
 
         execute(remove, add,
-                () -> makePacket(EnumWrappers.PlayerInfoAction.ADD_PLAYER, input),
+                (Supplier<PacketContainer>) () -> makePacket(EnumWrappers.PlayerInfoAction.ADD_PLAYER, input),
                 packet -> protocol.sendServerPacket(viewer, packet, false));
     }
 
