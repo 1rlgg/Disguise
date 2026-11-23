@@ -70,34 +70,14 @@ public final class SkinCommandHandler {
                 requests.finish(viewerId, subjectId, token);
                 return;
             }
+            Runnable completion = () -> completeLookup(
+                    sender, viewerId, subjectId, sourceId, expected, skin, error, token);
+            if (Bukkit.isPrimaryThread()) {
+                completion.run();
+                return;
+            }
             try {
-                Bukkit.getScheduler().runTask(plugin, () -> {
-                    if (!plugin.isEnabled()) {
-                        requests.finish(viewerId, subjectId, token);
-                        return;
-                    }
-                    if (!requests.isCurrent(viewerId, subjectId, token)) return;
-                    try {
-                        Player currentSubject = Bukkit.getPlayer(subjectId);
-                        Player currentViewer = viewerId == null ? null : Bukkit.getPlayer(viewerId);
-                        if (currentSubject == null || !currentSubject.isOnline()
-                                || (viewerId != null && (currentViewer == null || !currentViewer.isOnline()))) {
-                            reply(sender, ChatColor.YELLOW + "Player disconnected; skin request discarded.");
-                        } else if (error != null) {
-                            plugin.getLogger().log(Level.WARNING, "Signed texture lookup failed for " + sourceId, error);
-                            reply(sender, ChatColor.RED + "Mojang texture lookup failed.");
-                        } else {
-                            boolean applied = viewerId == null
-                                    ? assignments.applyIfCurrent(subjectId, expected, skin)
-                                    : assignments.applyForViewerIfCurrent(viewerId, subjectId, expected, skin);
-                            reply(sender, applied
-                                    ? ChatColor.GREEN + "Skin stored; experimental client refresh may update appearance."
-                                    : ChatColor.YELLOW + "Alias changed; stale skin request discarded.");
-                        }
-                    } finally {
-                        requests.finish(viewerId, subjectId, token);
-                    }
-                });
+                Bukkit.getScheduler().runTask(plugin, completion);
             } catch (RuntimeException ex) {
                 requests.finish(viewerId, subjectId, token);
                 if (plugin.isEnabled()) {
@@ -106,6 +86,36 @@ public final class SkinCommandHandler {
                 }
             }
         });
+    }
+
+    private void completeLookup(CommandSender sender, UUID viewerId, UUID subjectId, UUID sourceId,
+                                Disguise expected, dev.fyre.disguise.api.SkinProperty skin,
+                                Throwable error, long token) {
+        if (!plugin.isEnabled()) {
+            requests.finish(viewerId, subjectId, token);
+            return;
+        }
+        if (!requests.isCurrent(viewerId, subjectId, token)) return;
+        try {
+            Player currentSubject = Bukkit.getPlayer(subjectId);
+            Player currentViewer = viewerId == null ? null : Bukkit.getPlayer(viewerId);
+            if (currentSubject == null || !currentSubject.isOnline()
+                    || (viewerId != null && (currentViewer == null || !currentViewer.isOnline()))) {
+                reply(sender, ChatColor.YELLOW + "Player disconnected; skin request discarded.");
+            } else if (error != null) {
+                plugin.getLogger().log(Level.WARNING, "Signed texture lookup failed for " + sourceId, error);
+                reply(sender, ChatColor.RED + "Mojang texture lookup failed.");
+            } else {
+                boolean applied = viewerId == null
+                        ? assignments.applyIfCurrent(subjectId, expected, skin)
+                        : assignments.applyForViewerIfCurrent(viewerId, subjectId, expected, skin);
+                reply(sender, applied
+                        ? ChatColor.GREEN + "Skin stored; experimental client refresh may update appearance."
+                        : ChatColor.YELLOW + "Alias changed; stale skin request discarded.");
+            }
+        } finally {
+            requests.finish(viewerId, subjectId, token);
+        }
     }
 
     public void forgetPlayer(UUID playerId) { requests.forgetPlayer(playerId); }
