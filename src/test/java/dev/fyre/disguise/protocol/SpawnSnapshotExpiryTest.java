@@ -9,9 +9,9 @@ public class SpawnSnapshotExpiryTest {
         
         assertFalse(TrackedSpawnPackets.expiredSince(100, 10, time::get));
         time.set(109);
-        assertFalse(TrackedSpawnPackets.expiredSince(100));
+        assertFalse(TrackedSpawnPackets.expiredSince(100, 10, time::get));
         time.set(110);
-        assertTrue(TrackedSpawnPackets.expiredSince(100));
+        assertTrue(TrackedSpawnPackets.expiredSince(100, 10, time::get));
     }
     @Test public void handlesNanoTimeWrap() {
         AtomicLong time = new AtomicLong(Long.MAX_VALUE - 2);
