@@ -2,7 +2,7 @@ package dev.fyre.disguise.protocol;
 import org.junit.Test;
 import static org.junit.Assert.*;
 
-public class PacketRewriteBreakerTest {
+public class EntityRefreshFailureGateTest {
     @Test public void opensAfterThreeConsecutiveFailures() {
         PacketRewriteBreaker gate = new PacketRewriteBreaker(3);
         assertFalse(gate.recordFailure());
