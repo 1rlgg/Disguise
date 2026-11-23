@@ -67,6 +67,12 @@ public final class PlayerInfoTabRefresh {
 
     public static <T> void execute(T remove, T aliasAdd, T originalAdd,
                                    Sender<T> sender) throws InvocationTargetException {
+        Objects.requireNonNull(originalAdd, "originalAdd");
+        execute(remove, aliasAdd, (Supplier<T>) () -> originalAdd, sender);
+    }
+
+    public static <T> void execute(T remove, T aliasAdd, Supplier<T> originalAdd,
+                                   Sender<T> sender) throws InvocationTargetException {
         Objects.requireNonNull(remove, "remove");
         Objects.requireNonNull(aliasAdd, "aliasAdd");
         Objects.requireNonNull(originalAdd, "originalAdd");
@@ -75,9 +81,12 @@ public final class PlayerInfoTabRefresh {
             sender.send(remove);
             sender.send(aliasAdd);
         } catch (InvocationTargetException | RuntimeException failure) {
-
             attempt(sender, remove, failure);
-            attempt(sender, originalAdd, failure);
+            try {
+                attempt(sender, Objects.requireNonNull(originalAdd.get(), "originalAdd.get()"), failure);
+            } catch (RuntimeException recovery) {
+                if (recovery != failure) failure.addSuppressed(recovery);
+            }
             throw failure;
         }
     }
