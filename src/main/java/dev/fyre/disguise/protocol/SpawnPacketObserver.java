@@ -11,7 +11,7 @@ import org.bukkit.plugin.Plugin;
 
 public final class SpawnPacketObserver extends PacketAdapter {
     private final TrackedSpawnPackets snapshots;
-    private final SpawnObservationCircuit observation = new SpawnObservationCircuit();
+    private final ObservationCircuit observation = new ObservationCircuit();
 
     public SpawnPacketObserver(Plugin plugin, TrackedSpawnPackets snapshots) {
         super(plugin, ListenerPriority.MONITOR,
@@ -41,5 +41,12 @@ public final class SpawnPacketObserver extends PacketAdapter {
                         "Spawn packet observation disabled after failure; using tab-list fallback", ex);
             }
         }
+    }
+    public static final class ObservationCircuit {
+        private final java.util.concurrent.atomic.AtomicBoolean tripped =
+                new java.util.concurrent.atomic.AtomicBoolean();
+
+        public boolean enabled() { return !tripped.get(); }
+        public boolean trip() { return tripped.compareAndSet(false, true); }
     }
 }

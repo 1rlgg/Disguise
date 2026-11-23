@@ -5,7 +5,7 @@ import static org.junit.Assert.*;
 
 public class SpawnObservationCircuitTest {
     @Test public void oneFailureStopsFutureObservation() {
-        SpawnObservationCircuit circuit = new SpawnObservationCircuit();
+        SpawnPacketObserver.ObservationCircuit circuit = new SpawnPacketObserver.ObservationCircuit();
         assertTrue(circuit.enabled());
         assertTrue(circuit.trip());
         assertFalse(circuit.enabled());
