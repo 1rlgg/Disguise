@@ -5,7 +5,7 @@ import java.util.Objects;
 import java.util.Optional;
 import java.util.UUID;
 
-/** Strict UUID parser, not an offline-player name lookup. */
+
 public final class SkinSourceId {
     private SkinSourceId() { }
 

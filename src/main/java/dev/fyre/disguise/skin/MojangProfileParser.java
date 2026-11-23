@@ -9,10 +9,7 @@ import java.io.IOException;
 import java.util.Objects;
 import java.util.UUID;
 
-/**
- * Parses a Mojang sessionserver profile, rejecting a mismatched profile ID.
- * Checks property presence, not the RSA cryptographic signature.
- */
+
 public final class MojangProfileParser {
     private MojangProfileParser() { }
 

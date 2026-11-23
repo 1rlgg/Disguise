@@ -6,10 +6,7 @@ import dev.fyre.disguise.api.SkinProperty;
 import java.util.Objects;
 import java.util.UUID;
 
-/**
- * Applies signed texture values to immutable disguise requests. Must run on the
- * Bukkit primary thread; a stale asynchronous response is rejected by identity.
- */
+
 public final class SkinAssignment {
     private final DisguiseService disguises;
 
@@ -32,16 +29,13 @@ public final class SkinAssignment {
         return true;
     }
 
-    /**
-     * A viewer-specific override must still be present; a global disguise
-     * fallback is not eligible for per-viewer mutation.
-     */
+
     public boolean applyForViewerIfCurrent(UUID viewerId, UUID playerId,
                                            Disguise expected, SkinProperty skin) {
         Objects.requireNonNull(viewerId, "viewerId");
         validate(playerId, expected, skin);
-        // Explicit scope lookup avoids confusing a shared immutable instance
-        // with a global fallback, and never creates a new override implicitly.
+
+
         if (disguises.getViewerOverride(viewerId, playerId).orElse(null) != expected) return false;
         disguises.setDisguiseFor(viewerId, new Disguise(playerId, expected.getName(), skin));
         return true;

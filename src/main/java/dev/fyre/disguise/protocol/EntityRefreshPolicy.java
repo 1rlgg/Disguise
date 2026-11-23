@@ -1,16 +1,10 @@
 package dev.fyre.disguise.protocol;
 
-/**
- * Pure admission checks for the experimental client entity destroy/respawn.
- * The actual render engine supplies observed player state on Bukkit's main thread.
- */
+
 public final class EntityRefreshPolicy {
     private EntityRefreshPolicy() { }
 
-    /**
-     * Skip unsupported or unsafe states rather than guessing what packets a
-     * legacy client needs to reconstruct sleeping, mounted or dead players.
-     */
+
     public static boolean permitted(boolean sameWorld, boolean visible, boolean online,
                                     boolean dead, boolean sleeping, boolean mounted,
                                     boolean inTrackingRange, boolean hasMatchingSpawn) {
@@ -18,7 +12,7 @@ public final class EntityRefreshPolicy {
                 false, inTrackingRange, hasMatchingSpawn);
     }
 
-    /** Spectator-mode entities use special client semantics; never respawn them manually. */
+
     public static boolean permitted(boolean sameWorld, boolean visible, boolean online,
                                     boolean dead, boolean sleeping, boolean mounted,
                                     boolean spectator, boolean inTrackingRange,
@@ -27,12 +21,7 @@ public final class EntityRefreshPolicy {
                 && !spectator && inTrackingRange && hasMatchingSpawn;
     }
 
-    /**
-     * A chunk view distance does not prove the player entity is tracked by the
-     * client. Default 1.8 player tracking is substantially shorter. Limit
-     * experimental entity recreation to 48 blocks even on 16-chunk servers;
-     * the observed spawn snapshot must also still match.
-     */
+
     public static boolean withinTrackingRange(double distanceSquared, int viewDistanceChunks) {
         if (Double.isNaN(distanceSquared) || Double.isInfinite(distanceSquared) || distanceSquared < 0
                 || viewDistanceChunks < 1) return false;

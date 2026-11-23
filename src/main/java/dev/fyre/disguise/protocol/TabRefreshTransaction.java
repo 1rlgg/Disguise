@@ -3,7 +3,7 @@ package dev.fyre.disguise.protocol;
 import java.lang.reflect.InvocationTargetException;
 import java.util.Objects;
 
-/** Best-effort atomic-like tab entry replacement for ambiguous network failures. */
+
 public final class TabRefreshTransaction {
     private TabRefreshTransaction() { }
 
@@ -21,10 +21,8 @@ public final class TabRefreshTransaction {
             sender.send(remove);
             sender.send(aliasAdd);
         } catch (InvocationTargetException | RuntimeException failure) {
-            // Packet sends are ambiguous. The alias may already have reached
-            // the client even if its transport call threw. Clear that slot
-            // first, then restore the original profile regardless of whether
-            // cleanup itself fails. Preserve every secondary error.
+
+
             attempt(sender, remove, failure);
             attempt(sender, originalAdd, failure);
             throw failure;

@@ -11,11 +11,7 @@ import java.util.Objects;
 import java.util.Optional;
 import java.util.UUID;
 
-/**
- * Publishes minimal transitions after state changes.
- * Mutations are protected by the supplied main-thread guard, including when
- * consumers retain a reference to this service after getDisguiseService().
- */
+
 public final class ObservableDisguiseService implements DisguiseService {
     private final DisguiseService delegate;
     private final IdentityRenderer renderer;
@@ -37,11 +33,7 @@ public final class ObservableDisguiseService implements DisguiseService {
         this.mutationGuard = Objects.requireNonNull(mutationGuard, "mutationGuard");
     }
 
-    /**
-     * Re-render another unchanged identity when an explicit alias transition
-     * changes its collision status for this viewer. The underlying disguise
-     * has not changed, but the outgoing player-info packet must be revisited.
-     */
+
     private void refreshAliasNeighbours(UUID viewer, UUID changedSubject,
                                         Disguise before, Disguise after) {
         if (!(delegate instanceof DisguiseSubjectCatalog)) return;
@@ -134,9 +126,8 @@ public final class ObservableDisguiseService implements DisguiseService {
     @Override public void clearPlayer(UUID id) {
         mutationGuard.run();
         Objects.requireNonNull(id, "id");
-        // A player can be both a disguised subject and a viewer with custom
-        // overrides for other subjects. Clearing their viewer overrides may
-        // reveal global aliases, so both directions require transitions.
+
+
         Collection<UUID> online = new ArrayList<UUID>(viewers.get());
         java.util.Map<UUID, Disguise> beforeSubject = new java.util.LinkedHashMap<UUID, Disguise>();
         for (UUID viewer : online) {
@@ -174,8 +165,8 @@ public final class ObservableDisguiseService implements DisguiseService {
     @Override public void clear() {
         mutationGuard.run();
         if (!(delegate instanceof DisguiseSubjectCatalog)) {
-            // A custom registry with no subject enumeration cannot offer
-            // guaranteed restoration, but clearing its state remains valid.
+
+
             delegate.clear();
             return;
         }

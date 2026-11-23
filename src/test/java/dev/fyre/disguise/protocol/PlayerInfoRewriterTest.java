@@ -7,11 +7,7 @@ import java.util.UUID;
 import org.junit.Test;
 import static org.junit.Assert.*;
 
-/**
- * Only pure behavior can be tested without a running Minecraft server.
- * ProtocolLib GameProfile/PlayerInfoData initialization requires server internals,
- * so actual packet serialization must be verified in an integration test.
- */
+
 public class PlayerInfoRewriterTest {
     @Test public void preservesEmptyPacketDataWithoutServerRuntime() {
         InMemoryDisguiseService registry = new InMemoryDisguiseService();

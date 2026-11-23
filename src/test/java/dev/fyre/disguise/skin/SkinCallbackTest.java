@@ -7,7 +7,7 @@ import java.util.concurrent.TimeUnit;
 import org.junit.Test;
 import static org.junit.Assert.*;
 
-/** Regression test: CompletableFuture completion must not retain the service monitor. */
+
 public class SkinCallbackTest {
     @Test public void callbackCanReadServiceStateAndStartNextLookup() throws Exception {
         SkinProperty skin = new SkinProperty("dGVzdA==", "c2ln");

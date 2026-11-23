@@ -6,10 +6,7 @@ import java.util.Objects;
 import java.util.Optional;
 import java.util.UUID;
 
-/**
- * Read-only per-viewer identity lookup for a future tracked player spawn.
- * Does not send or alter entity packets, UUIDs, hitboxes or visibility.
- */
+
 public final class SpawnIdentityDecision {
     private final DisguiseService disguises;
 

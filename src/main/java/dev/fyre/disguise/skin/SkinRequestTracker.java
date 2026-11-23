@@ -5,10 +5,7 @@ import java.util.Map;
 import java.util.Objects;
 import java.util.UUID;
 
-/**
- * Main-thread request sequencing for global and viewer-specific skin commands.
- * The latest command wins even when Mojang responses arrive out of order.
- */
+
 public final class SkinRequestTracker {
     private static final class Target {
         final UUID viewer;
@@ -51,7 +48,7 @@ public final class SkinRequestTracker {
         return value != null && value.longValue() == token;
     }
 
-    /** Remove only this request; an older callback cannot clear a newer one. */
+
     public synchronized void finish(UUID viewer, UUID subject, long token) {
         latest.remove(new Target(viewer, subject), token);
     }

@@ -14,10 +14,7 @@ import java.util.List;
 import java.util.Objects;
 import org.bukkit.entity.Player;
 
-/**
- * Experimental per-viewer tab-list synchronization. No world entity or
- * nametag refresh is performed; caller must use Bukkit primary thread.
- */
+
 public final class PlayerInfoTabRefresh {
     private final ProtocolManager protocol;
     private final PlayerInfoRewriter rewriter;
@@ -31,10 +28,7 @@ public final class PlayerInfoTabRefresh {
         send(viewer, subject, false);
     }
 
-    /**
-     * Force the ORIGINAL player profile for shutdown/restoration regardless of
-     * the current disguise registry. Never let a late alias reappear here.
-     */
+
     public void restoreOriginal(Player viewer, Player subject) throws InvocationTargetException {
         send(viewer, subject, true);
     }
@@ -57,9 +51,7 @@ public final class PlayerInfoTabRefresh {
         PacketContainer remove = makePacket(EnumWrappers.PlayerInfoAction.REMOVE_PLAYER, input);
         PacketContainer add = makePacket(EnumWrappers.PlayerInfoAction.ADD_PLAYER, output);
 
-        // Prepare the recovery packet before touching the client's list.
-        // A failed send is ambiguous; restore the real profile whether REMOVE
-        // or ADD failed instead of assuming the client received neither.
+
         PacketContainer restore = makePacket(EnumWrappers.PlayerInfoAction.ADD_PLAYER, input);
         TabRefreshTransaction.execute(remove, add, restore,
                 packet -> protocol.sendServerPacket(viewer, packet, false));

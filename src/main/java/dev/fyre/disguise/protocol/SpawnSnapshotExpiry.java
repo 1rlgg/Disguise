@@ -2,7 +2,7 @@ package dev.fyre.disguise.protocol;
 import java.util.Objects;
 import java.util.function.LongSupplier;
 
-/** Monotonic freshness check for captured player spawn packets. */
+
 public final class SpawnSnapshotExpiry {
     private final long ttl;
     private final LongSupplier clock;

@@ -9,10 +9,7 @@ import java.util.UUID;
 import java.util.logging.Level;
 import org.bukkit.plugin.Plugin;
 
-/**
- * Observer only: never alters normal server-generated spawn or destroy packets.
- * ProtocolLib may invoke listeners off the primary thread; cache is synchronized.
- */
+
 public final class SpawnPacketObserver extends PacketAdapter {
     private final TrackedSpawnPackets snapshots;
     private final SpawnObservationCircuit observation = new SpawnObservationCircuit();
@@ -24,7 +21,7 @@ public final class SpawnPacketObserver extends PacketAdapter {
     }
 
     @Override public void onPacketSending(PacketEvent event) {
-        // A cancelled outgoing packet did not establish client entity tracking.
+
         if (event.isCancelled() || !observation.enabled()) return;
         try {
             UUID viewer = event.getPlayer().getUniqueId();
@@ -39,8 +36,8 @@ public final class SpawnPacketObserver extends PacketAdapter {
             }
         } catch (RuntimeException ex) {
             if (observation.trip()) {
-                // ProtocolLib reflection may no longer match the server.
-                // Never reuse snapshots from a damaged observer state.
+
+
                 snapshots.clear();
                 getPlugin().getLogger().log(Level.WARNING,
                         "Spawn packet observation disabled after failure; using tab-list fallback", ex);

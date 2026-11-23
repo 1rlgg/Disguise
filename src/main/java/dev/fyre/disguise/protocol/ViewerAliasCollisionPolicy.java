@@ -5,7 +5,7 @@ import java.util.Collection;
 import java.util.Objects;
 import java.util.UUID;
 
-/** Checks collisions in the aliases actually visible to a specific viewer. */
+
 public final class ViewerAliasCollisionPolicy {
     private ViewerAliasCollisionPolicy() { }
 

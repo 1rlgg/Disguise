@@ -11,7 +11,7 @@ import java.nio.charset.StandardCharsets;
 import java.util.Objects;
 import java.util.UUID;
 
-/** Blocking HTTPS lookup with fixed host and bounded response size; call off the Bukkit tick thread. */
+
 public final class MojangSkinSource implements SkinSource {
     private static final int MAX_BODY_CHARS = 32768;
     private final int connectTimeoutMillis;

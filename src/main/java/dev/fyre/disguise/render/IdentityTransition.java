@@ -5,7 +5,7 @@ import java.util.Objects;
 import java.util.Optional;
 import java.util.UUID;
 
-/** Desired transition for one subject as observed by one viewer. */
+
 public final class IdentityTransition {
     private final UUID viewerId;
     private final UUID subjectId;

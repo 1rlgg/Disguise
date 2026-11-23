@@ -39,7 +39,7 @@ import org.bukkit.event.player.PlayerRespawnEvent;
 import org.bukkit.event.player.PlayerTeleportEvent;
 import org.bukkit.plugin.java.JavaPlugin;
 
-/** Experimental 1.8 identity renderer. World respawn is disabled by default. */
+
 public final class FyreDisguisePlugin extends JavaPlugin implements Listener {
     private DisguiseService disguises;
     private InMemoryDisguiseService registry;
@@ -123,8 +123,8 @@ public final class FyreDisguisePlugin extends JavaPlugin implements Listener {
         if (tabRenderer == null) return;
         final long ticket = resyncTickets.schedule(playerId);
         Bukkit.getScheduler().runTaskLater(this, () -> {
-            // Consume first: an older task must never revive a cancelled or
-            // superseded join/respawn/world resync after disconnect/reconnect.
+
+
             if (!resyncTickets.consume(playerId, ticket)) return;
             if (tabRenderer == null || refreshPlanner == null || !isEnabled()) return;
             Player player = Bukkit.getPlayer(playerId);
@@ -164,8 +164,8 @@ public final class FyreDisguisePlugin extends JavaPlugin implements Listener {
         if (skinCommands != null) skinCommands.forgetPlayer(id);
         if (tabRenderer != null) tabRenderer.forget(id);
         if (spawnPackets != null) spawnPackets.forget(id);
-        // A quitting subject is already being removed by the server; do not
-        // schedule synthetic client respawns for their outgoing entity.
+
+
         if (registry != null) registry.clearPlayer(id);
     }
 

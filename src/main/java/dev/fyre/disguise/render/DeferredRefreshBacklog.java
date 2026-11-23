@@ -5,10 +5,7 @@ import java.util.LinkedHashSet;
 import java.util.Objects;
 import java.util.UUID;
 
-/**
- * Main-thread-only bounded secondary backlog for cosmetic refreshes rejected
- * by a saturated primary queue. Never evicts queued restorations.
- */
+
 public final class DeferredRefreshBacklog {
     private final int capacity;
     private final LinkedHashSet<RefreshQueue.Pair> deferred = new LinkedHashSet<RefreshQueue.Pair>();
@@ -37,8 +34,8 @@ public final class DeferredRefreshBacklog {
         while (iter.hasNext() && moved < maxPerTick) {
             RefreshQueue.Pair pair = iter.next();
             if (queue.contains(pair.getViewer(), pair.getSubject())) {
-                // A newer queue event already represents this exact pair.
-                // Remove the stale deferred copy even if the primary is full.
+
+
                 iter.remove();
                 continue;
             }
@@ -50,7 +47,7 @@ public final class DeferredRefreshBacklog {
         return moved;
     }
 
-    /** A higher-priority restore supersedes any old cosmetic request. */
+
     public boolean cancel(UUID viewer, UUID subject) {
         return deferred.remove(new RefreshQueue.Pair(viewer, subject));
     }

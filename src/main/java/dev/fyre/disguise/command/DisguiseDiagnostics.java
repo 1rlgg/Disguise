@@ -4,7 +4,7 @@ import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
 
-/** Immutable, unprivileged rendering statistics; command access remains admin-only. */
+
 public final class DisguiseDiagnostics {
     private final boolean tabEnabled;
     private final boolean entityEnabled;

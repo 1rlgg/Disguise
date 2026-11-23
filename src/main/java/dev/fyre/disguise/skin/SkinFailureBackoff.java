@@ -8,10 +8,7 @@ import java.util.UUID;
 import java.util.concurrent.TimeUnit;
 import java.util.function.LongSupplier;
 
-/**
- * Bounded, short-lived backoff for failed upstream skin lookups.
- * No errors or player details are retained, only UUIDs and monotonic times.
- */
+
 public final class SkinFailureBackoff {
     private final int capacity;
     private final long durationNanos;
@@ -54,7 +51,7 @@ public final class SkinFailureBackoff {
         failures.remove(Objects.requireNonNull(id, "id"));
     }
 
-    /** Counts only active cooldowns, not expired entries retained by the LRU. */
+
     public synchronized int size() {
         purgeExpired();
         return failures.size();

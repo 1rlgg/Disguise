@@ -17,7 +17,7 @@ import org.bukkit.command.CommandExecutor;
 import org.bukkit.command.CommandSender;
 import org.bukkit.entity.Player;
 
-/** Operator-only test controls; world entity appearance is not changed. */
+
 public final class DisguiseCommand implements CommandExecutor {
     private final DisguiseService disguises;
     private final SkinCommandHandler skins;
@@ -67,9 +67,8 @@ public final class DisguiseCommand implements CommandExecutor {
             return true;
         }
         if (args.length == 1 && args[0].equalsIgnoreCase("reset")) {
-            // Administrative emergency recovery: mutate through the observable
-            // service so every active viewer receives a restoration transition.
-            // In-flight texture lookups must not reinstate prior disguises.
+
+
             if (skins != null) skins.clearPending();
             disguises.clear();
             sender.sendMessage(ChatColor.YELLOW + "All aliases cleared; restoration queued for online viewers.");

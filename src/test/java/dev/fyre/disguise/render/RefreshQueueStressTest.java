@@ -9,10 +9,7 @@ import java.util.UUID;
 import org.junit.Test;
 import static org.junit.Assert.*;
 
-/**
- * Deterministic stress coverage for PvP-scale alias churn: preserve bounds,
- * avoid duplicated pairs and prevent cosmetic work overtaking restoration.
- */
+
 public class RefreshQueueStressTest {
     @Test public void survivesTenThousandMixedMutationsWithoutDuplicateWork() {
         final int capacity = 64;

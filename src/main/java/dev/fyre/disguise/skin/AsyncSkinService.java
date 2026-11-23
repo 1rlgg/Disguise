@@ -12,11 +12,7 @@ import java.util.concurrent.ThreadPoolExecutor;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.RejectedExecutionException;
 
-/**
- * Bounded single-flight resolver. Concurrent requests for the same UUID share
- * one I/O task, but each caller receives an independent cancellation handle.
- * Callbacks never execute while the service monitor is held.
- */
+
 public final class AsyncSkinService implements AutoCloseable {
     private final SkinSource source;
     private final SkinCache cache;
@@ -66,8 +62,8 @@ public final class AsyncSkinService implements AutoCloseable {
         }
 
         if (submit) {
-            // Executor rejection must never complete user callbacks while the
-            // service monitor is held. close() may concurrently reject the task.
+
+
             final CompletableFuture<SkinProperty> taskFuture = shared;
             try {
                 executor.execute(() -> resolve(id, taskFuture));
@@ -78,7 +74,7 @@ public final class AsyncSkinService implements AutoCloseable {
                 taskFuture.completeExceptionally(ex);
             }
         }
-        // An independent dependent stage keeps caller cancellation isolated.
+
         return shared.thenApply(value -> value);
     }
 
@@ -89,9 +85,8 @@ public final class AsyncSkinService implements AutoCloseable {
             skin = source.load(id);
             if (skin == null || !skin.isSigned()) throw new IllegalStateException("Missing signed textures");
         } catch (Throwable ex) {
-            // A faulty third-party skin source may throw Error rather than
-            // Exception. Regardless, every submitted lookup must settle and
-            // release its in-flight slot; otherwise callers can hang forever.
+
+
             failure = ex;
         }
         boolean stopped;
@@ -105,7 +100,7 @@ public final class AsyncSkinService implements AutoCloseable {
                 failures.failed(id);
             }
         }
-        // Complete downstream stages after releasing the lock: user callbacks may be slow.
+
         if (stopped) shared.completeExceptionally(new IllegalStateException("Skin service closed"));
         else if (failure != null) shared.completeExceptionally(failure);
         else shared.complete(skin);

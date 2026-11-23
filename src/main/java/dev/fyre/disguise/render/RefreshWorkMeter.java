@@ -1,9 +1,6 @@
 package dev.fyre.disguise.render;
 
-/**
- * Allocation-light main-thread counters for the refresh loop. Measures CPU
- * wall duration of each flush, not packet delivery or combat tick stability.
- */
+
 public final class RefreshWorkMeter {
     private long flushes;
     private long totalPairs;

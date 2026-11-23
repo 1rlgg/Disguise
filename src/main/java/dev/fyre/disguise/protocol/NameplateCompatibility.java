@@ -1,9 +1,6 @@
 package dev.fyre.disguise.protocol;
 
-/**
- * Read-only gate explaining common vanilla/scoreboard reasons an experimental
- * world refresh must not run. No team membership or game rules are changed.
- */
+
 public final class NameplateCompatibility {
     private NameplateCompatibility() { }
 

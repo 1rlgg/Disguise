@@ -11,10 +11,7 @@ import java.util.HashSet;
 import java.util.Collections;
 import java.util.UUID;
 
-/**
- * Thread-safe desired identity registry, including viewer-specific overrides.
- * Writes should originate on the Bukkit primary thread. Reads are safe for packet listeners.
- */
+
 public final class InMemoryDisguiseService implements DisguiseService, DisguiseSubjectCatalog {
     private final Map<UUID, Disguise> global = new HashMap<UUID, Disguise>();
     private final Map<UUID, Map<UUID, Disguise>> perViewer = new HashMap<UUID, Map<UUID, Disguise>>();
