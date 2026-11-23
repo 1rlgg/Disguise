@@ -3,7 +3,6 @@ package dev.fyre.disguise.command;
 import dev.fyre.disguise.api.Disguise;
 import dev.fyre.disguise.api.DisguiseService;
 import dev.fyre.disguise.skin.MojangSkinSource;
-import dev.fyre.disguise.protocol.entity.NameplateCompatibility;
 import dev.fyre.disguise.protocol.entity.EntityRefreshPolicy;
 import java.util.Objects;
 import java.util.UUID;
@@ -119,7 +118,7 @@ public final class DisguiseCommand implements CommandExecutor {
                     + disguises.getDisguiseFor(viewer.getUniqueId(), subject.getUniqueId())
                     .map(Disguise::getName).orElse("(none)"));
             sender.sendMessage(ChatColor.YELLOW + "Experimental world eligibility: "
-                    + NameplateCompatibility.reason(sameWorld, visible, teamOwned, aliasTeamOwned,
+                    + EntityRefreshPolicy.nameplateReason(sameWorld, visible, teamOwned, aliasTeamOwned,
                             aliasCollision, duplicateAlias, spectator, viewer.equals(subject)));
             sender.sendMessage(ChatColor.GRAY + "Inspection only; no packets or scoreboard teams changed.");
             return true;
