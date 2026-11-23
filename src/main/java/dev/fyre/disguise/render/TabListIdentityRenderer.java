@@ -13,9 +13,6 @@ import dev.fyre.disguise.render.restoration.ShutdownRestorationBudget;
 import dev.fyre.disguise.render.restoration.AppliedTabEntries;
 
 import dev.fyre.disguise.render.refresh.RefreshPolicy;
-import dev.fyre.disguise.render.refresh.RefreshPolicy;
-import dev.fyre.disguise.render.refresh.RefreshPolicy;
-import dev.fyre.disguise.render.refresh.RefreshPolicy;
 
 import dev.fyre.disguise.api.DisguiseService;
 import dev.fyre.disguise.protocol.LegacyEntityRefresh;
