@@ -15,31 +15,31 @@ public class MojangProfileParserTest {
     }
 
     @Test public void acceptsMatchingProfileAndSignedTextures() throws Exception {
-        SkinProperty property = MojangProfileParser.signedTextures(id, response(id));
+        SkinProperty property = MojangSkinSource.signedTextures(id, response(id));
         assertTrue(property.isSigned());
         assertEquals("dGVzdA==", property.getValue());
     }
 
     @Test(expected = IOException.class)
     public void rejectsAnotherAccountProfile() throws Exception {
-        MojangProfileParser.signedTextures(id, response(UUID.randomUUID()));
+        MojangSkinSource.signedTextures(id, response(UUID.randomUUID()));
     }
 
     @Test(expected = IOException.class)
     public void rejectsUnsignedTextureProperty() throws Exception {
-        MojangProfileParser.signedTextures(id, "{\"id\":\""
+        MojangSkinSource.signedTextures(id, "{\"id\":\""
                 + id.toString().replace("-", "")
                 + "\",\"properties\":[{\"name\":\"textures\",\"value\":\"dGVzdA==\"}]}");
     }
 
     @Test(expected = IOException.class)
     public void rejectsMalformedResponse() throws Exception {
-        MojangProfileParser.signedTextures(id, "not-json");
+        MojangSkinSource.signedTextures(id, "not-json");
     }
 
     @Test(expected = IOException.class)
     public void rejectsMissingId() throws Exception {
-        MojangProfileParser.signedTextures(id,
+        MojangSkinSource.signedTextures(id,
                 "{\"properties\":[{\"name\":\"textures\",\"value\":\"dGVzdA==\",\"signature\":\"c2ln\"}]}");
     }
 }

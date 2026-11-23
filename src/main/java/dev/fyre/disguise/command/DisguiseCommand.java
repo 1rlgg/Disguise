@@ -2,7 +2,7 @@ package dev.fyre.disguise.command;
 
 import dev.fyre.disguise.api.Disguise;
 import dev.fyre.disguise.api.DisguiseService;
-import dev.fyre.disguise.skin.SkinSourceId;
+import dev.fyre.disguise.skin.MojangSkinSource;
 import dev.fyre.disguise.protocol.entity.NameplateCompatibility;
 import dev.fyre.disguise.protocol.entity.ViewerAliasCollisionPolicy;
 import java.util.Objects;
@@ -54,7 +54,7 @@ public final class DisguiseCommand implements CommandExecutor {
     private UUID skinSource(CommandSender sender, String input) {
         Player online = Bukkit.getPlayerExact(input);
         if (online != null && online.isOnline()) return online.getUniqueId();
-        java.util.Optional<UUID> uuid = SkinSourceId.parse(input);
+        java.util.Optional<UUID> uuid = MojangSkinSource.parse(input);
         if (uuid.isPresent()) return uuid.get();
         sender.sendMessage(ChatColor.RED + "Source must be an online player name or complete UUID.");
         return null;
