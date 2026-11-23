@@ -5,8 +5,7 @@ import java.util.List;
 import java.util.Objects;
 
 public final class EntityRefreshTransaction {
-
-
+    @FunctionalInterface
     public interface Sender<T> {
         void send(T packet) throws InvocationTargetException;
     }
@@ -26,7 +25,6 @@ public final class EntityRefreshTransaction {
             transport.send(head);
             for (T item : equipment) transport.send(item);
         } catch (InvocationTargetException | RuntimeException failure) {
-
             trySend(transport, destroy, failure);
             trySend(transport, recoverySpawn, failure);
             trySend(transport, head, failure);
@@ -42,10 +40,14 @@ public final class EntityRefreshTransaction {
             if (error != original) original.addSuppressed(error);
         }
     }
-    @FunctionalInterface public interface WorldSender {
+
+    @FunctionalInterface
+    public interface WorldSender {
         boolean refresh() throws InvocationTargetException;
     }
-    @FunctionalInterface public interface TabSender {
+
+    @FunctionalInterface
+    public interface TabSender {
         void refresh() throws InvocationTargetException;
     }
 
@@ -68,10 +70,8 @@ public final class EntityRefreshTransaction {
         } catch (InvocationTargetException | RuntimeException failure) {
             boolean disabled = gate.recordFailure();
             if (disabled) {
-
                 failure.addSuppressed(new EntityCircuitOpenedException());
             }
-
             try {
                 tab.refresh();
             } catch (InvocationTargetException | RuntimeException fallbackFailure) {

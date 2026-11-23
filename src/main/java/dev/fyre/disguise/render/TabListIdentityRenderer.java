@@ -1,38 +1,37 @@
 package dev.fyre.disguise.render;
 
-
-import dev.fyre.disguise.render.identity.IdentityTransition;
-
-import dev.fyre.disguise.render.refresh.RefreshWorkMeter;
-import dev.fyre.disguise.render.refresh.DeferredRefreshBacklog;
-import dev.fyre.disguise.render.refresh.RefreshRetryLedger;
-
-import dev.fyre.disguise.render.restoration.RestorationReconciler;
-import dev.fyre.disguise.render.restoration.AppliedTabEntries;
-
-import dev.fyre.disguise.render.refresh.RefreshPolicy;
-
 import dev.fyre.disguise.api.DisguiseService;
+import dev.fyre.disguise.protocol.EntityRefreshTransaction;
 import dev.fyre.disguise.protocol.LegacyEntityRefresh;
 import dev.fyre.disguise.protocol.PacketRewriteBreaker;
-import dev.fyre.disguise.protocol.EntityRefreshTransaction;
 import dev.fyre.disguise.protocol.packet.PlayerInfoTabRefresh;
+import dev.fyre.disguise.render.identity.IdentityTransition;
+import dev.fyre.disguise.render.refresh.DeferredRefreshBacklog;
+import dev.fyre.disguise.render.refresh.RefreshPolicy;
+import dev.fyre.disguise.render.refresh.RefreshRetryLedger;
+import dev.fyre.disguise.render.refresh.RefreshWorkMeter;
+import dev.fyre.disguise.render.restoration.AppliedTabEntries;
+import dev.fyre.disguise.render.restoration.RestorationReconciler;
 import java.lang.reflect.InvocationTargetException;
 import java.util.Collection;
+import java.util.HashSet;
+import java.util.List;
 import java.util.Objects;
+import java.util.Set;
 import java.util.UUID;
+import java.util.function.Consumer;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import org.bukkit.Bukkit;
 import org.bukkit.entity.Player;
 
-public final class TabListIdentityRenderer implements java.util.function.Consumer<dev.fyre.disguise.render.identity.IdentityTransition> {
+public final class TabListIdentityRenderer implements Consumer<IdentityTransition> {
     private final PlayerInfoTabRefresh transport;
     private final Logger logger;
     private final RefreshQueue pending;
     private final AppliedTabEntries applied = new AppliedTabEntries();
-    private final java.util.Set<RefreshQueue.Pair> manualRestores =
-            new java.util.HashSet<RefreshQueue.Pair>();
+    private final Set<RefreshQueue.Pair> manualRestores =
+            new HashSet<RefreshQueue.Pair>();
     private final RefreshRetryLedger retries;
     private final DeferredRefreshBacklog deferred;
     private final RestorationReconciler reconciler = new RestorationReconciler();
@@ -118,7 +117,10 @@ public final class TabListIdentityRenderer implements java.util.function.Consume
                 deferred.offer(evicted.getViewer(), evicted.getSubject()));
     }
 
-    @Override public void accept(IdentityTransition transition) { render(transition); }
+    @Override
+    public void accept(IdentityTransition transition) {
+        render(transition);
+    }
 
     public void render(IdentityTransition transition) {
         assertPrimaryThread();
@@ -213,7 +215,7 @@ public final class TabListIdentityRenderer implements java.util.function.Consume
         int batchSize = RefreshPolicy.batchSize(maxPerTick,
                 entityRefresh != null && !entityGate.isOpen());
         long started = System.nanoTime();
-        java.util.List<RefreshQueue.Pair> work = pending.poll(batchSize);
+        List<RefreshQueue.Pair> work = pending.poll(batchSize);
         for (RefreshQueue.Pair pair : work) {
             boolean manualRestore = manualRestores.remove(pair);
 
@@ -280,7 +282,7 @@ public final class TabListIdentityRenderer implements java.util.function.Consume
         int restored = 0;
         int failed = 0;
         int unavailable = 0;
-        java.util.Set<RefreshQueue.Pair> remaining = applied.snapshot();
+        Set<RefreshQueue.Pair> remaining = applied.snapshot();
         int omitted = shutdownBudget.omitted(remaining.size());
         for (RefreshQueue.Pair pair : shutdownBudget.selectPrioritized(
                 remaining, pending.pendingRestorationSnapshot())) {

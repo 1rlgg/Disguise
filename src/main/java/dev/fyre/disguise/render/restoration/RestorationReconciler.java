@@ -3,13 +3,13 @@ package dev.fyre.disguise.render.restoration;
 import dev.fyre.disguise.render.RefreshQueue;
 
 import java.util.ArrayList;
-import java.util.Collections;
-import java.util.LinkedHashSet;
-import java.util.Set;
-import java.util.Iterator;
 import java.util.Collection;
+import java.util.Collections;
+import java.util.Iterator;
+import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Objects;
+import java.util.Set;
 import java.util.function.Predicate;
 
 public final class RestorationReconciler {
@@ -48,6 +48,7 @@ public final class RestorationReconciler {
     }
 
     public void reset() { offset = 0; }
+
     public List<RefreshQueue.Pair> select(Collection<RefreshQueue.Pair> applied) {
         Objects.requireNonNull(applied, "applied");
         List<RefreshQueue.Pair> result = new ArrayList<RefreshQueue.Pair>();

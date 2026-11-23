@@ -29,6 +29,7 @@ public final class EntityRefreshPolicy {
         double limit = Math.min(viewDistanceChunks * 16.0D, 48.0D);
         return distanceSquared <= limit * limit;
     }
+
     public static boolean mayRefreshEntity(boolean scoreboardTeamOwnsRealName) {
         return mayRefreshEntity(scoreboardTeamOwnsRealName, false, false);
     }
