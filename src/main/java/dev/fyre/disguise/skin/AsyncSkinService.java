@@ -1,5 +1,9 @@
 package dev.fyre.disguise.skin;
 
+import dev.fyre.disguise.skin.cache.SkinFailureBackoff;
+
+import dev.fyre.disguise.skin.cache.SkinCache;
+
 import dev.fyre.disguise.api.SkinProperty;
 import java.util.ArrayList;
 import java.util.HashMap;

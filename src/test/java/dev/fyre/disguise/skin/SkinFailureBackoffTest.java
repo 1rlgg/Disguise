@@ -1,5 +1,7 @@
 package dev.fyre.disguise.skin;
 
+import dev.fyre.disguise.skin.cache.SkinFailureBackoff;
+
 import java.util.UUID;
 import java.util.concurrent.atomic.AtomicLong;
 import org.junit.Test;

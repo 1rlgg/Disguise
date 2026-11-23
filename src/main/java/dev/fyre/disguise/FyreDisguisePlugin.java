@@ -23,7 +23,7 @@ import dev.fyre.disguise.render.RefreshTargetPlanner;
 import dev.fyre.disguise.render.TabListIdentityRenderer;
 import dev.fyre.disguise.skin.AsyncSkinService;
 import dev.fyre.disguise.skin.MojangSkinSource;
-import dev.fyre.disguise.skin.SkinCache;
+import dev.fyre.disguise.skin.cache.SkinCache;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.UUID;

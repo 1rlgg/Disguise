@@ -1,4 +1,4 @@
-package dev.fyre.disguise.skin;
+package dev.fyre.disguise.skin.cache;
 
 import java.util.Iterator;
 import java.util.LinkedHashMap;

@@ -1,4 +1,4 @@
-package dev.fyre.disguise.skin;
+package dev.fyre.disguise.skin.cache;
 
 import dev.fyre.disguise.api.SkinProperty;
 import java.util.Iterator;
