@@ -81,4 +81,22 @@ public class AppliedTabEntriesTest {
         entries.clear();
         assertEquals(0, entries.size());
     }
+
+    @Test public void indexedSnapshotsRemainStableAcrossMutations() {
+        AppliedTabEntries entries = new AppliedTabEntries();
+        UUID viewer = UUID.randomUUID();
+        for (int i = 0; i < 300; i++) entries.applied(viewer, new UUID(0, i));
+        java.util.List<RefreshQueue.Pair> snapshot = entries.scanSnapshot();
+        assertSame(snapshot, entries.scanSnapshot());
+        assertTrue(snapshot instanceof java.util.RandomAccess);
+        gg.rl1.disguise.render.restoration.RestorationReconciler reconciler =
+                new gg.rl1.disguise.render.restoration.RestorationReconciler();
+        for (int i = 0; i < 300; i++) {
+            assertEquals(snapshot.get(i), reconciler.scan(snapshot, pair -> true, 1).get(0));
+        }
+        assertEquals(snapshot.get(0), reconciler.scan(snapshot, pair -> true, 1).get(0));
+        entries.clear();
+        assertEquals(300, snapshot.size());
+        assertTrue(entries.scanSnapshot().isEmpty());
+    }
 }
