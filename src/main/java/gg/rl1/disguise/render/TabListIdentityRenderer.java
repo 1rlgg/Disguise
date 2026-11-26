@@ -198,12 +198,12 @@ public final class TabListIdentityRenderer implements Consumer<IdentityTransitio
                 ticksSinceReconcile = 0;
                 for (RefreshQueue.Pair pair : reconciler.scan(applied.scanSnapshot(),
                     candidate -> {
-                        if (retries.suppressed(candidate)) return false;
+                        if (retries.suppressed(candidate) || state.getDisguiseFor(candidate.getViewer(), candidate.getSubject()).isPresent()) return false;
                         Player viewer = Bukkit.getPlayer(candidate.getViewer());
                         Player subject = Bukkit.getPlayer(candidate.getSubject());
                         if (viewer == null || subject == null) return false;
                         return RefreshPolicy.canRestore(true,
-                                state.getDisguiseFor(candidate.getViewer(), candidate.getSubject()).isPresent(),
+                                false,
                                 viewer.isOnline(), subject.isOnline(), viewer.canSee(subject),
                                 viewer.equals(subject));
                     },
