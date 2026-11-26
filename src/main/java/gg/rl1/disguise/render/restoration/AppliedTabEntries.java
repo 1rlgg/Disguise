@@ -48,13 +48,13 @@ public final class AppliedTabEntries {
     public Set<RefreshQueue.Pair> snapshot() {
 
         if (cachedSnapshot == null) {
-            cachedSnapshot = Collections.unmodifiableSet(new LinkedHashSet<RefreshQueue.Pair>(applied));
+            cachedSnapshot = applied.isEmpty() ? Collections.emptySet() : Collections.unmodifiableSet(new LinkedHashSet<RefreshQueue.Pair>(applied));
         }
         return cachedSnapshot;
     }
 
     public java.util.List<RefreshQueue.Pair> scanSnapshot() {
-        if (cachedScan == null) cachedScan = Collections.unmodifiableList(new ArrayList<RefreshQueue.Pair>(applied));
+        if (cachedScan == null) cachedScan = applied.isEmpty() ? Collections.emptyList() : Collections.unmodifiableList(new ArrayList<RefreshQueue.Pair>(applied));
         return cachedScan;
     }
 
