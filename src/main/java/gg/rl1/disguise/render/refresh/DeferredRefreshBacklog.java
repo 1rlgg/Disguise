@@ -31,8 +31,9 @@ public final class DeferredRefreshBacklog {
         Objects.requireNonNull(queue, "queue");
         if (maxPerTick < 1) throw new IllegalArgumentException("maxPerTick must be positive");
         int moved = 0;
+        int inspected = 0;
         Iterator<RefreshQueue.Pair> iter = deferred.iterator();
-        while (iter.hasNext() && moved < maxPerTick) {
+        while (iter.hasNext() && inspected++ < maxPerTick) {
             RefreshQueue.Pair pair = iter.next();
             if (queue.contains(pair)) {
                 iter.remove();
