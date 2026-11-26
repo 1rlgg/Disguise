@@ -100,4 +100,34 @@ public class DisguiseSubjectCatalogTest {
             // Expected.
         }
     }
+
+    @Test public void effectiveCacheInvalidatesOnlyAffectedViewerForPrivateMutation() {
+        InMemoryDisguiseService registry = new InMemoryDisguiseService();
+        UUID subject = UUID.randomUUID(), a = UUID.randomUUID(), b = UUID.randomUUID();
+        registry.setDisguise(new Disguise(subject, "GlobalAlias"));
+        java.util.Map<UUID, Disguise> first = registry.effectiveSnapshot(a);
+        java.util.Map<UUID, Disguise> second = registry.effectiveSnapshot(b);
+        assertSame(first, registry.effectiveSnapshot(a));
+        registry.setDisguiseFor(a, new Disguise(subject, "PrivateAlias"));
+        assertNotSame(first, registry.effectiveSnapshot(a));
+        assertSame(second, registry.effectiveSnapshot(b));
+        registry.removeDisguiseFor(a, subject);
+        assertEquals("GlobalAlias", registry.effectiveSnapshot(a).get(subject).getName());
+        registry.setDisguise(new Disguise(subject, "NewAlias"));
+        assertNotSame(second, registry.effectiveSnapshot(b));
+    }
+
+    @Test public void snapshotCacheEvictsLeastRecentlyUsedViewer() {
+        InMemoryDisguiseService registry = new InMemoryDisguiseService();
+        UUID subject = new UUID(1, 0);
+        registry.setDisguise(new Disguise(subject, "GlobalAlias"));
+        UUID first = new UUID(2, 0), second = new UUID(2, 1);
+        java.util.Map<UUID, Disguise> retained = registry.effectiveSnapshot(first);
+        java.util.Map<UUID, Disguise> evicted = registry.effectiveSnapshot(second);
+        for (int i = 2; i < 256; i++) registry.effectiveSnapshot(new UUID(2, i));
+        assertSame(retained, registry.effectiveSnapshot(first));
+        registry.effectiveSnapshot(new UUID(2, 256));
+        assertSame(retained, registry.effectiveSnapshot(first));
+        assertNotSame(evicted, registry.effectiveSnapshot(second));
+    }
 }
