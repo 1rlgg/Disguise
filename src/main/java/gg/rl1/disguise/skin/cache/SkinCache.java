@@ -47,8 +47,13 @@ public final class SkinCache {
     }
 
     public synchronized void put(UUID id, SkinProperty skin) {
-        entries.put(Objects.requireNonNull(id, "id"),
-                new Entry(Objects.requireNonNull(skin, "skin"), ticker.getAsLong()));
+        Objects.requireNonNull(id, "id");
+        Objects.requireNonNull(skin, "skin");
+        long now = ticker.getAsLong();
+        entries.put(id, new Entry(skin, now));
+        if (entries.size() > maxEntries) {
+            entries.entrySet().removeIf(entry -> now - entry.getValue().storedAt >= ttlNanos);
+        }
         if (entries.size() > maxEntries) {
             Iterator<Map.Entry<UUID, Entry>> iterator = entries.entrySet().iterator();
             iterator.next();
