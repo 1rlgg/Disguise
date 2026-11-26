@@ -170,6 +170,10 @@ public final class ObservableDisguiseService implements DisguiseService {
             delegate.clear();
             return;
         }
+        if (!((DisguiseSubjectCatalog) delegate).hasAnySubjects()) {
+            delegate.clear();
+            return;
+        }
         Collection<UUID> recipients = new ArrayList<UUID>(viewers.get());
         Map<UUID, Map<UUID, Disguise>> before =
                 new LinkedHashMap<UUID, Map<UUID, Disguise>>();
