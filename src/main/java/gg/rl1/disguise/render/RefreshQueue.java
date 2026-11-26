@@ -104,11 +104,18 @@ public final class RefreshQueue {
         if (limit < 1) throw new IllegalArgumentException("limit must be positive");
         if (size() == 0) return Collections.emptyList();
         List<Pair> out = new ArrayList<Pair>(Math.min(limit, size()));
-        while (out.size() < limit && size() > 0) {
-            Pair pair = urgent.isEmpty() ? takeFirst(normal) : takeFirst(urgent);
-            out.add(pair);
-        }
+        drain(urgent, out, limit);
+        drain(normal, out, limit);
         return out;
+    }
+
+    private static void drain(LinkedHashSet<Pair> entries, List<Pair> out, int limit) {
+        if (entries.isEmpty() || out.size() >= limit) return;
+        Iterator<Pair> iterator = entries.iterator();
+        while (iterator.hasNext() && out.size() < limit) {
+            out.add(iterator.next());
+            iterator.remove();
+        }
     }
 
     public void forget(UUID playerId) {
