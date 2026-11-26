@@ -32,4 +32,20 @@ public class SkinCacheTest {
         assertFalse(cache.get(player).isPresent());
         assertEquals(0, cache.size());
     }
+
+    @Test public void expiredRecentlyUsedEntryDoesNotDisplaceLiveEntry() {
+        AtomicLong now = new AtomicLong(0);
+        SkinCache cache = new SkinCache(2, 10, now::get);
+        UUID old = UUID.randomUUID(), live = UUID.randomUUID(), fresh = UUID.randomUUID();
+        cache.put(old, sample());
+        now.set(5);
+        cache.put(live, sample());
+        assertTrue(cache.get(old).isPresent());
+        now.set(10);
+        cache.put(fresh, sample());
+        assertFalse(cache.get(old).isPresent());
+        assertTrue(cache.get(live).isPresent());
+        assertTrue(cache.get(fresh).isPresent());
+        assertEquals(2, cache.size());
+    }
 }
