@@ -92,4 +92,31 @@ public class SkinRequestTrackerTest {
         tracker.finish(viewer, subject, old);
         assertTrue(tracker.isCurrent(viewer, subject, replacement));
     }
+
+    @Test public void supersededCallbacksAreCancelledWithoutCancellingReplacement() {
+        SkinRequestTracker tracker = new SkinRequestTracker(2);
+        UUID subject = UUID.randomUUID();
+        long first = tracker.begin(null, subject);
+        java.util.concurrent.CompletableFuture<Void> old = new java.util.concurrent.CompletableFuture<>();
+        tracker.attach(null, subject, first, old);
+        long next = tracker.begin(null, subject);
+        assertTrue(old.isCancelled());
+        java.util.concurrent.CompletableFuture<Void> current = new java.util.concurrent.CompletableFuture<>();
+        tracker.attach(null, subject, next, current);
+        tracker.finish(null, subject, first);
+        assertFalse(current.isDone());
+        tracker.clear();
+        assertTrue(current.isCancelled());
+    }
+
+    @Test public void lateAttachmentIsCancelledAfterTargetRemoval() {
+        SkinRequestTracker tracker = new SkinRequestTracker(1);
+        UUID subject = UUID.randomUUID();
+        long token = tracker.begin(null, subject);
+        tracker.cancel(null, subject);
+        java.util.concurrent.CompletableFuture<Void> callback = new java.util.concurrent.CompletableFuture<>();
+        tracker.attach(null, subject, token, callback);
+        assertTrue(callback.isCancelled());
+        assertEquals(0, tracker.size());
+    }
 }
