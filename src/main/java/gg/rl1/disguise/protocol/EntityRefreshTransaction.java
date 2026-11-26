@@ -81,7 +81,7 @@ public final class EntityRefreshTransaction {
         }
         if (changed) gate.recordSuccess();
         else tab.refresh();
-        return false;
+        return changed;
     }
 
     public static final class EntityCircuitOpenedException extends RuntimeException {
