@@ -112,8 +112,7 @@ public final class TabListIdentityRenderer implements Consumer<IdentityTransitio
 
     private boolean enqueueRestoration(UUID viewer, UUID subject) {
         if (deferred.size() > 0) deferred.cancel(viewer, subject);
-        return pending.offerRestoration(viewer, subject, evicted ->
-                deferred.offer(evicted.getViewer(), evicted.getSubject()));
+        return pending.offerRestoration(viewer, subject, deferred::offer);
     }
 
     @Override
@@ -264,8 +263,8 @@ public final class TabListIdentityRenderer implements Consumer<IdentityTransitio
                         if (enqueueRestoration(pair.getViewer(), pair.getSubject()) && manualRestore)
                             manualRestores.add(pair);
                     }
-                    else if (!pending.offer(pair.getViewer(), pair.getSubject())
-                            && !deferred.offer(pair.getViewer(), pair.getSubject())) {
+                    else if (!pending.offer(pair)
+                            && !deferred.offer(pair)) {
                         retries.succeeded(pair);
                         retry = false;
                     }
