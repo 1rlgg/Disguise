@@ -73,4 +73,25 @@ public class DeferredRefreshBacklogTest {
 
     @Test(expected = IllegalArgumentException.class)
     public void invalidCapacityIsRejected() { new DeferredRefreshBacklog(0); }
+    @Test public void duplicateInspectionIsBounded() {
+        UUID viewer = UUID.randomUUID();
+        RefreshQueue primary = new RefreshQueue(8);
+        DeferredRefreshBacklog backlog = new DeferredRefreshBacklog(8);
+        for (int i = 0; i < 8; i++) {
+            RefreshQueue.Pair pair = new RefreshQueue.Pair(viewer, new UUID(0, i));
+            primary.offer(pair);
+            backlog.offer(pair);
+        }
+        assertEquals(0, backlog.drainTo(primary, 3));
+        assertEquals(5, backlog.size());
+    }
+
+    @Test public void promotionRetainsOriginalPairInstance() {
+        RefreshQueue primary = new RefreshQueue(1);
+        DeferredRefreshBacklog backlog = new DeferredRefreshBacklog(1);
+        RefreshQueue.Pair pair = new RefreshQueue.Pair(UUID.randomUUID(), UUID.randomUUID());
+        assertTrue(backlog.offer(pair));
+        assertEquals(1, backlog.drainTo(primary, 1));
+        assertSame(pair, primary.poll(1).get(0));
+    }
 }
