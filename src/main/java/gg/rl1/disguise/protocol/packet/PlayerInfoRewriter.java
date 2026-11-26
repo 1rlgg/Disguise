@@ -39,8 +39,10 @@ public final class PlayerInfoRewriter {
         Map<String, Integer> aliasCounts = null;
         for (int index = 0; index < original.size(); index++) {
             PlayerInfoData info = original.get(index);
-            if (info == null || info.getProfile() == null) continue;
-            UUID subjectId = info.getProfile().getUUID();
+            if (info == null) continue;
+            WrappedGameProfile originalProfile = info.getProfile();
+            if (originalProfile == null) continue;
+            UUID subjectId = originalProfile.getUUID();
             if (subjectId == null || !mayRewrite(viewerId, subjectId)) continue;
             Optional<Disguise> wanted = disguises.getDisguiseFor(viewerId, subjectId);
             if (!wanted.isPresent()) continue;
@@ -64,7 +66,7 @@ public final class PlayerInfoRewriter {
             WrappedGameProfile profile = new WrappedGameProfile(subjectId, disguise.getName());
             Optional<SkinProperty> requestedSkin = disguise.getSkin();
             boolean signedSkin = requestedSkin.isPresent() && requestedSkin.get().isSigned();
-            for (Map.Entry<String, WrappedSignedProperty> entry : info.getProfile().getProperties().entries()) {
+            for (Map.Entry<String, WrappedSignedProperty> entry : originalProfile.getProperties().entries()) {
                 if (!signedSkin || !"textures".equals(entry.getKey())) {
                     profile.getProperties().put(entry.getKey(), entry.getValue());
                 }
