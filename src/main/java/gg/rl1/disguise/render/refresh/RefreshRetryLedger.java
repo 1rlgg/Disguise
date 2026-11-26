@@ -27,10 +27,10 @@ public final class RefreshRetryLedger {
 
     public boolean shouldRetry(RefreshQueue.Pair pair) {
         Objects.requireNonNull(pair, "pair");
-        Integer prior = failures.get(pair);
-        int count = prior == null ? 1 : prior + 1;
         if (terminal.contains(pair)) return false;
-        if (count > maxRetries) {
+        Integer prior = failures.get(pair);
+        int previous = prior == null ? 0 : prior;
+        if (previous >= maxRetries) {
             failures.remove(pair);
             exhausted++;
 
@@ -46,7 +46,7 @@ public final class RefreshRetryLedger {
             overflow++;
             return false;
         }
-        failures.put(pair, count);
+        failures.put(pair, previous + 1);
         return true;
     }
 
