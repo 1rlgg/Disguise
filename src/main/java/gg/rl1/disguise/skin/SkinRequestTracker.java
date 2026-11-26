@@ -26,6 +26,7 @@ public final class SkinRequestTracker {
     private final int capacity;
     private final Map<Target, Long> latest = new HashMap<Target, Long>();
     private long sequence;
+    private final Map<Target, java.util.concurrent.CompletableFuture<?>> callbacks = new HashMap<>();
 
     public SkinRequestTracker(int capacity) {
         if (capacity < 1) throw new IllegalArgumentException("capacity must be positive");
@@ -39,6 +40,7 @@ public final class SkinRequestTracker {
         }
         long token = ++sequence;
         latest.put(target, token);
+        cancelCallback(target);
         return token;
     }
 
@@ -48,18 +50,51 @@ public final class SkinRequestTracker {
     }
 
     public synchronized void finish(UUID viewer, UUID subject, long token) {
-        latest.remove(new Target(viewer, subject), token);
+        Target target = new Target(viewer, subject);
+        if (latest.remove(target, token)) callbacks.remove(target);
     }
 
     public synchronized boolean cancel(UUID viewer, UUID subject) {
-        return latest.remove(new Target(viewer, subject)) != null;
+        Target target = new Target(viewer, subject);
+        boolean removed = latest.remove(target) != null;
+        cancelCallback(target);
+        return removed;
     }
 
     public synchronized void forgetPlayer(UUID player) {
         Objects.requireNonNull(player, "player");
-        latest.keySet().removeIf(target -> player.equals(target.subject) || player.equals(target.viewer));
+        java.util.Iterator<Target> iterator = latest.keySet().iterator();
+        while (iterator.hasNext()) {
+            Target target = iterator.next();
+            if (player.equals(target.subject) || player.equals(target.viewer)) {
+                iterator.remove();
+                cancelCallback(target);
+            }
+        }
+    }
+
+    public synchronized void attach(UUID viewer, UUID subject, long token,
+                                    java.util.concurrent.CompletableFuture<?> callback) {
+        Objects.requireNonNull(callback, "callback");
+        Target target = new Target(viewer, subject);
+        Long current = latest.get(target);
+        if (current == null || current.longValue() != token) {
+            callback.cancel(false);
+            return;
+        }
+        cancelCallback(target);
+        callbacks.put(target, callback);
+    }
+
+    private void cancelCallback(Target target) {
+        java.util.concurrent.CompletableFuture<?> callback = callbacks.remove(target);
+        if (callback != null) callback.cancel(false);
     }
 
     public synchronized int size() { return latest.size(); }
-    public synchronized void clear() { latest.clear(); }
+    public synchronized void clear() {
+        latest.clear();
+        for (java.util.concurrent.CompletableFuture<?> callback : callbacks.values()) callback.cancel(false);
+        callbacks.clear();
+    }
 }

@@ -73,7 +73,7 @@ public final class SkinCommandHandler {
             reply(sender, ChatColor.RED + "Mojang texture lookup failed.");
             return;
         }
-        lookup.whenComplete((skin, error) -> {
+        java.util.concurrent.CompletableFuture<?> callback = lookup.whenComplete((skin, error) -> {
             if (!requests.isCurrent(viewerId, subjectId, token)) return;
             if (!plugin.isEnabled()) {
                 requests.finish(viewerId, subjectId, token);
@@ -95,6 +95,7 @@ public final class SkinCommandHandler {
                 }
             }
         });
+        requests.attach(viewerId, subjectId, token, callback);
     }
 
     private void completeLookup(CommandSender sender, UUID viewerId, UUID subjectId, UUID sourceId,
