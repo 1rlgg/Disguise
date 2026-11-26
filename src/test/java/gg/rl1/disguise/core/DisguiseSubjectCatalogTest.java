@@ -65,4 +65,16 @@ public class DisguiseSubjectCatalogTest {
     public void snapshotIsImmutable() {
         new InMemoryDisguiseService().subjectIds().add(UUID.randomUUID());
     }
+
+    @Test public void unrelatedPlayerCleanupDoesNotInvalidateSnapshot() {
+        InMemoryDisguiseService registry = new InMemoryDisguiseService();
+        UUID subject = UUID.randomUUID();
+        registry.setDisguise(new Disguise(subject, "AliasOne"));
+        Set<UUID> snapshot = registry.subjectIds();
+        registry.clearPlayer(UUID.randomUUID());
+        assertSame(snapshot, registry.subjectIds());
+        registry.clearPlayer(subject);
+        assertTrue(registry.subjectIds().isEmpty());
+        assertTrue(snapshot.contains(subject));
+    }
 }
