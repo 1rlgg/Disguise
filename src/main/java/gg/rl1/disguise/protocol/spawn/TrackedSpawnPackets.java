@@ -121,6 +121,22 @@ public final class TrackedSpawnPackets {
         }
     }
 
+    public synchronized int purgeExpired() {
+        long now = clock.getAsLong();
+        int removed = 0;
+        Iterator<Map.Entry<RefreshQueue.Pair, Snapshot>> iterator = cache.entrySet().iterator();
+        while (iterator.hasNext()) {
+            Map.Entry<RefreshQueue.Pair, Snapshot> entry = iterator.next();
+            if (now - entry.getValue().capturedAt >= ttlNanos) {
+                RefreshQueue.Pair key = entry.getKey();
+                iterator.remove();
+                unindex(key);
+                removed++;
+            }
+        }
+        return removed;
+    }
+
     public synchronized boolean isEmpty() { return cache.isEmpty(); }
     public synchronized int size() { return cache.size(); }
     public synchronized void clear() { cache.clear(); byViewer.clear(); }
