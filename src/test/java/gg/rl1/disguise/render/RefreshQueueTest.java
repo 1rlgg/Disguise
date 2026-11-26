@@ -197,4 +197,20 @@ public class RefreshQueueTest {
         assertEquals(1, queue.size());
         assertEquals(restore, queue.poll(1).get(0).getSubject());
     }
+    @Test public void cancellingEitherPriorityReleasesCapacityWithoutReordering() {
+        RefreshQueue queue = new RefreshQueue(3);
+        UUID viewer = UUID.randomUUID();
+        RefreshQueue.Pair cosmetic = new RefreshQueue.Pair(viewer, new UUID(0, 1));
+        RefreshQueue.Pair urgent = new RefreshQueue.Pair(viewer, new UUID(0, 2));
+        RefreshQueue.Pair retained = new RefreshQueue.Pair(viewer, new UUID(0, 3));
+        queue.offer(cosmetic);
+        queue.offerRestoration(viewer, urgent.getSubject());
+        queue.offer(retained);
+        assertTrue(queue.cancel(cosmetic));
+        assertTrue(queue.cancel(urgent));
+        assertFalse(queue.cancel(urgent));
+        assertEquals(0, queue.pendingRestorations());
+        assertEquals(1, queue.size());
+        assertSame(retained, queue.poll(3).get(0));
+    }
 }
