@@ -120,6 +120,11 @@ public final class RefreshQueue {
         }
     }
 
+    public boolean cancel(Pair pair) {
+        Objects.requireNonNull(pair, "pair");
+        return normal.remove(pair) | urgent.remove(pair);
+    }
+
     public void forget(UUID playerId) {
         Objects.requireNonNull(playerId, "playerId");
         normal.removeIf(pair -> pair.viewer.equals(playerId) || pair.subject.equals(playerId));

@@ -133,6 +133,11 @@ public final class TabListIdentityRenderer implements Consumer<IdentityTransitio
         retries.newTransition(changedPair);
 
         if (!transition.getAfter().isPresent()) {
+            if (state != null && !applied.contains(changedPair)) {
+                pending.cancel(changedPair);
+                deferred.cancel(changedPair);
+                return;
+            }
             enqueueRestoration(transition.getViewerId(), transition.getSubjectId());
         } else {
             enqueue(transition.getViewerId(), transition.getSubjectId());
