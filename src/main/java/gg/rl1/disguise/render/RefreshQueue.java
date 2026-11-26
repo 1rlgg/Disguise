@@ -54,7 +54,7 @@ public final class RefreshQueue {
         Objects.requireNonNull(pair, "pair");
         if (pair.viewer.equals(pair.subject)) return true;
         if (contains(pair)) return true;
-        if (size() == capacity) {
+        if (size() >= capacity) {
             droppedCosmetic++;
             return false;
         }
@@ -87,7 +87,9 @@ public final class RefreshQueue {
 
             Pair evicted = takeFirst(normal);
             droppedCosmetic++;
+            urgent.add(pair);
             onCosmeticEvicted.accept(evicted);
+            return true;
         }
         urgent.add(pair);
         return true;
