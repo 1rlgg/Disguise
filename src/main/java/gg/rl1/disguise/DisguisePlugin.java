@@ -179,11 +179,10 @@ public final class DisguisePlugin extends JavaPlugin implements Listener {
         BukkitTask pendingResync = resyncTasks.remove(id);
         if (pendingResync != null) pendingResync.cancel();
         if (skinCommands != null) skinCommands.forgetPlayer(id);
-        if (tabRenderer != null) tabRenderer.forget(id);
-        if (spawnPackets != null) spawnPackets.forget(id);
-
         if (disguises != null && isEnabled()) disguises.clearPlayer(id);
         else if (registry != null) registry.clearPlayer(id);
+        if (tabRenderer != null) tabRenderer.forget(id);
+        if (spawnPackets != null) spawnPackets.forget(id);
     }
 
     @Override public void onDisable() {
