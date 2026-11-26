@@ -72,7 +72,8 @@ public final class RestorationReconciler {
                                                       Collection<RefreshQueue.Pair> urgent) {
         Objects.requireNonNull(applied, "applied");
         Objects.requireNonNull(urgent, "urgent");
-        Set<RefreshQueue.Pair> eligible = new LinkedHashSet<RefreshQueue.Pair>(applied);
+        Collection<RefreshQueue.Pair> eligible = applied instanceof Set
+                ? applied : new LinkedHashSet<RefreshQueue.Pair>(applied);
         LinkedHashSet<RefreshQueue.Pair> result = new LinkedHashSet<RefreshQueue.Pair>();
         for (RefreshQueue.Pair pair : urgent) {
             if (result.size() >= limit) break;
