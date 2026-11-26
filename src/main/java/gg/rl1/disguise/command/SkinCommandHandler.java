@@ -127,6 +127,8 @@ public final class SkinCommandHandler {
         }
     }
 
+    public void cancel(UUID viewerId, UUID subjectId) { requests.cancel(viewerId, subjectId); }
+
     public void forgetPlayer(UUID playerId) { requests.forgetPlayer(playerId); }
     public void clearPending() { requests.clear(); }
 

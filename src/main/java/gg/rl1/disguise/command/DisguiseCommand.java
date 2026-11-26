@@ -143,6 +143,7 @@ public final class DisguiseCommand implements CommandExecutor {
             if (target != null) {
                 try {
                     disguises.setDisguise(new Disguise(target.getUniqueId(), args[2]));
+                    if (skins != null) skins.cancel(null, target.getUniqueId());
                     sender.sendMessage(ChatColor.GREEN + "Global alias updated. World appearance unchanged.");
                 } catch (IllegalArgumentException ex) { invalidAlias(sender); }
             }
@@ -150,8 +151,11 @@ public final class DisguiseCommand implements CommandExecutor {
         }
         if (args.length == 2 && args[0].equalsIgnoreCase("clear")) {
             Player target = find(sender, args[1]);
-            if (target != null) sender.sendMessage(disguises.removeDisguise(target.getUniqueId())
-                    ? ChatColor.GREEN + "Global alias removed." : ChatColor.YELLOW + "No global alias.");
+            if (target != null) {
+                if (skins != null) skins.cancel(null, target.getUniqueId());
+                sender.sendMessage(disguises.removeDisguise(target.getUniqueId())
+                        ? ChatColor.GREEN + "Global alias removed." : ChatColor.YELLOW + "No global alias.");
+            }
             return true;
         }
         if (args.length == 2 && args[0].equalsIgnoreCase("status")) {
@@ -171,9 +175,11 @@ public final class DisguiseCommand implements CommandExecutor {
             if (action.equals("view")) {
                 try {
                     disguises.setDisguiseFor(viewer.getUniqueId(), new Disguise(target.getUniqueId(), args[3]));
+                    if (skins != null) skins.cancel(viewer.getUniqueId(), target.getUniqueId());
                     sender.sendMessage(ChatColor.GREEN + "Viewer override updated. World appearance unchanged.");
                 } catch (IllegalArgumentException ex) { invalidAlias(sender); }
             } else if (action.equals("unview")) {
+                if (skins != null) skins.cancel(viewer.getUniqueId(), target.getUniqueId());
                 sender.sendMessage(disguises.removeDisguiseFor(viewer.getUniqueId(), target.getUniqueId())
                         ? ChatColor.GREEN + "Viewer override removed." : ChatColor.YELLOW + "No viewer override.");
             } else {
