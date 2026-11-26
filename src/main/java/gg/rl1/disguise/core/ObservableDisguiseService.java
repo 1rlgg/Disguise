@@ -55,6 +55,7 @@ public final class ObservableDisguiseService implements DisguiseService {
 
     private void update(UUID subject, Runnable mutation) {
         List<UUID> recipients = new ArrayList<UUID>(viewers.get());
+        recipients.removeIf(subject::equals);
         List<Disguise> previous = new ArrayList<Disguise>(recipients.size());
         for (UUID viewer : recipients)
             previous.add(delegate.getDisguiseFor(viewer, subject).orElse(null));
