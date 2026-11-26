@@ -4,6 +4,7 @@ import com.comphenix.protocol.events.PacketContainer;
 import gg.rl1.disguise.render.RefreshQueue;
 import java.util.Iterator;
 import java.util.HashSet;
+import java.util.HashMap;
 import java.util.Set;
 import java.util.LinkedHashMap;
 import java.util.Map;
@@ -32,6 +33,8 @@ public final class TrackedSpawnPackets {
     private final LinkedHashMap<RefreshQueue.Pair, Snapshot> cache =
             new LinkedHashMap<RefreshQueue.Pair, Snapshot>(16, 0.75f, true);
 
+    private final Map<UUID, Set<RefreshQueue.Pair>> byViewer = new HashMap<>();
+
     public TrackedSpawnPackets(int capacity) {
         this(capacity, TimeUnit.MINUTES.toNanos(2), System::nanoTime);
     }
@@ -54,11 +57,14 @@ public final class TrackedSpawnPackets {
         Objects.requireNonNull(subject, "subject");
         Objects.requireNonNull(packet, "packet");
         if (viewer.equals(subject)) return;
-        cache.put(new RefreshQueue.Pair(viewer, subject), new Snapshot(entityId, packet.deepClone(), clock.getAsLong()));
+        RefreshQueue.Pair key = new RefreshQueue.Pair(viewer, subject);
+        cache.put(key, new Snapshot(entityId, packet.deepClone(), clock.getAsLong()));
+        byViewer.computeIfAbsent(viewer, ignored -> new HashSet<>()).add(key);
         while (cache.size() > capacity) {
             Iterator<Map.Entry<RefreshQueue.Pair, Snapshot>> iterator = cache.entrySet().iterator();
-            iterator.next();
+            RefreshQueue.Pair evicted = iterator.next().getKey();
             iterator.remove();
+            unindex(evicted);
         }
     }
 
@@ -68,6 +74,7 @@ public final class TrackedSpawnPackets {
         if (entry == null) return null;
         if (expiredSince(entry.capturedAt, ttlNanos, clock)) {
             cache.remove(key);
+            unindex(key);
             return null;
         }
         return entry;
@@ -75,25 +82,46 @@ public final class TrackedSpawnPackets {
 
     public synchronized void destroy(UUID viewer, int[] entityIds) {
         Objects.requireNonNull(viewer, "viewer");
-        if (entityIds == null) return;
-        if (entityIds.length == 0) return;
-        if (entityIds.length == 1) {
-            int id = entityIds[0];
-            cache.entrySet().removeIf(entry -> entry.getKey().getViewer().equals(viewer)
-                    && entry.getValue().entityId == id);
-            return;
+        if (entityIds == null || entityIds.length == 0) return;
+        Set<RefreshQueue.Pair> keys = byViewer.get(viewer);
+        if (keys == null) return;
+        Set<Integer> ids = null;
+        if (entityIds.length > 1) {
+            ids = new HashSet<>();
+            for (int id : entityIds) ids.add(id);
         }
-        Set<Integer> ids = new HashSet<Integer>();
-        for (int id : entityIds) ids.add(id);
-        cache.entrySet().removeIf(entry -> entry.getKey().getViewer().equals(viewer)
-                && ids.contains(entry.getValue().entityId));
+        Iterator<RefreshQueue.Pair> iterator = keys.iterator();
+        while (iterator.hasNext()) {
+            RefreshQueue.Pair key = iterator.next();
+            Snapshot snapshot = cache.get(key);
+            if (snapshot != null && (ids == null ? snapshot.entityId == entityIds[0] : ids.contains(snapshot.entityId))) {
+                cache.remove(key);
+                iterator.remove();
+            }
+        }
+        if (keys.isEmpty()) byViewer.remove(viewer);
+    }
+
+    private void unindex(RefreshQueue.Pair key) {
+        Set<RefreshQueue.Pair> keys = byViewer.get(key.getViewer());
+        if (keys != null) {
+            keys.remove(key);
+            if (keys.isEmpty()) byViewer.remove(key.getViewer());
+        }
     }
 
     public synchronized void forget(UUID playerId) {
-        cache.keySet().removeIf(key -> key.getViewer().equals(playerId) || key.getSubject().equals(playerId));
+        Iterator<RefreshQueue.Pair> iterator = cache.keySet().iterator();
+        while (iterator.hasNext()) {
+            RefreshQueue.Pair key = iterator.next();
+            if (key.getViewer().equals(playerId) || key.getSubject().equals(playerId)) {
+                iterator.remove();
+                unindex(key);
+            }
+        }
     }
 
     public synchronized boolean isEmpty() { return cache.isEmpty(); }
     public synchronized int size() { return cache.size(); }
-    public synchronized void clear() { cache.clear(); }
+    public synchronized void clear() { cache.clear(); byViewer.clear(); }
 }
