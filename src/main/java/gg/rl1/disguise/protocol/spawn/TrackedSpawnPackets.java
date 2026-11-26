@@ -33,7 +33,7 @@ public final class TrackedSpawnPackets {
     private final LinkedHashMap<RefreshQueue.Pair, Snapshot> cache =
             new LinkedHashMap<RefreshQueue.Pair, Snapshot>(16, 0.75f, true);
 
-    private final Map<UUID, Set<RefreshQueue.Pair>> byViewer = new HashMap<>();
+    private final Map<UUID, Map<RefreshQueue.Pair, Integer>> byViewer = new HashMap<>();
 
     public TrackedSpawnPackets(int capacity) {
         this(capacity, TimeUnit.MINUTES.toNanos(2), System::nanoTime);
@@ -59,7 +59,7 @@ public final class TrackedSpawnPackets {
         if (viewer.equals(subject)) return;
         RefreshQueue.Pair key = new RefreshQueue.Pair(viewer, subject);
         cache.put(key, new Snapshot(entityId, packet.deepClone(), clock.getAsLong()));
-        byViewer.computeIfAbsent(viewer, ignored -> new HashSet<>()).add(key);
+        byViewer.computeIfAbsent(viewer, ignored -> new HashMap<>()).put(key, entityId);
         while (cache.size() > capacity) {
             Iterator<Map.Entry<RefreshQueue.Pair, Snapshot>> iterator = cache.entrySet().iterator();
             RefreshQueue.Pair evicted = iterator.next().getKey();
@@ -83,19 +83,19 @@ public final class TrackedSpawnPackets {
     public synchronized void destroy(UUID viewer, int[] entityIds) {
         Objects.requireNonNull(viewer, "viewer");
         if (entityIds == null || entityIds.length == 0) return;
-        Set<RefreshQueue.Pair> keys = byViewer.get(viewer);
+        Map<RefreshQueue.Pair, Integer> keys = byViewer.get(viewer);
         if (keys == null) return;
         Set<Integer> ids = null;
         if (entityIds.length > 1) {
             ids = new HashSet<>();
             for (int id : entityIds) ids.add(id);
         }
-        Iterator<RefreshQueue.Pair> iterator = keys.iterator();
+        Iterator<Map.Entry<RefreshQueue.Pair, Integer>> iterator = keys.entrySet().iterator();
         while (iterator.hasNext()) {
-            RefreshQueue.Pair key = iterator.next();
-            Snapshot snapshot = cache.get(key);
-            if (snapshot != null && (ids == null ? snapshot.entityId == entityIds[0] : ids.contains(snapshot.entityId))) {
-                cache.remove(key);
+            Map.Entry<RefreshQueue.Pair, Integer> entry = iterator.next();
+            int entityId = entry.getValue();
+            if (ids == null ? entityId == entityIds[0] : ids.contains(entityId)) {
+                cache.remove(entry.getKey());
                 iterator.remove();
             }
         }
@@ -103,7 +103,7 @@ public final class TrackedSpawnPackets {
     }
 
     private void unindex(RefreshQueue.Pair key) {
-        Set<RefreshQueue.Pair> keys = byViewer.get(key.getViewer());
+        Map<RefreshQueue.Pair, Integer> keys = byViewer.get(key.getViewer());
         if (keys != null) {
             keys.remove(key);
             if (keys.isEmpty()) byViewer.remove(key.getViewer());
