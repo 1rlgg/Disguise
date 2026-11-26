@@ -185,4 +185,16 @@ public class RefreshQueueTest {
         assertEquals(new UUID(0, 6), tail.get(1).getSubject());
         assertEquals(0, queue.size());
     }
+
+    @Test public void evictionCallbackCannotOverfillReservedRestorationSlot() {
+        RefreshQueue queue = new RefreshQueue(1);
+        UUID viewer = UUID.randomUUID(), first = UUID.randomUUID(), restore = UUID.randomUUID();
+        queue.offer(viewer, first);
+        assertTrue(queue.offerRestoration(viewer, restore, evicted -> {
+            assertEquals(1, queue.size());
+            assertFalse(queue.offer(evicted));
+        }));
+        assertEquals(1, queue.size());
+        assertEquals(restore, queue.poll(1).get(0).getSubject());
+    }
 }
