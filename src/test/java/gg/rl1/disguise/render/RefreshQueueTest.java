@@ -167,4 +167,22 @@ public class RefreshQueueTest {
 
     @Test(expected = IllegalArgumentException.class)
     public void rejectsInvalidCapacity() { new RefreshQueue(0); }
+
+    @Test public void batchCrossesPriorityTiersWithoutLosingOrder() {
+        RefreshQueue queue = new RefreshQueue(12);
+        UUID viewer = UUID.randomUUID();
+        for (int i = 1; i <= 6; i++) queue.offer(viewer, new UUID(0, i));
+        queue.offerRestoration(viewer, new UUID(0, 4));
+        queue.offerRestoration(viewer, new UUID(0, 2));
+        List<RefreshQueue.Pair> first = queue.poll(4);
+        long[] expected = {4, 2, 1, 3};
+        for (int i = 0; i < expected.length; i++)
+            assertEquals(new UUID(0, expected[i]), first.get(i).getSubject());
+        assertEquals(0, queue.pendingRestorations());
+        List<RefreshQueue.Pair> tail = queue.poll(4);
+        assertEquals(2, tail.size());
+        assertEquals(new UUID(0, 5), tail.get(0).getSubject());
+        assertEquals(new UUID(0, 6), tail.get(1).getSubject());
+        assertEquals(0, queue.size());
+    }
 }
