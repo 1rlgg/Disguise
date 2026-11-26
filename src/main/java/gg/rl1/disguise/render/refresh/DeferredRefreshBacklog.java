@@ -18,8 +18,12 @@ public final class DeferredRefreshBacklog {
     }
 
     public boolean offer(UUID viewer, UUID subject) {
-        RefreshQueue.Pair pair = new RefreshQueue.Pair(viewer, subject);
-        if (viewer.equals(subject) || deferred.contains(pair)) return true;
+        return offer(new RefreshQueue.Pair(viewer, subject));
+    }
+
+    public boolean offer(RefreshQueue.Pair pair) {
+        Objects.requireNonNull(pair, "pair");
+        if (pair.getViewer().equals(pair.getSubject()) || deferred.contains(pair)) return true;
         if (deferred.size() >= capacity) {
             overflow++;
             return false;
