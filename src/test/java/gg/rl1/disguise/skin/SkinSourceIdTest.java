@@ -18,4 +18,10 @@ public class SkinSourceIdTest {
         assertFalse(MojangSkinSource.parse("0000000000000000000000000000000X").isPresent());
         assertFalse(MojangSkinSource.parse("00000000-0000-0000-0000-000000000000extra").isPresent());
     }
+
+    @Test public void rejectsMisplacedSeparators() {
+        assertFalse(MojangSkinSource.parse("-00000000000000000000000000000000").isPresent());
+        assertFalse(MojangSkinSource.parse("0000000-00000-0000-0000-000000000000").isPresent());
+        assertFalse(MojangSkinSource.parse("00000000-0000-0000-0000-000000000000-").isPresent());
+    }
 }

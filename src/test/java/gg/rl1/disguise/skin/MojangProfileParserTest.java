@@ -42,4 +42,16 @@ public class MojangProfileParserTest {
         MojangSkinSource.signedTextures(id,
                 "{\"properties\":[{\"name\":\"textures\",\"value\":\"dGVzdA==\",\"signature\":\"c2ln\"}]}");
     }
+
+    @Test(expected = IOException.class)
+    public void rejectsNonStringTextureValue() throws Exception {
+        MojangSkinSource.signedTextures(id, response(id).replace("\"dGVzdA==\"", "[\"dGVzdA==\"]"));
+    }
+
+    @Test(expected = IOException.class)
+    public void rejectsOversizedDirectParserInput() throws Exception {
+        StringBuilder body = new StringBuilder(response(id));
+        for (int i = 0; i < 32769; i++) body.append(' ');
+        MojangSkinSource.signedTextures(id, body.toString());
+    }
 }
