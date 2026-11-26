@@ -80,7 +80,7 @@ public final class DisguisePlugin extends JavaPlugin implements Listener {
             tabRenderer = new TabListIdentityRenderer(tab, getLogger(), 2048, registry, world);
             refreshPlanner = new RefreshTargetPlanner(registry);
         }
-        Consumer<IdentityTransition> renderer = experimentalRefresh ? tabRenderer : transition -> getLogger().fine("Identity transition for viewer "
+        Consumer<IdentityTransition> renderer = experimentalRefresh ? tabRenderer : transition -> getLogger().fine(() -> "Identity transition for viewer "
                 + transition.getViewerId() + " subject " + transition.getSubjectId()
                 + ": " + (transition.getAfter().isPresent() ? "disguise requested" : "restore requested"));
         disguises = new ObservableDisguiseService(registry, renderer, this::onlineViewerIds, this::assertMainThread);
