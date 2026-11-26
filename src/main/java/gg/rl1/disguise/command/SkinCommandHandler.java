@@ -64,7 +64,16 @@ public final class SkinCommandHandler {
             return;
         }
         reply(sender, ChatColor.YELLOW + "Looking up signed Mojang textures asynchronously...");
-        skins.lookup(sourceId).whenComplete((skin, error) -> {
+        java.util.concurrent.CompletableFuture<gg.rl1.disguise.api.SkinProperty> lookup;
+        try {
+            lookup = skins.lookup(sourceId);
+        } catch (RuntimeException error) {
+            requests.finish(viewerId, subjectId, token);
+            plugin.getLogger().log(Level.WARNING, "Could not start signed texture lookup", error);
+            reply(sender, ChatColor.RED + "Mojang texture lookup failed.");
+            return;
+        }
+        lookup.whenComplete((skin, error) -> {
             if (!requests.isCurrent(viewerId, subjectId, token)) return;
             if (!plugin.isEnabled()) {
                 requests.finish(viewerId, subjectId, token);
