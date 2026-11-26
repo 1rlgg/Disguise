@@ -29,4 +29,23 @@ public class PacketRewriteBreakerTest {
     public void invalidThresholdIsRejected() {
         new PacketRewriteBreaker(0);
     }
+
+    @Test public void concurrentSuccessCannotReopenTrippedCircuit() throws Exception {
+        for (int round = 0; round < 50; round++) {
+            PacketRewriteBreaker breaker = new PacketRewriteBreaker(1);
+            java.util.concurrent.CountDownLatch start = new java.util.concurrent.CountDownLatch(1);
+            java.util.concurrent.FutureTask<Void> success = new java.util.concurrent.FutureTask<>(() -> {
+                start.await();
+                for (int i = 0; i < 200; i++) breaker.recordSuccess();
+                return null;
+            });
+            Thread worker = new Thread(success);
+            worker.start();
+            start.countDown();
+            breaker.recordFailure();
+            success.get(5, java.util.concurrent.TimeUnit.SECONDS);
+            assertTrue(breaker.isOpen());
+            assertEquals(1, breaker.failureCount());
+        }
+    }
 }
