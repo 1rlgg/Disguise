@@ -74,4 +74,20 @@ public class ObservableDisguiseCollisionTest {
         service.setDisguise(new Disguise(a, "SameAlias"));
         assertTrue(events.isEmpty());
     }
+    @Test public void departingSubjectResyncsOnlyRemainingViewerCollisions() {
+        UUID viewer = UUID.randomUUID(), departing = UUID.randomUUID(), remaining = UUID.randomUUID();
+        List<UUID> online = new ArrayList<>(Arrays.asList(viewer, departing, remaining));
+        List<IdentityTransition> events = new ArrayList<>();
+        ObservableDisguiseService service = new ObservableDisguiseService(
+                new InMemoryDisguiseService(), events::add, () -> online);
+        service.setDisguise(new Disguise(departing, "SharedAlias"));
+        service.setDisguise(new Disguise(remaining, "SharedAlias"));
+        events.clear();
+        online.remove(departing);
+        service.clearPlayer(departing);
+        assertTrue(events.stream().noneMatch(e -> e.getViewerId().equals(departing)));
+        assertTrue(events.stream().anyMatch(e -> e.getViewerId().equals(viewer)
+                && e.getSubjectId().equals(remaining) && e.getAfter().isPresent()));
+        assertFalse(service.getDisguise(departing).isPresent());
+    }
 }
