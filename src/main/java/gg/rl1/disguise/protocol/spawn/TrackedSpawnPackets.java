@@ -86,7 +86,7 @@ public final class TrackedSpawnPackets {
         Map<RefreshQueue.Pair, Integer> keys = byViewer.get(viewer);
         if (keys == null) return;
         Set<Integer> ids = null;
-        if (entityIds.length > 1) {
+        if (entityIds.length > 8) {
             ids = new HashSet<>();
             for (int id : entityIds) ids.add(id);
         }
@@ -94,12 +94,17 @@ public final class TrackedSpawnPackets {
         while (iterator.hasNext()) {
             Map.Entry<RefreshQueue.Pair, Integer> entry = iterator.next();
             int entityId = entry.getValue();
-            if (ids == null ? entityId == entityIds[0] : ids.contains(entityId)) {
+            if (ids == null ? containsEntity(entityIds, entityId) : ids.contains(entityId)) {
                 cache.remove(entry.getKey());
                 iterator.remove();
             }
         }
         if (keys.isEmpty()) byViewer.remove(viewer);
+    }
+
+    private static boolean containsEntity(int[] ids, int entityId) {
+        for (int id : ids) if (id == entityId) return true;
+        return false;
     }
 
     private void unindex(RefreshQueue.Pair key) {
