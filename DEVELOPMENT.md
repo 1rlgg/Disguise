@@ -1,6 +1,6 @@
 # Development policy and production-readiness gates
 
-This repository contains **FyreDisguise**, a Spigot 1.8.8 plugin targeting Minecraft 1.8.9 clients. It does not contain the rest of a PvP server (combat, anticheat, economy, proxy, etc.). Work here must not be represented as validation of those absent systems.
+This repository contains **Disguise**, a Spigot 1.8.8 plugin targeting Minecraft 1.8.9 clients. It does not contain the rest of a PvP server (combat, anticheat, economy, proxy, etc.). Work here must not be represented as validation of those absent systems.
 
 ## Autonomous change boundaries
 
@@ -31,7 +31,7 @@ Use a disposable Spigot 1.8.8 server with ProtocolLib 4.8.0 and two or more Mine
 - Death, respawn, teleport, world changes, vanish, spectator, mounts and sleeping players; reload/disable and restore original identity.
 - Correct skin and overhead name for each viewer, scoreboard team prefixes/suffixes, NPC and vanish-plugin behavior; no client-visible ghost or invisible entities.
 - Combat hit registration, reach, knockback, hitboxes, server TPS, packet bandwidth and memory during repeated skin/disguise commands under load.
-- Verify `/fyredisguise stats` counters do not conceal dropped refreshes or failed restores; compare network traces when necessary.
+- Verify `/disguise stats` counters do not conceal dropped refreshes or failed restores; compare network traces when necessary.
 
 Do not call this plugin production-ready until these tests pass with reproducible results.
 

@@ -1,0 +1,101 @@
+package gg.rl1.disguise.protocol.packet;
+
+import com.comphenix.protocol.PacketType;
+import com.comphenix.protocol.ProtocolManager;
+import com.comphenix.protocol.events.PacketContainer;
+import com.comphenix.protocol.wrappers.EnumWrappers;
+import com.comphenix.protocol.wrappers.PlayerInfoData;
+import com.comphenix.protocol.wrappers.WrappedChatComponent;
+import com.comphenix.protocol.wrappers.WrappedGameProfile;
+import gg.rl1.disguise.api.DisguiseService;
+import java.lang.reflect.InvocationTargetException;
+import java.util.Collections;
+import java.util.List;
+import java.util.Objects;
+import java.util.function.Supplier;
+import org.bukkit.entity.Player;
+
+public final class PlayerInfoTabRefresh {
+    private final ProtocolManager protocol;
+    private final PlayerInfoRewriter rewriter;
+
+    public PlayerInfoTabRefresh(ProtocolManager protocol, DisguiseService service) {
+        this.protocol = Objects.requireNonNull(protocol, "protocol");
+        this.rewriter = new PlayerInfoRewriter(Objects.requireNonNull(service, "service"));
+    }
+
+    public void refresh(Player viewer, Player subject) throws InvocationTargetException {
+        send(viewer, subject, false);
+    }
+
+    public void restoreOriginal(Player viewer, Player subject) throws InvocationTargetException {
+        send(viewer, subject, true);
+    }
+
+    private void send(Player viewer, Player subject, boolean originalOnly)
+            throws InvocationTargetException {
+        Objects.requireNonNull(viewer, "viewer");
+        Objects.requireNonNull(subject, "subject");
+        if (viewer.equals(subject) || !viewer.isOnline() || !subject.isOnline() || !viewer.canSee(subject)) return;
+
+        WrappedGameProfile realProfile = WrappedGameProfile.fromPlayer(subject);
+        PlayerInfoData original = new PlayerInfoData(realProfile, 0,
+                EnumWrappers.NativeGameMode.valueOf(subject.getGameMode().name()),
+                WrappedChatComponent.fromText(subject.getPlayerListName() == null
+                        ? subject.getName() : subject.getPlayerListName()));
+        List<PlayerInfoData> input = Collections.singletonList(original);
+        List<PlayerInfoData> output = originalOnly ? input
+                : rewriter.rewrite(viewer.getUniqueId(), input);
+
+        PacketContainer remove = makePacket(EnumWrappers.PlayerInfoAction.REMOVE_PLAYER, input);
+        PacketContainer add = makePacket(EnumWrappers.PlayerInfoAction.ADD_PLAYER, output);
+
+        executeLazy(remove, add,
+                () -> makePacket(EnumWrappers.PlayerInfoAction.ADD_PLAYER, input),
+                packet -> protocol.sendServerPacket(viewer, packet, false));
+    }
+
+    private PacketContainer makePacket(EnumWrappers.PlayerInfoAction action, List<PlayerInfoData> data) {
+        PacketContainer packet = protocol.createPacket(PacketType.Play.Server.PLAYER_INFO);
+        packet.getPlayerInfoAction().write(0, action);
+        packet.getPlayerInfoDataLists().write(0, data);
+        return packet;
+    }
+    public interface Sender<T> {
+        void send(T packet) throws InvocationTargetException;
+    }
+
+    public static <T> void execute(T remove, T aliasAdd, T originalAdd,
+                                   Sender<T> sender) throws InvocationTargetException {
+        Objects.requireNonNull(originalAdd, "originalAdd");
+        executeLazy(remove, aliasAdd, () -> originalAdd, sender);
+    }
+
+    public static <T> void executeLazy(T remove, T aliasAdd, Supplier<T> originalAdd,
+                                   Sender<T> sender) throws InvocationTargetException {
+        Objects.requireNonNull(remove, "remove");
+        Objects.requireNonNull(aliasAdd, "aliasAdd");
+        Objects.requireNonNull(originalAdd, "originalAdd");
+        Objects.requireNonNull(sender, "sender");
+        try {
+            sender.send(remove);
+            sender.send(aliasAdd);
+        } catch (InvocationTargetException | RuntimeException failure) {
+            attempt(sender, remove, failure);
+            try {
+                attempt(sender, Objects.requireNonNull(originalAdd.get(), "originalAdd.get()"), failure);
+            } catch (RuntimeException recovery) {
+                if (recovery != failure) failure.addSuppressed(recovery);
+            }
+            throw failure;
+        }
+    }
+
+    private static <T> void attempt(Sender<T> sender, T packet, Throwable primary) {
+        try {
+            sender.send(packet);
+        } catch (InvocationTargetException | RuntimeException recovery) {
+            if (recovery != primary) primary.addSuppressed(recovery);
+        }
+    }
+}

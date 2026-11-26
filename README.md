@@ -1,4 +1,4 @@
-# FyreDisguise
+# Disguise
 
 Experimental Java 8 / Spigot 1.8.8 player-disguise framework for Minecraft 1.8.9 clients.
 
@@ -98,10 +98,10 @@ The ordinary tab-list refresh path can still run. It does **not** make
 scoreboard overhead nametags display per-viewer disguise aliases; full
 team/nametag integration and live compatibility testing remain release blockers.
 
-Operators with `fyredisguise.admin` can run:
+Operators with `disguise.admin` can run:
 
 ```text
-/fyredisguise stats
+/disguise stats
 ```
 
 The command reports configured experimental refresh flags, queued tab/entity
@@ -168,7 +168,7 @@ the older request completes first. Request tokens are cleared on player
 disconnect and plugin disable. Global and per-viewer requests remain
 independent. UUID and signed texture checks still apply.
 
-`/fyredisguise stats` now additionally reports pending refresh retry
+`/disguise stats` now additionally reports pending refresh retry
 pairs, exhausted retry attempts and attempts rejected by the bounded retry
 ledger. These counts are **not** proof of actual client-side restoration;
 they are operator-visible signals to investigate. Observing repeated
@@ -196,7 +196,7 @@ per-UUID cooldown. The resolver keeps only UUID/timestamp entries (up to 512)
 and rejects repeated failed lookups immediately during that window instead
 of repeatedly consuming HTTP worker threads. A success clears its failure
 state. Normal successful skins retain their positive cache; this is not an
-invalid-texture cache. The admin `/fyredisguise stats` command now reports
+invalid-texture cache. The admin `/disguise stats` command now reports
 how many UUIDs are currently recorded in the failure cooldown table.
 
 The outgoing experimental entity renderer also avoids incorrectly clearing
@@ -220,7 +220,7 @@ bounded terminal quarantine and is not automatically requeued indefinitely;
 a new explicit identity transition clears that quarantine. Existing retry
 exhaustion and displaced-restore counters reveal these conditions.
 
-`/fyredisguise stats` additionally reports total refresh batches, processed
+`/disguise stats` additionally reports total refresh batches, processed
 viewer/subject pairs, and average/peak flush **elapsed wall time** in
 microseconds. These are diagnostic wall-clock measurements that include
 packet-send call duration, **not** a dedicated server CPU profiler, combat
@@ -269,7 +269,7 @@ discarded immediately. At most 32 deferred pairs are moved back to the main
 queue after each flush, while urgent restorations remain ahead of cosmetics.
 An explicit undisguise transition removes any obsolete deferred cosmetic pair.
 Both queues have bounded capacities, and overflow is observable through
-`/fyredisguise stats` (deferred pairs and deferred overflow counters).
+`/disguise stats` (deferred pairs and deferred overflow counters).
 
 This reduces lost alias changes during bursts but cannot guarantee eventual
 visual correctness on an untested client. If **both** backlogs saturate, the
@@ -357,7 +357,7 @@ visibility. Experimental rendering remains disabled by default.
 
 ## Administrator recovery and world-render inspection (development cycle 34)
 
-Use `/fyredisguise reset` (requires `fyredisguise.admin`) for a
+Use `/disguise reset` (requires `disguise.admin`) for a
 disposable test session emergency reset. This clears **both global aliases
 and all viewer-specific overrides**, invalidates outstanding asynchronous
 skin command tokens, and sends restoration transitions for online viewers
@@ -366,7 +366,7 @@ Bukkit entity identity, hitboxes, team membership, or visibility. Successful
 command completion is not proof that every connected client displayed its
 original skin.
 
-Use `/fyredisguise inspect <viewer> <player>` to see the requested alias
+Use `/disguise inspect <viewer> <player>` to see the requested alias
 and preliminary world-render eligibility: viewer visibility, shared world,
 spectator mode and whether a scoreboard team already owns the real player
 name. The command is read-only and does not change any team or packet.
@@ -377,7 +377,7 @@ Repeatedly failed packet refresh pairs now remain quarantined even if
 a delayed resync or deferred work item requeues them. Only an actual
 identity transition, explicit cleanup, or a successful delivery resets
 their quarantine. This bounds failure storms without hiding the exhaustion
-counter in `/fyredisguise stats`.
+counter in `/disguise stats`.
 
 Both experimental tab and world refresh modes remain disabled by default.
 Full scoreboard-compatible overhead nametags, real-client original-profile
@@ -391,16 +391,16 @@ viewer-specific alias is already owned by a scoreboard team, or if it collides
 with another online player's real username. The existing real-name team
 safeguard remains in place. These checks **do not implement overhead nametag
 disguising**: they conservatively skip the dangerous world refresh and leave
-tab-list-only handling as the fallback. `/fyredisguise inspect <viewer> <player>`
+tab-list-only handling as the fallback. `/disguise inspect <viewer> <player>`
 now exposes the same alias/team collision conditions.
 
 For a previously applied alias that has been removed but has not visibly
 restored on a disposable test server, an operator can request a targeted
 original-profile tab refresh via:
 
-`/fyredisguise restore <viewer> <player>`
+`/disguise restore <viewer> <player>`
 
-This command requires `fyredisguise.admin`, an online and visible pair,
+This command requires `disguise.admin`, an online and visible pair,
 a recorded previously applied alias, and **no currently desired disguise**.
 It reopens the pair's exhausted retry quarantine only for this explicit
 repair request and schedules restoration within normal packet budgets.
@@ -427,7 +427,7 @@ one viewer, and offline subjects.
 
 A collision blocks only the synthetic destroy/respawn route; the existing
 tab-list fallback remains available. The read-only
-`/fyredisguise inspect <viewer> <player>` reports this additional reason
+`/disguise inspect <viewer> <player>` reports this additional reason
 without modifying scoreboard teams. This is conservative, not a completed
 overhead nametag implementation.
 

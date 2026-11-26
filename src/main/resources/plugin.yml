@@ -1,15 +1,15 @@
-name: FyreDisguise
-main: dev.fyre.disguise.FyreDisguisePlugin
+name: Disguise
+main: gg.rl1.disguise.DisguisePlugin
 version: 0.1.0
 description: Experimental developer-facing disguise framework
-author: Fyre
+author: 1rl
 depend: [ProtocolLib]
 commands:
-  fyredisguise:
+  disguise:
     description: Administration and testing of global disguise state
-    usage: /fyredisguise <set|clear|status|reset|stats|inspect|restore>
-    permission: fyredisguise.admin
+    usage: /disguise <set|clear|status|reset|stats|inspect|restore>
+    permission: disguise.admin
 permissions:
-  fyredisguise.admin:
+  disguise.admin:
     description: Allows editing and viewing test aliases
     default: op

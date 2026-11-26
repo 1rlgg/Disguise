@@ -1,4 +1,4 @@
-# FyreDisguise release validation checklist
+# Disguise release validation checklist
 
 This is a **manual acceptance plan**, not a record of passed live tests.
 The current GitHub Actions pipeline compiles Java 8 code and runs JUnit tests,
@@ -35,7 +35,7 @@ but it does not launch a Spigot 1.8.8 server or Minecraft 1.8.9 clients.
 ## Load and failure testing
 
 - [ ] Repeat alias/undisguise bursts with 10, 25, 50 and 100+ simulated player pairs
-- [ ] Confirm `/fyredisguise stats` reports queue saturation and displaced restoration work
+- [ ] Confirm `/disguise stats` reports queue saturation and displaced restoration work
 - [ ] Exercise Mojang timeouts, concurrent requests, cancellation and executor saturation
 - [ ] Inject packet failures in a disposable environment and inspect recovery logs
 - [ ] Validate after 30+ minutes sustained load and several plugin restart cycles
@@ -90,13 +90,13 @@ On a disposable Java 8 / Spigot 1.8.8 server with ProtocolLib 4.8.0
 and two vanilla Minecraft 1.8.9 clients (A and B):
 
 1. Set `experimental-tab-refresh: true`, leaving entity refresh false.
-   Apply `/fyredisguise set A TestAlias` and confirm B's tab entry behavior.
-2. Run `/fyredisguise inspect B A` and record alias, visibility, world,
+   Apply `/disguise set A TestAlias` and confirm B's tab entry behavior.
+2. Run `/disguise inspect B A` and record alias, visibility, world,
    spectator and scoreboard-team ownership. The command must leave
    scoreboard membership and server visibility unchanged.
-3. Change A's alias, run `/fyredisguise clear A`, then repeat with a
+3. Change A's alias, run `/disguise clear A`, then repeat with a
    viewer-specific override. Verify B sees the real profile again.
-4. Run `/fyredisguise reset` while both global and viewer overrides and
+4. Run `/disguise reset` while both global and viewer overrides and
    texture lookups are pending. Confirm all registry aliases clear and
    no late texture callback reinstates them.
 5. Inject repeated packet-send failures until a pair is quarantined.
@@ -116,10 +116,10 @@ and two vanilla Minecraft 1.8.9 clients (A and B):
       online player and verify experimental world refresh refuses collision
       while the other player's entity remains intact
 - [ ] Assign the alias to a third-party scoreboard team and verify
-      `/fyredisguise inspect <viewer> <player>` reports the block without
+      `/disguise inspect <viewer> <player>` reports the block without
       modifying scoreboard ownership, nametag rules or invisibility
 - [ ] Apply then clear an alias; if B's tab still shows the alias,
-      run `/fyredisguise restore B A` and verify B sees A's authentic name
+      run `/disguise restore B A` and verify B sees A's authentic name
       and signed skin afterward
 - [ ] Confirm restore refuses a currently disguised pair and a viewer who
       cannot see the subject (vanish compatibility)
