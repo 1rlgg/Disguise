@@ -46,7 +46,10 @@ public final class DisguiseCommand implements CommandExecutor {
 
     private Player find(CommandSender sender, String name) {
         Player player = Bukkit.getPlayerExact(name);
-        if (player == null || !player.isOnline()) sender.sendMessage(ChatColor.RED + "Player must be online: " + name);
+        if (player == null || !player.isOnline()) {
+            sender.sendMessage(ChatColor.RED + "Player must be online: " + name);
+            return null;
+        }
         return player;
     }
 
