@@ -9,6 +9,7 @@ import com.comphenix.protocol.wrappers.WrappedSignedProperty;
 import gg.rl1.disguise.api.Disguise;
 import gg.rl1.disguise.api.DisguiseService;
 import gg.rl1.disguise.core.DisguiseSubjectCatalog;
+import gg.rl1.disguise.core.InMemoryDisguiseService;
 import gg.rl1.disguise.api.SkinProperty;
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -33,6 +34,9 @@ public final class PlayerInfoRewriter {
 
         if (disguises instanceof DisguiseSubjectCatalog
                 && !((DisguiseSubjectCatalog) disguises).hasAnySubjectsFor(viewerId)) return original;
+        Map<UUID, Disguise> snapshot = disguises instanceof InMemoryDisguiseService
+                ? ((InMemoryDisguiseService) disguises).effectiveSnapshot(viewerId) : null;
+        if (snapshot != null && snapshot.isEmpty()) return original;
         List<PlayerInfoData> result = null;
 
         Set<UUID> knownSubjects = null;
@@ -44,11 +48,20 @@ public final class PlayerInfoRewriter {
             if (originalProfile == null) continue;
             UUID subjectId = originalProfile.getUUID();
             if (subjectId == null || !mayRewrite(viewerId, subjectId)) continue;
-            Optional<Disguise> wanted = disguises.getDisguiseFor(viewerId, subjectId);
-            if (!wanted.isPresent()) continue;
-            Disguise disguise = wanted.get();
+            Disguise disguise = snapshot == null
+                    ? disguises.getDisguiseFor(viewerId, subjectId).orElse(null) : snapshot.get(subjectId);
+            if (disguise == null) continue;
 
-            if (disguises instanceof DisguiseSubjectCatalog) {
+            if (snapshot != null) {
+                if (aliasCounts == null) {
+                    aliasCounts = new HashMap<String, Integer>();
+                    for (Disguise active : snapshot.values()) {
+                        String alias = active.getName().toLowerCase(Locale.ROOT);
+                        aliasCounts.merge(alias, 1, Integer::sum);
+                    }
+                }
+                if (aliasCounts.get(disguise.getName().toLowerCase(Locale.ROOT)) > 1) continue;
+            } else if (disguises instanceof DisguiseSubjectCatalog) {
                 if (knownSubjects == null)
                     knownSubjects = ((DisguiseSubjectCatalog) disguises).subjectIds();
                 boolean collision;
