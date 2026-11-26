@@ -123,12 +123,12 @@ public final class AsyncSkinService implements AutoCloseable {
         synchronized (this) {
             if (closed) return;
             closed = true;
-            executor.shutdownNow();
             pending = new ArrayList<CompletableFuture<SkinProperty>>(inFlight.values());
             inFlight.clear();
             cache.clear();
             failures.clear();
         }
+        executor.shutdownNow();
         for (CompletableFuture<SkinProperty> future : pending) {
             future.completeExceptionally(new IllegalStateException("Skin service closed"));
         }
