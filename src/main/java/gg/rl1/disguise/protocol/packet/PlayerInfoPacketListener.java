@@ -40,8 +40,8 @@ public final class PlayerInfoPacketListener extends PacketAdapter {
 
             if (updated != existing) {
                 packet.getPlayerInfoDataLists().write(0, updated);
-                breaker.recordSuccess();
             }
+            breaker.recordSuccess();
         } catch (RuntimeException ex) {
             boolean nowDisabled = breaker.recordFailure();
             if (firstErrorLogged.compareAndSet(false, true)) {
