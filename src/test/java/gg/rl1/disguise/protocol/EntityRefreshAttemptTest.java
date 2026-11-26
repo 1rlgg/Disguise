@@ -88,4 +88,17 @@ public class EntityRefreshAttemptTest {
         attempt.deliver(() -> true, () -> fail("Unneeded tab refresh"));
         assertEquals(0, gate.failureCount());
     }
+    @Test public void returnsTrueOnlyWhenWorldRefreshSucceeds() throws Exception {
+        PacketRewriteBreaker gate = new PacketRewriteBreaker(1);
+        EntityRefreshTransaction attempt = new EntityRefreshTransaction(gate);
+        AtomicInteger tabs = new AtomicInteger();
+        assertTrue(attempt.deliver(() -> true, tabs::incrementAndGet));
+        assertEquals(0, tabs.get());
+        assertFalse(attempt.deliver(() -> false, tabs::incrementAndGet));
+        assertEquals(1, tabs.get());
+        gate.recordFailure();
+        assertFalse(attempt.deliver(() -> { fail("World circuit is open"); return true; },
+                tabs::incrementAndGet));
+        assertEquals(2, tabs.get());
+    }
 }
