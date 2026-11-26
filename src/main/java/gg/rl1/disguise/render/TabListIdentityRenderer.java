@@ -230,6 +230,7 @@ public final class TabListIdentityRenderer implements Consumer<IdentityTransitio
         int batchSize = RefreshPolicy.batchSize(maxPerTick,
                 entityRefresh != null && !entityGate.isOpen());
         long started = System.nanoTime();
+        if (pending.size() == 0) deferred.drainTo(pending, batchSize);
         List<RefreshQueue.Pair> work = pending.poll(batchSize);
         for (RefreshQueue.Pair pair : work) {
             boolean manualRestore = manualRestores.remove(pair);
