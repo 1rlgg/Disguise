@@ -52,6 +52,16 @@ public final class InMemoryDisguiseService implements DisguiseService, DisguiseS
         return cachedSubjectIds;
     }
 
+    public synchronized Map<UUID, Disguise> effectiveSnapshot(UUID viewerId) {
+        Objects.requireNonNull(viewerId, "viewerId");
+        Map<UUID, Disguise> overrides = perViewer.get(viewerId);
+        if (global.isEmpty() && overrides == null) return Collections.emptyMap();
+        Map<UUID, Disguise> effective = new HashMap<UUID, Disguise>(global);
+        if (overrides != null) effective.putAll(overrides);
+        effective.remove(viewerId);
+        return Collections.unmodifiableMap(effective);
+    }
+
     @Override public synchronized void clear() {
         global.clear();
         perViewer.clear();
