@@ -95,7 +95,6 @@ public final class AsyncSkinService implements AutoCloseable {
         }
         boolean stopped;
         synchronized (this) {
-            inFlight.remove(id, shared);
             stopped = closed;
             if (!stopped && failure == null) {
                 cache.put(id, skin);
@@ -108,6 +107,9 @@ public final class AsyncSkinService implements AutoCloseable {
         if (stopped) shared.completeExceptionally(new IllegalStateException("Skin service closed"));
         else if (failure != null) shared.completeExceptionally(failure);
         else shared.complete(skin);
+        synchronized (this) {
+            inFlight.remove(id, shared);
+        }
     }
 
     private static <T> CompletableFuture<T> failed(Throwable failure) {
