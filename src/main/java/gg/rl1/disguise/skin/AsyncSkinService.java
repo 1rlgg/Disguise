@@ -81,6 +81,9 @@ public final class AsyncSkinService implements AutoCloseable {
     }
 
     private void resolve(UUID id, CompletableFuture<SkinProperty> shared) {
+        synchronized (this) {
+            if (closed || inFlight.get(id) != shared) return;
+        }
         SkinProperty skin = null;
         Throwable failure = null;
         try {
