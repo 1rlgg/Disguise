@@ -159,7 +159,8 @@ public final class DisguisePlugin extends JavaPlugin implements Listener {
     }
     @EventHandler(priority = EventPriority.MONITOR, ignoreCancelled = true)
     public void onTeleport(PlayerTeleportEvent event) {
-        if (event.getTo() != null && EntityRefreshPolicy.invalidates(
+        if (spawnPackets == null || event.getTo() == null) return;
+        if (EntityRefreshPolicy.invalidates(
                 !event.getFrom().getWorld().equals(event.getTo().getWorld()),
                 event.getFrom().getX(), event.getFrom().getY(), event.getFrom().getZ(),
                 event.getTo().getX(), event.getTo().getY(), event.getTo().getZ())) {
