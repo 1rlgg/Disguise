@@ -36,6 +36,15 @@ public final class RestorationReconciler {
 
         int inspected = Math.min(maxInspect, applied.size());
         int from = offset % applied.size();
+        if (applied instanceof java.util.RandomAccess && applied instanceof List) {
+            List<RefreshQueue.Pair> indexed = (List<RefreshQueue.Pair>) applied;
+            for (int i = 0; i < inspected; i++) {
+                RefreshQueue.Pair pair = indexed.get((from + i) % indexed.size());
+                if (needsRestore.test(pair)) restore.add(pair);
+            }
+            offset = (from + inspected) % applied.size();
+            return restore;
+        }
         Iterator<RefreshQueue.Pair> iter = applied.iterator();
         for (int skip = 0; skip < from; skip++) iter.next();
         for (int i = 0; i < inspected; i++) {

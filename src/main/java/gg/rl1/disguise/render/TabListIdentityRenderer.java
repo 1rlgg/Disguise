@@ -196,7 +196,7 @@ public final class TabListIdentityRenderer implements Consumer<IdentityTransitio
         if (state != null && applied.size() > 0) {
             if (++ticksSinceReconcile >= 20) {
                 ticksSinceReconcile = 0;
-                for (RefreshQueue.Pair pair : reconciler.scan(applied.snapshot(),
+                for (RefreshQueue.Pair pair : reconciler.scan(applied.scanSnapshot(),
                     candidate -> {
                         if (retries.suppressed(candidate)) return false;
                         Player viewer = Bukkit.getPlayer(candidate.getViewer());

@@ -12,13 +12,14 @@ import java.util.UUID;
 public final class AppliedTabEntries {
     private final Set<RefreshQueue.Pair> applied = new LinkedHashSet<RefreshQueue.Pair>();
     private Set<RefreshQueue.Pair> cachedSnapshot;
+    private java.util.List<RefreshQueue.Pair> cachedScan;
 
     public void applied(UUID viewer, UUID subject) {
         applied(new RefreshQueue.Pair(viewer, subject));
     }
 
     public void applied(RefreshQueue.Pair pair) {
-        if (applied.add(Objects.requireNonNull(pair, "pair"))) cachedSnapshot = null;
+        if (applied.add(Objects.requireNonNull(pair, "pair"))) { cachedSnapshot = null; cachedScan = null; }
     }
 
     public boolean contains(UUID viewer, UUID subject) {
@@ -34,13 +35,13 @@ public final class AppliedTabEntries {
     }
 
     public void restored(RefreshQueue.Pair pair) {
-        if (applied.remove(Objects.requireNonNull(pair, "pair"))) cachedSnapshot = null;
+        if (applied.remove(Objects.requireNonNull(pair, "pair"))) { cachedSnapshot = null; cachedScan = null; }
     }
 
     public void forget(UUID playerId) {
         Objects.requireNonNull(playerId, "playerId");
         if (applied.removeIf(pair -> pair.getViewer().equals(playerId) || pair.getSubject().equals(playerId))) {
-            cachedSnapshot = null;
+            { cachedSnapshot = null; cachedScan = null; }
         }
     }
 
@@ -52,6 +53,11 @@ public final class AppliedTabEntries {
         return cachedSnapshot;
     }
 
+    public java.util.List<RefreshQueue.Pair> scanSnapshot() {
+        if (cachedScan == null) cachedScan = Collections.unmodifiableList(new ArrayList<RefreshQueue.Pair>(applied));
+        return cachedScan;
+    }
+
     public int size() { return applied.size(); }
-    public void clear() { applied.clear(); cachedSnapshot = null; }
+    public void clear() { applied.clear(); { cachedSnapshot = null; cachedScan = null; } }
 }
