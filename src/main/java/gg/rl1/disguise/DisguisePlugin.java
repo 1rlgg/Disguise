@@ -186,6 +186,10 @@ public final class DisguisePlugin extends JavaPlugin implements Listener {
         for (BukkitTask task : resyncTasks.values()) task.cancel();
         resyncTasks.clear();
         onlineViewers.clear();
+        if (skinCommands != null) skinCommands.clearPending();
+        skinCommands = null;
+        if (skins != null) skins.close();
+        skins = null;
         if (registry != null) registry.clear();
         if (tabRenderer != null) {
             tabRenderer.restoreApplied();
@@ -197,10 +201,6 @@ public final class DisguisePlugin extends JavaPlugin implements Listener {
         packets = null;
         if (spawnPackets != null) spawnPackets.clear();
         spawnPackets = null;
-        if (skinCommands != null) skinCommands.clearPending();
-        skinCommands = null;
-        if (skins != null) skins.close();
-        skins = null;
         disguises = null;
         registry = null;
     }
