@@ -36,7 +36,7 @@ public final class InMemoryDisguiseService implements DisguiseService, DisguiseS
         if (removed) {
             cachedSubjectIds = null;
             effectiveSnapshots.clear();
-        packetSnapshots.clear();
+            packetSnapshots.clear();
         }
         return removed;
     }
@@ -84,7 +84,7 @@ public final class InMemoryDisguiseService implements DisguiseService, DisguiseS
 
     public synchronized Map<UUID, Disguise> packetSnapshot(UUID viewerId) {
         Map<UUID, Disguise> effective = effectiveSnapshot(viewerId);
-        if (effective.isEmpty()) return effective;
+        if (effective.size() <= 1) return effective;
         Map<UUID, Disguise> cached = packetSnapshots.get(viewerId);
         if (cached != null) return cached;
         Set<String> seen = new HashSet<>();
@@ -122,7 +122,7 @@ public final class InMemoryDisguiseService implements DisguiseService, DisguiseS
         }
         if (overrides.put(disguise.getPlayerId(), disguise) == null) cachedSubjectIds = null;
         effectiveSnapshots.remove(viewerId);
-            packetSnapshots.remove(viewerId);
+        packetSnapshots.remove(viewerId);
     }
 
     @Override public synchronized Optional<Disguise> getDisguiseFor(UUID viewerId, UUID playerId) {
