@@ -75,6 +75,8 @@ public final class DisguisePlugin extends JavaPlugin implements Listener {
             if (entityRefresh) {
                 spawnPackets = new TrackedSpawnPackets(4096);
                 packets.addPacketListener(new SpawnPacketObserver(this, spawnPackets));
+                TrackedSpawnPackets tracked = spawnPackets;
+                Bukkit.getScheduler().runTaskTimer(this, tracked::purgeExpired, 1200L, 1200L);
                 world = new LegacyEntityRefresh(packets, tab, spawnPackets, registry);
             }
             tabRenderer = new TabListIdentityRenderer(tab, getLogger(), 2048, registry, world);
