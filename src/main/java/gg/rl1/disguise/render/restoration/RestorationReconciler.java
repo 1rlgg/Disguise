@@ -28,11 +28,11 @@ public final class RestorationReconciler {
         Objects.requireNonNull(applied, "applied");
         Objects.requireNonNull(needsRestore, "needsRestore");
         if (maxInspect < 1) throw new IllegalArgumentException("maxInspect must be positive");
-        List<RefreshQueue.Pair> restore = new ArrayList<RefreshQueue.Pair>();
         if (applied.isEmpty()) {
             offset = 0;
-            return restore;
+            return Collections.emptyList();
         }
+        List<RefreshQueue.Pair> restore = new ArrayList<RefreshQueue.Pair>();
 
         int inspected = Math.min(maxInspect, applied.size());
         int from = offset % applied.size();
