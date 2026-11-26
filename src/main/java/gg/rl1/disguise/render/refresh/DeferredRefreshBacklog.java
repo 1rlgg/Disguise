@@ -34,6 +34,7 @@ public final class DeferredRefreshBacklog {
     public int drainTo(RefreshQueue queue, int maxPerTick) {
         Objects.requireNonNull(queue, "queue");
         if (maxPerTick < 1) throw new IllegalArgumentException("maxPerTick must be positive");
+        if (deferred.isEmpty()) return 0;
         int moved = 0;
         int inspected = 0;
         Iterator<RefreshQueue.Pair> iter = deferred.iterator();
