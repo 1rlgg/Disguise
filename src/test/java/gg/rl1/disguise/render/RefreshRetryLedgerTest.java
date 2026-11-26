@@ -69,4 +69,15 @@ public class RefreshRetryLedgerTest {
 
     @Test(expected = IllegalArgumentException.class)
     public void invalidCapacityRejected() { new RefreshRetryLedger(1, 0); }
+
+    @Test public void zeroRetryBudgetCountsEachExhaustedTransitionOnce() {
+        RefreshRetryLedger ledger = new RefreshRetryLedger(0, 4);
+        RefreshQueue.Pair pair = pair();
+        for (int i = 0; i < 100; i++) assertFalse(ledger.shouldRetry(pair));
+        assertEquals(1, ledger.exhaustedCount());
+        assertEquals(0, ledger.size());
+        ledger.newTransition(pair);
+        assertFalse(ledger.shouldRetry(pair));
+        assertEquals(2, ledger.exhaustedCount());
+    }
 }
