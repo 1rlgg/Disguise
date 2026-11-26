@@ -260,8 +260,12 @@ public final class TabListIdentityRenderer implements Consumer<IdentityTransitio
 
                     boolean restore = state != null && !currentDisguise;
                     if (restore) {
-                        if (enqueueRestoration(pair.getViewer(), pair.getSubject()) && manualRestore)
-                            manualRestores.add(pair);
+                        boolean admitted = enqueueRestoration(pair.getViewer(), pair.getSubject());
+                        if (admitted && manualRestore) manualRestores.add(pair);
+                        if (!admitted) {
+                            retries.succeeded(pair);
+                            retry = false;
+                        }
                     }
                     else if (!pending.offer(pair)
                             && !deferred.offer(pair)) {
