@@ -51,7 +51,11 @@ public final class DeferredRefreshBacklog {
     }
 
     public boolean cancel(UUID viewer, UUID subject) {
-        return deferred.remove(new RefreshQueue.Pair(viewer, subject));
+        return cancel(new RefreshQueue.Pair(viewer, subject));
+    }
+
+    public boolean cancel(RefreshQueue.Pair pair) {
+        return deferred.remove(Objects.requireNonNull(pair, "pair"));
     }
 
     public void forget(UUID playerId) {
