@@ -85,6 +85,13 @@ public final class MojangSkinSource implements SkinSource {
 
     public static Optional<UUID> parse(String input) {
         Objects.requireNonNull(input, "input");
+        if (input.length() != 32 && input.length() != 36) return Optional.empty();
+        if (input.length() == 36) {
+            for (int i = 0; i < input.length(); i++) {
+                boolean separator = i == 8 || i == 13 || i == 18 || i == 23;
+                if ((input.charAt(i) == '-') != separator) return Optional.empty();
+            }
+        } else if (input.indexOf('-') >= 0) return Optional.empty();
         StringBuilder raw = new StringBuilder(32);
         for (int i = 0; i < input.length(); i++) {
             char value = input.charAt(i);
