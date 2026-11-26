@@ -60,9 +60,10 @@ public final class MojangSkinSource implements SkinSource {
     public static SkinProperty signedTextures(UUID requested, String json) throws IOException {
         Objects.requireNonNull(requested, "requested");
         Objects.requireNonNull(json, "json");
+        if (json.length() > MAX_BODY_CHARS) throw new IOException("Skin response too large");
         try {
             JsonObject root = new JsonParser().parse(json).getAsJsonObject();
-            if (!root.has("id") || !compact(requested)
+            if (!isString(root.get("id")) || !compact(requested)
                     .equalsIgnoreCase(root.get("id").getAsString())) {
                 throw new IOException("Mojang profile ID did not match the requested UUID");
             }
@@ -70,14 +71,14 @@ public final class MojangSkinSource implements SkinSource {
             if (properties == null) throw new IOException("Mojang profile has no properties");
             for (JsonElement element : properties) {
                 JsonObject property = element.getAsJsonObject();
-                if (property.has("name") && "textures".equals(property.get("name").getAsString())
-                        && property.has("value") && property.has("signature")) {
+                if (isString(property.get("name")) && "textures".equals(property.get("name").getAsString())
+                        && isString(property.get("value")) && isString(property.get("signature"))) {
                     return new SkinProperty(property.get("value").getAsString(),
                             property.get("signature").getAsString());
                 }
             }
             throw new IOException("Mojang profile has no signed textures property");
-        } catch (IllegalStateException | IllegalArgumentException | NullPointerException exception) {
+        } catch (RuntimeException exception) {
             throw new IOException("Malformed Mojang session profile", exception);
         }
     }
@@ -99,6 +100,10 @@ public final class MojangSkinSource implements SkinSource {
         String formatted = value.substring(0, 8) + "-" + value.substring(8, 12) + "-"
                 + value.substring(12, 16) + "-" + value.substring(16, 20) + "-" + value.substring(20);
         return Optional.of(UUID.fromString(formatted));
+    }
+
+    private static boolean isString(JsonElement value) {
+        return value != null && value.isJsonPrimitive() && value.getAsJsonPrimitive().isString();
     }
 
     private static String compact(UUID id) {
