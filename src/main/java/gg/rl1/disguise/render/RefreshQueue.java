@@ -3,11 +3,9 @@ package gg.rl1.disguise.render;
 import java.util.Iterator;
 import java.util.LinkedHashSet;
 import java.util.ArrayList;
-import java.util.HashSet;
 import java.util.Collections;
 import java.util.List;
 import java.util.Objects;
-import java.util.Set;
 import java.util.UUID;
 import java.util.function.Consumer;
 
@@ -37,7 +35,6 @@ public final class RefreshQueue {
     private final int capacity;
     private final LinkedHashSet<Pair> normal = new LinkedHashSet<Pair>();
     private final LinkedHashSet<Pair> urgent = new LinkedHashSet<Pair>();
-    private final Set<Pair> queued = new HashSet<Pair>();
     private long droppedCosmetic;
     private long droppedRestoration;
 
@@ -56,12 +53,11 @@ public final class RefreshQueue {
     public boolean offer(Pair pair) {
         Objects.requireNonNull(pair, "pair");
         if (pair.viewer.equals(pair.subject)) return true;
-        if (queued.contains(pair)) return true;
+        if (contains(pair)) return true;
         if (size() == capacity) {
             droppedCosmetic++;
             return false;
         }
-        queued.add(pair);
         normal.add(pair);
         return true;
     }
@@ -78,8 +74,7 @@ public final class RefreshQueue {
         if (viewer.equals(subject)) return true;
         Pair pair = new Pair(viewer, subject);
         if (urgent.contains(pair)) return true;
-        if (queued.contains(pair)) {
-            normal.remove(pair);
+        if (normal.remove(pair)) {
             urgent.add(pair);
                         return true;
         }
@@ -91,12 +86,10 @@ public final class RefreshQueue {
             }
 
             Pair evicted = takeFirst(normal);
-            queued.remove(evicted);
             droppedCosmetic++;
             onCosmeticEvicted.accept(evicted);
         }
         urgent.add(pair);
-                queued.add(pair);
         return true;
     }
 
@@ -109,11 +102,10 @@ public final class RefreshQueue {
 
     public List<Pair> poll(int limit) {
         if (limit < 1) throw new IllegalArgumentException("limit must be positive");
-        if (queued.isEmpty()) return Collections.emptyList();
-        List<Pair> out = new ArrayList<Pair>(Math.min(limit, queued.size()));
-        while (out.size() < limit && !queued.isEmpty()) {
+        if (size() == 0) return Collections.emptyList();
+        List<Pair> out = new ArrayList<Pair>(Math.min(limit, size()));
+        while (out.size() < limit && size() > 0) {
             Pair pair = urgent.isEmpty() ? takeFirst(normal) : takeFirst(urgent);
-                        queued.remove(pair);
             out.add(pair);
         }
         return out;
@@ -123,17 +115,17 @@ public final class RefreshQueue {
         Objects.requireNonNull(playerId, "playerId");
         normal.removeIf(pair -> pair.viewer.equals(playerId) || pair.subject.equals(playerId));
         urgent.removeIf(pair -> pair.viewer.equals(playerId) || pair.subject.equals(playerId));
-                queued.removeIf(pair -> pair.viewer.equals(playerId) || pair.subject.equals(playerId));
     }
 
-    public int size() { return queued.size(); }
-    public boolean hasFreeSlot() { return queued.size() < capacity; }
+    public int size() { return normal.size() + urgent.size(); }
+    public boolean hasFreeSlot() { return size() < capacity; }
     public boolean contains(UUID viewer, UUID subject) {
         return contains(new Pair(viewer, subject));
     }
 
     public boolean contains(Pair pair) {
-        return queued.contains(Objects.requireNonNull(pair, "pair"));
+        Objects.requireNonNull(pair, "pair");
+        return normal.contains(pair) || urgent.contains(pair);
     }
     public int pendingRestorations() { return urgent.size(); }
 
@@ -143,7 +135,7 @@ public final class RefreshQueue {
     public long droppedCosmetic() { return droppedCosmetic; }
     public long droppedRestoration() { return droppedRestoration; }
     public void clear() {
-        normal.clear(); urgent.clear(); queued.clear();
+        normal.clear(); urgent.clear();
         droppedCosmetic = 0; droppedRestoration = 0;
     }
 }
