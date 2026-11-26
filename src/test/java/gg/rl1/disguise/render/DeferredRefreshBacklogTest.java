@@ -94,4 +94,22 @@ public class DeferredRefreshBacklogTest {
         assertEquals(1, backlog.drainTo(primary, 1));
         assertSame(pair, primary.poll(1).get(0));
     }
+
+    @Test public void cancellationByPairReleasesCapacityWithoutReorderingRemainingWork() {
+        DeferredRefreshBacklog backlog = new DeferredRefreshBacklog(2);
+        RefreshQueue queue = new RefreshQueue(2);
+        UUID viewer = UUID.randomUUID();
+        RefreshQueue.Pair first = new RefreshQueue.Pair(viewer, UUID.randomUUID());
+        RefreshQueue.Pair second = new RefreshQueue.Pair(viewer, UUID.randomUUID());
+        RefreshQueue.Pair third = new RefreshQueue.Pair(viewer, UUID.randomUUID());
+        assertTrue(backlog.offer(first));
+        assertTrue(backlog.offer(second));
+        assertFalse(backlog.offer(third));
+        assertTrue(backlog.cancel(first));
+        assertTrue(backlog.offer(third));
+        assertEquals(2, backlog.drainTo(queue, 2));
+        java.util.List<RefreshQueue.Pair> pairs = queue.poll(2);
+        assertSame(second, pairs.get(0));
+        assertSame(third, pairs.get(1));
+    }
 }
