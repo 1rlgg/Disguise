@@ -94,8 +94,8 @@ public final class TabListIdentityRenderer implements Consumer<IdentityTransitio
         assertPrimaryThread();
 
         boolean currentDisguise = state != null && state.getDisguiseFor(viewer, subject).isPresent();
-        if (state != null && applied.contains(viewer, subject) && !currentDisguise) {
-            enqueueRestoration(viewer, subject);
+        if (state != null && !currentDisguise) {
+            if (applied.contains(viewer, subject)) enqueueRestoration(viewer, subject);
             return;
         }
         if (currentDisguise && !manualRestores.isEmpty())
@@ -111,8 +111,9 @@ public final class TabListIdentityRenderer implements Consumer<IdentityTransitio
     }
 
     private boolean enqueueRestoration(UUID viewer, UUID subject) {
-        if (deferred.size() > 0) deferred.cancel(viewer, subject);
-        return pending.offerRestoration(viewer, subject, deferred::offer);
+        boolean admitted = pending.offerRestoration(viewer, subject, deferred::offer);
+        if (admitted && deferred.size() > 0) deferred.cancel(viewer, subject);
+        return admitted;
     }
 
     @Override
