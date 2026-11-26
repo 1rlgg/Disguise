@@ -90,6 +90,7 @@ public final class AsyncSkinService implements AutoCloseable {
             skin = source.load(id);
             if (skin == null || !skin.isSigned()) throw new IllegalStateException("Missing signed textures");
         } catch (Throwable ex) {
+            if (ex instanceof InterruptedException) Thread.currentThread().interrupt();
             failure = ex;
         }
         boolean stopped;
