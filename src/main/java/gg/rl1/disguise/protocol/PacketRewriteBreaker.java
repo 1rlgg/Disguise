@@ -20,6 +20,6 @@ public final class PacketRewriteBreaker {
     }
 
     public void recordSuccess() {
-        if (!isOpen()) failures.set(0);
+        failures.getAndUpdate(old -> old >= threshold ? old : 0);
     }
 }
