@@ -98,12 +98,14 @@ public final class InMemoryDisguiseService implements DisguiseService, DisguiseS
 
     @Override public synchronized void clearPlayer(UUID playerId) {
         Objects.requireNonNull(playerId, "playerId");
-        global.remove(playerId);
-        perViewer.remove(playerId);
-        cachedSubjectIds = null;
-        perViewer.values().removeIf(overrides -> {
-            overrides.remove(playerId);
-            return overrides.isEmpty();
-        });
+        boolean changed = global.remove(playerId) != null;
+        changed |= perViewer.remove(playerId) != null;
+        java.util.Iterator<Map<UUID, Disguise>> iterator = perViewer.values().iterator();
+        while (iterator.hasNext()) {
+            Map<UUID, Disguise> overrides = iterator.next();
+            changed |= overrides.remove(playerId) != null;
+            if (overrides.isEmpty()) iterator.remove();
+        }
+        if (changed) cachedSubjectIds = null;
     }
 }
