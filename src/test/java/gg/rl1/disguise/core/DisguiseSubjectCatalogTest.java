@@ -77,4 +77,27 @@ public class DisguiseSubjectCatalogTest {
         assertTrue(registry.subjectIds().isEmpty());
         assertTrue(snapshot.contains(subject));
     }
+
+    @Test public void effectiveSnapshotsIsolateViewersAndSurviveRegistryChanges() {
+        InMemoryDisguiseService registry = new InMemoryDisguiseService();
+        UUID viewer = UUID.randomUUID(), subject = UUID.randomUUID(), other = UUID.randomUUID();
+        Disguise global = new Disguise(subject, "GlobalAlias");
+        Disguise privateAlias = new Disguise(subject, "PrivateAlias");
+        registry.setDisguise(global);
+        registry.setDisguiseFor(viewer, privateAlias);
+        registry.setDisguise(new Disguise(viewer, "SelfAlias"));
+        java.util.Map<UUID, Disguise> snapshot = registry.effectiveSnapshot(viewer);
+        assertEquals(1, snapshot.size());
+        assertSame(privateAlias, snapshot.get(subject));
+        assertSame(global, registry.effectiveSnapshot(other).get(subject));
+        registry.clear();
+        assertSame(privateAlias, snapshot.get(subject));
+        assertTrue(registry.effectiveSnapshot(viewer).isEmpty());
+        try {
+            snapshot.clear();
+            fail("Effective snapshot must be immutable");
+        } catch (UnsupportedOperationException expected) {
+            // Expected.
+        }
+    }
 }
