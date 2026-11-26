@@ -51,6 +51,10 @@ public final class SkinRequestTracker {
         latest.remove(new Target(viewer, subject), token);
     }
 
+    public synchronized boolean cancel(UUID viewer, UUID subject) {
+        return latest.remove(new Target(viewer, subject)) != null;
+    }
+
     public synchronized void forgetPlayer(UUID player) {
         Objects.requireNonNull(player, "player");
         latest.keySet().removeIf(target -> player.equals(target.subject) || player.equals(target.viewer));
