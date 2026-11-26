@@ -78,4 +78,18 @@ public class SkinRequestTrackerTest {
         assertFalse(tracker.isCurrent(viewer, subject, token));
         assertEquals(0, tracker.size());
     }
+
+    @Test public void cancellationFreesCapacityWithoutAffectingOtherScopes() {
+        SkinRequestTracker tracker = new SkinRequestTracker(2);
+        UUID viewer = UUID.randomUUID(), subject = UUID.randomUUID();
+        long global = tracker.begin(null, subject);
+        long old = tracker.begin(viewer, subject);
+        assertTrue(tracker.cancel(viewer, subject));
+        assertFalse(tracker.cancel(viewer, subject));
+        assertFalse(tracker.isCurrent(viewer, subject, old));
+        assertTrue(tracker.isCurrent(null, subject, global));
+        long replacement = tracker.begin(viewer, subject);
+        tracker.finish(viewer, subject, old);
+        assertTrue(tracker.isCurrent(viewer, subject, replacement));
+    }
 }
