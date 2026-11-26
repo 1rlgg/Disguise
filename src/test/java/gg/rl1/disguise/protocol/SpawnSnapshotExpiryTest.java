@@ -29,4 +29,18 @@ public class SpawnSnapshotExpiryTest {
     }
     @Test(expected = IllegalArgumentException.class)
     public void rejectsInvalidTtl() { TrackedSpawnPackets.expiredSince(0, 0, System::nanoTime); }
+
+    @Test public void maintenanceOfEmptyTrackerIsIdempotent() {
+        AtomicLong time = new AtomicLong(100);
+        TrackedSpawnPackets tracker = new TrackedSpawnPackets(4, 10, time::get);
+        java.util.UUID viewer = java.util.UUID.randomUUID();
+        for (int i = 0; i < 20; i++) {
+            time.incrementAndGet();
+            tracker.destroy(viewer, new int[] {1, 2, 3});
+            assertEquals(0, tracker.purgeExpired());
+            assertTrue(tracker.isEmpty());
+        }
+        tracker.clear();
+        assertEquals(0, tracker.purgeExpired());
+    }
 }
