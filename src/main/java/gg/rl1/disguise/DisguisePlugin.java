@@ -182,7 +182,8 @@ public final class DisguisePlugin extends JavaPlugin implements Listener {
         if (tabRenderer != null) tabRenderer.forget(id);
         if (spawnPackets != null) spawnPackets.forget(id);
 
-        if (registry != null) registry.clearPlayer(id);
+        if (disguises != null && isEnabled()) disguises.clearPlayer(id);
+        else if (registry != null) registry.clearPlayer(id);
     }
 
     @Override public void onDisable() {
