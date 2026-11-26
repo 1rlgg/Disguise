@@ -18,11 +18,13 @@ public final class InMemoryDisguiseService implements DisguiseService, DisguiseS
     private final Map<UUID, Map<UUID, Disguise>> effectiveSnapshots =
             new java.util.LinkedHashMap<UUID, Map<UUID, Disguise>>(16, 0.75f, true);
     private static final int SNAPSHOT_LIMIT = 256;
+    private final Map<UUID, Map<UUID, Disguise>> packetSnapshots = new HashMap<>();
 
     @Override public synchronized void setDisguise(Disguise disguise) {
         Objects.requireNonNull(disguise, "disguise");
         if (global.put(disguise.getPlayerId(), disguise) == null) cachedSubjectIds = null;
         effectiveSnapshots.clear();
+        packetSnapshots.clear();
     }
 
     @Override public synchronized Optional<Disguise> getDisguise(UUID playerId) {
@@ -34,6 +36,7 @@ public final class InMemoryDisguiseService implements DisguiseService, DisguiseS
         if (removed) {
             cachedSubjectIds = null;
             effectiveSnapshots.clear();
+        packetSnapshots.clear();
         }
         return removed;
     }
@@ -72,16 +75,40 @@ public final class InMemoryDisguiseService implements DisguiseService, DisguiseS
         effectiveSnapshots.put(viewerId, snapshot);
         if (effectiveSnapshots.size() > SNAPSHOT_LIMIT) {
             java.util.Iterator<UUID> oldest = effectiveSnapshots.keySet().iterator();
-            oldest.next();
+            UUID evicted = oldest.next();
             oldest.remove();
+            packetSnapshots.remove(evicted);
         }
         return snapshot;
+    }
+
+    public synchronized Map<UUID, Disguise> packetSnapshot(UUID viewerId) {
+        Map<UUID, Disguise> effective = effectiveSnapshot(viewerId);
+        if (effective.isEmpty()) return effective;
+        Map<UUID, Disguise> cached = packetSnapshots.get(viewerId);
+        if (cached != null) return cached;
+        Set<String> seen = new HashSet<>();
+        Set<String> collisions = new HashSet<>();
+        for (Disguise disguise : effective.values()) {
+            String alias = disguise.getName().toLowerCase(java.util.Locale.ROOT);
+            if (!seen.add(alias)) collisions.add(alias);
+        }
+        Map<UUID, Disguise> safe = effective;
+        if (!collisions.isEmpty()) {
+            Map<UUID, Disguise> filtered = new HashMap<>(effective);
+            filtered.values().removeIf(disguise ->
+                    collisions.contains(disguise.getName().toLowerCase(java.util.Locale.ROOT)));
+            safe = Collections.unmodifiableMap(filtered);
+        }
+        packetSnapshots.put(viewerId, safe);
+        return safe;
     }
 
     @Override public synchronized void clear() {
         global.clear();
         perViewer.clear();
         effectiveSnapshots.clear();
+        packetSnapshots.clear();
         cachedSubjectIds = null;
     }
 
@@ -95,6 +122,7 @@ public final class InMemoryDisguiseService implements DisguiseService, DisguiseS
         }
         if (overrides.put(disguise.getPlayerId(), disguise) == null) cachedSubjectIds = null;
         effectiveSnapshots.remove(viewerId);
+            packetSnapshots.remove(viewerId);
     }
 
     @Override public synchronized Optional<Disguise> getDisguiseFor(UUID viewerId, UUID playerId) {
@@ -123,6 +151,7 @@ public final class InMemoryDisguiseService implements DisguiseService, DisguiseS
         if (removed) {
             cachedSubjectIds = null;
             effectiveSnapshots.remove(viewerId);
+            packetSnapshots.remove(viewerId);
         }
         return removed;
     }
@@ -138,9 +167,11 @@ public final class InMemoryDisguiseService implements DisguiseService, DisguiseS
             if (overrides.isEmpty()) iterator.remove();
         }
         effectiveSnapshots.remove(playerId);
+        packetSnapshots.remove(playerId);
         if (changed) {
             cachedSubjectIds = null;
             effectiveSnapshots.clear();
+        packetSnapshots.clear();
         }
     }
 }

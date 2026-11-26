@@ -35,7 +35,7 @@ public final class PlayerInfoRewriter {
         if (disguises instanceof DisguiseSubjectCatalog
                 && !((DisguiseSubjectCatalog) disguises).hasAnySubjectsFor(viewerId)) return original;
         Map<UUID, Disguise> snapshot = disguises instanceof InMemoryDisguiseService
-                ? ((InMemoryDisguiseService) disguises).effectiveSnapshot(viewerId) : null;
+                ? ((InMemoryDisguiseService) disguises).packetSnapshot(viewerId) : null;
         if (snapshot != null && snapshot.isEmpty()) return original;
         List<PlayerInfoData> result = null;
 
@@ -52,16 +52,7 @@ public final class PlayerInfoRewriter {
                     ? disguises.getDisguiseFor(viewerId, subjectId).orElse(null) : snapshot.get(subjectId);
             if (disguise == null) continue;
 
-            if (snapshot != null) {
-                if (aliasCounts == null) {
-                    aliasCounts = new HashMap<String, Integer>();
-                    for (Disguise active : snapshot.values()) {
-                        String alias = active.getName().toLowerCase(Locale.ROOT);
-                        aliasCounts.merge(alias, 1, Integer::sum);
-                    }
-                }
-                if (aliasCounts.get(disguise.getName().toLowerCase(Locale.ROOT)) > 1) continue;
-            } else if (disguises instanceof DisguiseSubjectCatalog) {
+            if (snapshot == null && disguises instanceof DisguiseSubjectCatalog) {
                 if (knownSubjects == null)
                     knownSubjects = ((DisguiseSubjectCatalog) disguises).subjectIds();
                 boolean collision;
