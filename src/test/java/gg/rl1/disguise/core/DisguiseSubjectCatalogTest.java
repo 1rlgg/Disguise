@@ -130,4 +130,22 @@ public class DisguiseSubjectCatalogTest {
         assertSame(retained, registry.effectiveSnapshot(first));
         assertNotSame(evicted, registry.effectiveSnapshot(second));
     }
+
+    @Test public void packetSnapshotFiltersCollisionsAndInvalidatesCorrectly() {
+        InMemoryDisguiseService registry = new InMemoryDisguiseService();
+        UUID viewer = new UUID(1, 1), a = new UUID(2, 1), b = new UUID(2, 2);
+        registry.setDisguise(new Disguise(a, "SameAlias"));
+        registry.setDisguise(new Disguise(b, "samealias"));
+        java.util.Map<UUID, Disguise> blocked = registry.packetSnapshot(viewer);
+        assertTrue(blocked.isEmpty());
+        assertSame(blocked, registry.packetSnapshot(viewer));
+        registry.setDisguiseFor(viewer, new Disguise(b, "PrivateAlias"));
+        java.util.Map<UUID, Disguise> available = registry.packetSnapshot(viewer);
+        assertEquals(2, available.size());
+        assertSame(available, registry.packetSnapshot(viewer));
+        assertTrue(registry.packetSnapshot(new UUID(1, 2)).isEmpty());
+        registry.removeDisguiseFor(viewer, b);
+        assertTrue(registry.packetSnapshot(viewer).isEmpty());
+        assertEquals(2, available.size());
+    }
 }
