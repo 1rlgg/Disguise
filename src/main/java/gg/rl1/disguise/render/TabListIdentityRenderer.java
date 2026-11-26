@@ -93,17 +93,19 @@ public final class TabListIdentityRenderer implements Consumer<IdentityTransitio
     public void enqueue(UUID viewer, UUID subject) {
         assertPrimaryThread();
 
+        RefreshQueue.Pair pair = new RefreshQueue.Pair(viewer, subject);
+        if (viewer.equals(subject)) return;
         boolean currentDisguise = state != null && state.getDisguiseFor(viewer, subject).isPresent();
         if (state != null && !currentDisguise) {
-            if (applied.contains(viewer, subject)) enqueueRestoration(viewer, subject);
+            if (applied.contains(pair)) enqueueRestoration(viewer, subject);
             return;
         }
         if (currentDisguise && !manualRestores.isEmpty())
-            manualRestores.remove(new RefreshQueue.Pair(viewer, subject));
-        if (pending.offer(viewer, subject)) {
-            if (deferred.size() > 0) deferred.cancel(viewer, subject);
+            manualRestores.remove(pair);
+        if (pending.offer(pair)) {
+            if (deferred.size() > 0) deferred.cancel(pair);
         } else {
-            if (!deferred.offer(viewer, subject) && !capacityWarning) {
+            if (!deferred.offer(pair) && !capacityWarning) {
                 capacityWarning = true;
                 logger.warning("Tab refresh and deferred queues full; cosmetic updates may be dropped");
             }
